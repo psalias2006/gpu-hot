@@ -193,8 +193,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 5. Open a Pull Request
 
 ## License
-
-**CC BY-NC-SA 4.0** - Free for personal and open source use. No commercial use allowed.
 See the [LICENSE](LICENSE) file for full details.
 
 ## Acknowledgments
