@@ -865,11 +865,13 @@
         <div class="system-info">
             <div class="system-metric">
                 <div class="system-metric-value" id="cpu-usage">0%</div>
-                <div class="system-metric-label">CPU Usage</div>
+                <div class="system-metric-label">System CPU</div>
+                <div class="metric-sublabel">Host Processor</div>
             </div>
             <div class="system-metric">
                 <div class="system-metric-value" id="memory-usage">0%</div>
-                <div class="system-metric-label">Memory Usage</div>
+                <div class="system-metric-label">System RAM</div>
+                <div class="metric-sublabel">Host Memory</div>
             </div>
         </div>
     </div>
@@ -1202,6 +1204,18 @@
                                     <span class="spec-icon">🔥</span>
                                     <span id="fan-${gpuId}">${gpuInfo.fan_speed}%</span> Fan
                                 </span>
+                                <span class="spec-item">
+                                    <span class="spec-icon">⚙️</span>
+                                    <span id="pstate-header-${gpuId}">${gpuInfo.performance_state || 'N/A'}</span>
+                                </span>
+                                <span class="spec-item">
+                                    <span class="spec-icon">🔗</span>
+                                    PCIe Gen <span id="pcie-header-${gpuId}">${gpuInfo.pcie_gen || 'N/A'}</span>
+                                </span>
+                                <span class="spec-item">
+                                    <span class="spec-icon">💿</span>
+                                    Driver ${gpuInfo.driver_version || 'N/A'}
+                                </span>
                             </div>
                         </div>
                         <div class="gpu-status-badge">
@@ -1272,6 +1286,135 @@
                             <div class="progress-bar">
                                 <div class="progress-fill power-bar" id="power-bar-${gpuId}" style="width: ${powerPercent}%"></div>
                             </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🔧</span>
+                                <span class="metric-label">Graphics Clock</span>
+                            </div>
+                            <div class="metric-value-large" id="clock-gr-${gpuId}">${gpuInfo.clock_graphics || 0}</div>
+                            <div class="metric-sublabel">MHz</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">💿</span>
+                                <span class="metric-label">Memory Clock</span>
+                            </div>
+                            <div class="metric-value-large" id="clock-mem-${gpuId}">${gpuInfo.clock_memory || 0}</div>
+                            <div class="metric-sublabel">MHz</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🎯</span>
+                                <span class="metric-label">Memory Utilization</span>
+                            </div>
+                            <div class="metric-value-large" id="mem-util-${gpuId}">${gpuInfo.memory_utilization || 0}%</div>
+                            <div class="metric-sublabel">Controller Usage</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="mem-util-bar-${gpuId}" style="width: ${gpuInfo.memory_utilization || 0}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🔗</span>
+                                <span class="metric-label">PCIe Link</span>
+                            </div>
+                            <div class="metric-value-large" id="pcie-${gpuId}">Gen ${gpuInfo.pcie_gen || 'N/A'}</div>
+                            <div class="metric-sublabel">x${gpuInfo.pcie_width || 'N/A'} lanes</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">⚙️</span>
+                                <span class="metric-label">Performance State</span>
+                            </div>
+                            <div class="metric-value-large" id="pstate-${gpuId}">${gpuInfo.performance_state || 'N/A'}</div>
+                            <div class="metric-sublabel">Power Mode</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🎬</span>
+                                <span class="metric-label">Encoder Sessions</span>
+                            </div>
+                            <div class="metric-value-large" id="encoder-${gpuId}">${gpuInfo.encoder_sessions || 0}</div>
+                            <div class="metric-sublabel">${(gpuInfo.encoder_fps || 0).toFixed(1)} FPS avg</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">⏱️</span>
+                                <span class="metric-label">SM Clock</span>
+                            </div>
+                            <div class="metric-value-large" id="clock-sm-${gpuId}">${gpuInfo.clock_sm || 0}</div>
+                            <div class="metric-sublabel">MHz / ${gpuInfo.clock_max_sm || 0} Max</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🌡️</span>
+                                <span class="metric-label">Memory Temp</span>
+                            </div>
+                            <div class="metric-value-large" id="temp-mem-${gpuId}">${gpuInfo.temperature_memory || 0}°C</div>
+                            <div class="metric-sublabel">VRAM Temperature</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">💿</span>
+                                <span class="metric-label">Free Memory</span>
+                            </div>
+                            <div class="metric-value-large" id="mem-free-${gpuId}">${Math.round(gpuInfo.memory_free || 0)}MB</div>
+                            <div class="metric-sublabel">Available VRAM</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">📹</span>
+                                <span class="metric-label">Decoder Sessions</span>
+                            </div>
+                            <div class="metric-value-large" id="decoder-${gpuId}">${gpuInfo.decoder_sessions || 0}</div>
+                            <div class="metric-sublabel">${(gpuInfo.decoder_fps || 0).toFixed(1)} FPS avg</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🎥</span>
+                                <span class="metric-label">Video Clock</span>
+                            </div>
+                            <div class="metric-value-large" id="clock-video-${gpuId}">${gpuInfo.clock_video || 0}</div>
+                            <div class="metric-sublabel">MHz</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">📊</span>
+                                <span class="metric-label">Compute Mode</span>
+                            </div>
+                            <div class="metric-value-large" id="compute-mode-${gpuId}" style="font-size: 1.5rem;">${gpuInfo.compute_mode || 'N/A'}</div>
+                            <div class="metric-sublabel">Execution Mode</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🔌</span>
+                                <span class="metric-label">Max PCIe</span>
+                            </div>
+                            <div class="metric-value-large" id="pcie-max-${gpuId}">Gen ${gpuInfo.pcie_gen_max || 'N/A'}</div>
+                            <div class="metric-sublabel">x${gpuInfo.pcie_width_max || 'N/A'} Max</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🚨</span>
+                                <span class="metric-label">Throttle Status</span>
+                            </div>
+                            <div class="metric-value-large" id="throttle-${gpuId}" style="font-size: 1.2rem;">${gpuInfo.throttle_reasons === 'Active' || gpuInfo.throttle_reasons !== 'None' ? '⚠️ Active' : '✅ None'}</div>
+                            <div class="metric-sublabel">Performance</div>
                         </div>
                     </div>
                     
@@ -1369,6 +1512,51 @@
             if (memBar) memBar.style.width = `${memPercent}%`;
             if (powerBar) powerBar.style.width = `${powerPercent}%`;
             
+            // Update new metrics
+            const clockGrEl = document.getElementById(`clock-gr-${gpuId}`);
+            const clockMemEl = document.getElementById(`clock-mem-${gpuId}`);
+            const clockSmEl = document.getElementById(`clock-sm-${gpuId}`);
+            const memUtilEl = document.getElementById(`mem-util-${gpuId}`);
+            const memUtilBar = document.getElementById(`mem-util-bar-${gpuId}`);
+            const pcieEl = document.getElementById(`pcie-${gpuId}`);
+            const pstateEl = document.getElementById(`pstate-${gpuId}`);
+            const encoderEl = document.getElementById(`encoder-${gpuId}`);
+            
+            if (clockGrEl) clockGrEl.textContent = `${gpuInfo.clock_graphics || 0}`;
+            if (clockMemEl) clockMemEl.textContent = `${gpuInfo.clock_memory || 0}`;
+            if (clockSmEl) clockSmEl.textContent = `${gpuInfo.clock_sm || 0}`;
+            if (memUtilEl) memUtilEl.textContent = `${gpuInfo.memory_utilization || 0}%`;
+            if (memUtilBar) memUtilBar.style.width = `${gpuInfo.memory_utilization || 0}%`;
+            if (pcieEl) pcieEl.textContent = `Gen ${gpuInfo.pcie_gen || 'N/A'}`;
+            if (pstateEl) pstateEl.textContent = `${gpuInfo.performance_state || 'N/A'}`;
+            if (encoderEl) encoderEl.textContent = `${gpuInfo.encoder_sessions || 0}`;
+            
+            // Update header badges
+            const pstateHeaderEl = document.getElementById(`pstate-header-${gpuId}`);
+            const pcieHeaderEl = document.getElementById(`pcie-header-${gpuId}`);
+            if (pstateHeaderEl) pstateHeaderEl.textContent = `${gpuInfo.performance_state || 'N/A'}`;
+            if (pcieHeaderEl) pcieHeaderEl.textContent = `${gpuInfo.pcie_gen || 'N/A'}`;
+            
+            // Update new advanced metrics
+            const tempMemEl = document.getElementById(`temp-mem-${gpuId}`);
+            const memFreeEl = document.getElementById(`mem-free-${gpuId}`);
+            const decoderEl = document.getElementById(`decoder-${gpuId}`);
+            const clockVideoEl = document.getElementById(`clock-video-${gpuId}`);
+            const computeModeEl = document.getElementById(`compute-mode-${gpuId}`);
+            const pcieMaxEl = document.getElementById(`pcie-max-${gpuId}`);
+            const throttleEl = document.getElementById(`throttle-${gpuId}`);
+            
+            if (tempMemEl) tempMemEl.textContent = `${gpuInfo.temperature_memory || 0}°C`;
+            if (memFreeEl) memFreeEl.textContent = `${Math.round(gpuInfo.memory_free || 0)}MB`;
+            if (decoderEl) decoderEl.textContent = `${gpuInfo.decoder_sessions || 0}`;
+            if (clockVideoEl) clockVideoEl.textContent = `${gpuInfo.clock_video || 0}`;
+            if (computeModeEl) computeModeEl.textContent = `${gpuInfo.compute_mode || 'N/A'}`;
+            if (pcieMaxEl) pcieMaxEl.textContent = `Gen ${gpuInfo.pcie_gen_max || 'N/A'}`;
+            if (throttleEl) {
+                const isThrottling = gpuInfo.throttle_reasons && gpuInfo.throttle_reasons !== 'None' && gpuInfo.throttle_reasons !== '[N/A]';
+                throttleEl.textContent = isThrottling ? '⚠️ Active' : '✅ None';
+            }
+            
             // Update charts
             updateChart(gpuId, 'utilization', gpuInfo.utilization);
             updateChart(gpuId, 'temperature', gpuInfo.temperature);
@@ -1392,7 +1580,7 @@
             `).join('');
         }
 
-        // Update system info
+        // Update system info (minimal - GPU-relevant only)
         function updateSystemInfo(systemInfo) {
             const cpuEl = document.getElementById('cpu-usage');
             const memEl = document.getElementById('memory-usage');
