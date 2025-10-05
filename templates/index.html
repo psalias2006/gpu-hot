@@ -434,6 +434,7 @@
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             mask-composite: exclude;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -725,10 +726,89 @@
             background: var(--card-bg);
             backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 2rem;
+            border-radius: 20px;
+            padding: 0;
             margin-top: 2rem;
             box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .processes-header {
+            padding: 1.25rem 1.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .processes-header:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .processes-header.expanded {
+            border-bottom-color: var(--border-color);
+        }
+
+        .processes-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+
+        .processes-header:hover .processes-toggle {
+            color: var(--text-primary);
+        }
+
+        .toggle-icon {
+            font-size: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+        .processes-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .processes-content.expanded {
+            max-height: 500px;
+        }
+
+        .processes-inner {
+            padding: 1.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.3;
+        }
+
+        .empty-state-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .empty-state-subtext {
+            font-size: 0.8rem;
+            opacity: 0.6;
         }
 
         .processes-title {
@@ -789,11 +869,38 @@
             border-radius: 16px;
             border: 1px solid var(--border-color);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .system-metric::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, transparent 0%, rgba(102, 126, 234, 0.1) 100%);
+            z-index: 0;
+        }
+
+        .system-metric > * {
+            position: relative;
+            z-index: 1;
         }
 
         .system-metric:hover {
             transform: translateY(-4px);
             background: rgba(255, 255, 255, 0.05);
+        }
+
+        .system-metric-chart {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            z-index: 0;
         }
 
         .system-metric-value {
@@ -838,6 +945,204 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Sleek Segmented Control Navigation */
+        .view-selector {
+            display: inline-flex;
+            gap: 0.25rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 0.25rem;
+            overflow-x: auto;
+        }
+
+        .view-option {
+            padding: 0.6rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+
+        .view-option:hover:not(.active) {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .view-option.active {
+            background: rgba(102, 126, 234, 0.15);
+            color: white;
+            box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Tab Content with smooth transitions */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Overview Grid - Compact comparison view */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .overview-gpu-card {
+            background: linear-gradient(135deg, rgba(15, 15, 35, 0.9) 0%, rgba(20, 20, 50, 0.8) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            padding: 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .overview-gpu-card::after {
+            content: 'Click to view full details →';
+            position: absolute;
+            bottom: 1rem;
+            right: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .overview-gpu-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(102, 126, 234, 0.35);
+            border-color: rgba(102, 126, 234, 0.4);
+        }
+
+        .overview-gpu-card:hover::after {
+            opacity: 1;
+        }
+
+        .overview-header {
+            padding: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .overview-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .overview-metric {
+            padding: 1.5rem;
+            text-align: center;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            transition: background 0.3s ease;
+        }
+
+        .overview-metric:last-child {
+            border-right: none;
+        }
+
+        .overview-metric:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .overview-metric-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.6));
+        }
+
+        .overview-metric-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+        }
+
+        .overview-metric-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .overview-chart-section {
+            padding: 2rem;
+            padding-top: 1.5rem;
+            padding-bottom: 2.5rem;
+        }
+
+        .overview-mini-chart {
+            height: 160px;
+            position: relative;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+            border-radius: 16px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Detailed View - Full GPU card */
+        .detailed-view {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .gpu-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        /* Enhanced chart sizes for detailed view */
+        .detailed-view .chart-container {
+            height: 380px;
+        }
+
+        @media (max-width: 1200px) {
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .overview-metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -847,7 +1152,17 @@
                 font-size: 2.5rem;
             }
             
-            .gpu-grid {
+            .view-selector {
+                overflow-x: auto;
+                scrollbar-width: thin;
+            }
+            
+            .view-option {
+                font-size: 0.8rem;
+                padding: 0.55rem 1.25rem;
+            }
+            
+            .overview-metrics {
                 grid-template-columns: 1fr;
             }
             
@@ -857,6 +1172,14 @@
             
             .system-info {
                 grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 280px;
+            }
+            
+            .processes-title {
+                font-size: 1.2rem;
             }
         }
 
@@ -894,32 +1217,52 @@
             <div id="connection-status">Connecting...</div>
         </div>
 
-        <div id="gpu-container" class="gpu-grid">
-            <div class="loading">
-                <div class="spinner"></div>
-                Loading GPU data...
+        <!-- View Selector -->
+        <div class="view-selector" id="view-selector">
+            <button class="view-option active" data-view="overview" onclick="switchToView('overview')">All GPUs</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="tab-overview" class="tab-content active">
+            <div id="overview-container" class="overview-grid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading GPU data...
+                </div>
             </div>
         </div>
 
+        <!-- Individual GPU Tabs (dynamically created) -->
+
         <div class="processes-section">
-            <div class="processes-title">
-                🔄 Active GPU Processes
+            <div class="processes-header" onclick="toggleProcesses()">
+                <div class="processes-title">
+                    🔄 Active GPU Processes
+                </div>
+                <div class="processes-toggle">
+                    <span id="process-count">0 processes</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
             </div>
-            <div id="processes-container">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Loading processes...
+            <div class="processes-content" id="processes-content">
+                <div class="processes-inner" id="processes-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading processes...
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="system-info">
             <div class="system-metric">
+                <canvas class="system-metric-chart" id="cpu-chart"></canvas>
                 <div class="system-metric-value" id="cpu-usage">0%</div>
                 <div class="system-metric-label">System CPU</div>
                 <div class="metric-sublabel">Host Processor</div>
             </div>
             <div class="system-metric">
+                <canvas class="system-metric-chart" id="memory-chart"></canvas>
                 <div class="system-metric-value" id="memory-usage">0%</div>
                 <div class="system-metric-label">System RAM</div>
                 <div class="metric-sublabel">Host Memory</div>
@@ -930,6 +1273,62 @@
     <script>
         // Initialize Socket.IO connection
         const socket = io();
+        
+        // Global state
+        let currentTab = 'overview';
+        let registeredGPUs = new Set();
+        let systemCharts = {};
+        let systemData = {
+            cpu: { labels: [], data: [] },
+            memory: { labels: [], data: [] }
+        };
+        let hasAutoSwitched = false; // Track if we've done initial auto-switch
+        
+        // Toggle processes section
+        function toggleProcesses() {
+            const content = document.getElementById('processes-content');
+            const header = document.querySelector('.processes-header');
+            const icon = document.querySelector('.toggle-icon');
+            
+            content.classList.toggle('expanded');
+            header.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        }
+        
+        // Tab switching with smooth transitions
+        window.switchToView = function(viewName) {
+            currentTab = viewName;
+            
+            // Update view selector states
+            document.querySelectorAll('.view-option').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.view === viewName) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Switch tab content with animation
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const targetContent = document.getElementById(`tab-${viewName}`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+                
+                // Trigger chart resize for visible charts
+                if (viewName.startsWith('gpu-')) {
+                    const gpuId = viewName.replace('gpu-', '');
+                    setTimeout(() => {
+                        if (charts[gpuId]) {
+                            Object.values(charts[gpuId]).forEach(chart => {
+                                if (chart && chart.resize) chart.resize();
+                            });
+                        }
+                    }, 100);
+                }
+            }
+        }
         
         // Chart configurations with modern styling and thresholds
         const chartConfigs = {
@@ -1427,7 +1826,140 @@
             }
         }
 
-        // Create GPU card HTML
+        // Create overview GPU card (compact view)
+        function createOverviewCard(gpuId, gpuInfo) {
+            const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
+            
+            return `
+                <div class="overview-gpu-card" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')" style="pointer-events: auto;">
+                    <div class="overview-header">
+                        <div>
+                            <h2 style="font-size: 1.5rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">
+                                GPU ${gpuId}
+                            </h2>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">${gpuInfo.name}</p>
+                        </div>
+                        <div class="gpu-status-badge">
+                            <span class="status-dot"></span>
+                            <span class="status-text">ONLINE</span>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-metrics">
+                        <div class="overview-metric">
+                            <div class="overview-metric-icon">⚡</div>
+                            <div class="overview-metric-value" id="overview-util-${gpuId}">${gpuInfo.utilization}%</div>
+                            <div class="overview-metric-label">GPU Usage</div>
+                        </div>
+                        <div class="overview-metric">
+                            <div class="overview-metric-icon">🌡️</div>
+                            <div class="overview-metric-value" id="overview-temp-${gpuId}">${gpuInfo.temperature}°C</div>
+                            <div class="overview-metric-label">Temperature</div>
+                        </div>
+                        <div class="overview-metric">
+                            <div class="overview-metric-icon">💾</div>
+                            <div class="overview-metric-value" id="overview-mem-${gpuId}">${Math.round(memPercent)}%</div>
+                            <div class="overview-metric-label">Memory</div>
+                        </div>
+                        <div class="overview-metric">
+                            <div class="overview-metric-icon">⚡</div>
+                            <div class="overview-metric-value" id="overview-power-${gpuId}">${gpuInfo.power_draw.toFixed(0)}W</div>
+                            <div class="overview-metric-label">Power Draw</div>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-chart-section">
+                        <div class="overview-mini-chart">
+                            <canvas id="overview-chart-${gpuId}"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Initialize overview mini chart
+        function initOverviewMiniChart(gpuId) {
+            const canvas = document.getElementById(`overview-chart-${gpuId}`);
+            if (!canvas) return;
+            
+            if (!chartData[gpuId]) initGPUData(gpuId);
+            
+            const config = {
+                type: 'line',
+                data: {
+                    labels: chartData[gpuId].utilization.labels,
+                    datasets: [{
+                        data: chartData[gpuId].utilization.data,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.15)',
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            display: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.08)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.4)',
+                                font: { size: 10 },
+                                stepSize: 50,
+                                callback: value => value + '%'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: context => `GPU: ${context.parsed.y.toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            };
+            
+            if (!charts[gpuId]) charts[gpuId] = {};
+            charts[gpuId].overviewMini = new Chart(canvas, config);
+        }
+        
+        // Update overview card
+        function updateOverviewCard(gpuId, gpuInfo) {
+            const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
+            
+            const utilEl = document.getElementById(`overview-util-${gpuId}`);
+            const tempEl = document.getElementById(`overview-temp-${gpuId}`);
+            const memEl = document.getElementById(`overview-mem-${gpuId}`);
+            const powerEl = document.getElementById(`overview-power-${gpuId}`);
+            
+            if (utilEl) utilEl.textContent = `${gpuInfo.utilization}%`;
+            if (tempEl) tempEl.textContent = `${gpuInfo.temperature}°C`;
+            if (memEl) memEl.textContent = `${Math.round(memPercent)}%`;
+            if (powerEl) powerEl.textContent = `${gpuInfo.power_draw.toFixed(0)}W`;
+            
+            // Update mini chart
+            if (charts[gpuId] && charts[gpuId].overviewMini) {
+                charts[gpuId].overviewMini.update('none');
+            }
+        }
+        
+        // Create detailed GPU card HTML (for individual tabs)
         function createGPUCard(gpuId, gpuInfo) {
             const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
             const powerPercent = (gpuInfo.power_draw / gpuInfo.power_limit) * 100;
@@ -1769,7 +2301,7 @@
         // Initialize charts for a GPU
         function initGPUCharts(gpuId) {
             const chartTypes = ['utilization', 'temperature', 'memory', 'power'];
-            charts[gpuId] = {};
+            if (!charts[gpuId]) charts[gpuId] = {};
             
             chartTypes.forEach(type => {
                 const canvas = document.getElementById(`chart-${type}-${gpuId}`);
@@ -1796,7 +2328,7 @@
                 }
             });
         }
-
+        
         // Update GPU display
         function updateGPUDisplay(gpuId, gpuInfo) {
             // Update metric values
@@ -1900,52 +2432,216 @@
         // Update processes display
         function updateProcesses(processes) {
             const container = document.getElementById('processes-container');
+            const countEl = document.getElementById('process-count');
+            
+            // Update count
+            if (countEl) {
+                countEl.textContent = processes.length === 0 ? 'No processes' : 
+                                     processes.length === 1 ? '1 process' : 
+                                     `${processes.length} processes`;
+            }
+            
             if (processes.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No active GPU processes</div>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💤</div>
+                        <div class="empty-state-text">No Active GPU Processes</div>
+                        <div class="empty-state-subtext">Your GPUs are currently idle</div>
+                    </div>
+                `;
                 return;
             }
             
             container.innerHTML = processes.map(proc => `
                 <div class="process-item">
-                    <div class="process-name">${proc.name} (PID: ${proc.pid})</div>
-                    <div class="process-memory">${Math.round(proc.memory)}MB</div>
+                    <div class="process-name">
+                        <strong>${proc.name}</strong>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; margin-left: 0.5rem;">PID: ${proc.pid}</span>
+                    </div>
+                    <div class="process-memory">
+                        <span style="font-size: 1.1rem; font-weight: 700;">${Math.round(proc.memory)}MB</span>
+                        <span style="color: var(--text-secondary); font-size: 0.8rem; margin-left: 0.25rem;">VRAM</span>
+                    </div>
                 </div>
             `).join('');
         }
 
-        // Update system info (minimal - GPU-relevant only)
+        // Initialize system charts
+        function initSystemCharts() {
+            const cpuCanvas = document.getElementById('cpu-chart');
+            const memCanvas = document.getElementById('memory-chart');
+            
+            if (cpuCanvas && !systemCharts.cpu) {
+                systemCharts.cpu = new Chart(cpuCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: systemData.cpu.labels,
+                        datasets: [{
+                            data: systemData.cpu.data,
+                            borderColor: 'rgba(102, 126, 234, 0.8)',
+                            backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { display: false },
+                            y: { display: false, min: 0, max: 100 }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+            }
+            
+            if (memCanvas && !systemCharts.memory) {
+                systemCharts.memory = new Chart(memCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: systemData.memory.labels,
+                        datasets: [{
+                            data: systemData.memory.data,
+                            borderColor: 'rgba(79, 172, 254, 0.8)',
+                            backgroundColor: 'rgba(79, 172, 254, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { display: false },
+                            y: { display: false, min: 0, max: 100 }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Update system info with sparklines
         function updateSystemInfo(systemInfo) {
             const cpuEl = document.getElementById('cpu-usage');
             const memEl = document.getElementById('memory-usage');
             
             if (cpuEl) cpuEl.textContent = `${Math.round(systemInfo.cpu_percent)}%`;
             if (memEl) memEl.textContent = `${Math.round(systemInfo.memory_percent)}%`;
-        }
-
-        // Handle incoming GPU data
-        socket.on('gpu_data', function(data) {
-            const gpuContainer = document.getElementById('gpu-container');
             
-            // Clear loading state
-            if (gpuContainer.innerHTML.includes('Loading GPU data')) {
-                gpuContainer.innerHTML = '';
+            // Update system chart data
+            const now = new Date().toLocaleTimeString();
+            
+            systemData.cpu.labels.push(now);
+            systemData.cpu.data.push(systemInfo.cpu_percent);
+            systemData.memory.labels.push(now);
+            systemData.memory.data.push(systemInfo.memory_percent);
+            
+            // Keep only last 20 points
+            if (systemData.cpu.labels.length > 20) {
+                systemData.cpu.labels.shift();
+                systemData.cpu.data.shift();
+                systemData.memory.labels.shift();
+                systemData.memory.data.shift();
             }
             
-            // Update or create GPU cards
+            // Initialize charts if needed
+            if (!systemCharts.cpu || !systemCharts.memory) {
+                initSystemCharts();
+            }
+            
+            // Update charts
+            if (systemCharts.cpu) systemCharts.cpu.update('none');
+            if (systemCharts.memory) systemCharts.memory.update('none');
+        }
+
+        // Create or update GPU tab
+        function ensureGPUTab(gpuId, gpuInfo) {
+            if (!registeredGPUs.has(gpuId)) {
+                // Add view option
+                const viewSelector = document.getElementById('view-selector');
+                const viewOption = document.createElement('button');
+                viewOption.className = 'view-option';
+                viewOption.dataset.view = `gpu-${gpuId}`;
+                viewOption.textContent = `GPU ${gpuId}`;
+                viewOption.onclick = () => switchToView(`gpu-${gpuId}`);
+                viewSelector.appendChild(viewOption);
+                
+                // Create tab content
+                const tabContent = document.createElement('div');
+                tabContent.id = `tab-gpu-${gpuId}`;
+                tabContent.className = 'tab-content';
+                tabContent.innerHTML = `<div class="detailed-view"></div>`;
+                document.getElementById('tab-overview').after(tabContent);
+                
+                registeredGPUs.add(gpuId);
+            }
+            
+            // Update or create detailed GPU card in tab
+            const detailedContainer = document.querySelector(`#tab-gpu-${gpuId} .detailed-view`);
+            const existingCard = document.getElementById(`gpu-${gpuId}`);
+            
+            if (!existingCard && detailedContainer) {
+                detailedContainer.innerHTML = createGPUCard(gpuId, gpuInfo);
+                initGPUData(gpuId);
+                initGPUCharts(gpuId);
+            } else if (existingCard) {
+                updateGPUDisplay(gpuId, gpuInfo);
+            }
+        }
+        
+        // Handle incoming GPU data
+        socket.on('gpu_data', function(data) {
+            const overviewContainer = document.getElementById('overview-container');
+            
+            // Clear loading state
+            if (overviewContainer.innerHTML.includes('Loading GPU data')) {
+                overviewContainer.innerHTML = '';
+            }
+            
+            const gpuCount = Object.keys(data.gpus).length;
+            
+            // Process each GPU
             Object.keys(data.gpus).forEach(gpuId => {
                 const gpuInfo = data.gpus[gpuId];
-                const existingCard = document.getElementById(`gpu-${gpuId}`);
                 
-                if (!existingCard) {
-                    // Create new GPU card
-                    gpuContainer.insertAdjacentHTML('beforeend', createGPUCard(gpuId, gpuInfo));
+                // Initialize chart data if needed
+                if (!chartData[gpuId]) {
                     initGPUData(gpuId);
-                    initGPUCharts(gpuId);
-                } else {
-                    // Update existing card
-                    updateGPUDisplay(gpuId, gpuInfo);
                 }
+                
+                // Update or create overview card
+                const existingOverview = overviewContainer.querySelector(`[data-gpu-id="${gpuId}"]`);
+                if (!existingOverview) {
+                    overviewContainer.insertAdjacentHTML('beforeend', createOverviewCard(gpuId, gpuInfo));
+                    initOverviewMiniChart(gpuId);
+                } else {
+                    updateOverviewCard(gpuId, gpuInfo);
+                }
+                
+                // Ensure GPU has its own detail tab
+                ensureGPUTab(gpuId, gpuInfo);
             });
+            
+            // Auto-switch to single GPU view if only 1 GPU detected (first time only)
+            if (gpuCount === 1 && !hasAutoSwitched) {
+                const singleGpuId = Object.keys(data.gpus)[0];
+                setTimeout(() => {
+                    switchToView(`gpu-${singleGpuId}`);
+                }, 300); // Small delay to ensure DOM is ready
+                hasAutoSwitched = true;
+            }
             
             // Update processes and system info
             updateProcesses(data.processes);
