@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Hot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-bg: #0f0f23;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--dark-bg);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            animation: bgShift 20s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes bgShift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            opacity: 0.1;
+            filter: blur(40px);
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.5)); }
+            to { filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.8)); }
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success-gradient);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .gpu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .gpu-card {
+            background: linear-gradient(135deg, rgba(15, 15, 35, 0.85) 0%, rgba(20, 20, 50, 0.7) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            padding: 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gpu-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(102, 126, 234, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .gpu-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .gpu-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(102, 126, 234, 0.25), 0 0 0 1px rgba(102, 126, 234, 0.2) inset;
+        }
+
+        .gpu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .gpu-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .gpu-name {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .gpu-status {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: var(--success-gradient);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Enhanced GPU Header */
+        .gpu-header-enhanced {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gpu-header-enhanced::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.03) 50%, transparent 70%);
+            animation: shine 3s ease-in-out infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        .gpu-icon-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gpu-icon {
+            font-size: 3rem;
+            filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.8));
+            animation: float 3s ease-in-out infinite;
+            z-index: 2;
+            position: relative;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .gpu-icon-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        .gpu-info-section {
+            flex: 1;
+            margin-left: 2rem;
+            z-index: 2;
+        }
+
+        .gpu-title-large {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .gpu-specs {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .spec-icon {
+            font-size: 1rem;
+        }
+
+        .gpu-status-badge {
+            padding: 0.75rem 1.5rem;
+            background: rgba(67, 234, 123, 0.15);
+            border: 2px solid rgba(67, 234, 123, 0.4);
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #43e97b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(67, 234, 123, 0.3);
+            z-index: 2;
+        }
+
+        .status-text {
+            text-shadow: 0 0 10px rgba(67, 234, 123, 0.5);
+        }
+
+        /* Circular Progress Gauge */
+        .metric-card-featured {
+            grid-column: span 2;
+        }
+
+        .circular-progress-container {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .circular-progress {
+            width: 150px;
+            height: 150px;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 10;
+        }
+
+        .progress-ring {
+            fill: none;
+            stroke: url(#gradient);
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-dasharray: 314;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .progress-text {
+            fill: white;
+            font-size: 24px;
+            font-weight: 700;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            transform: rotate(90deg);
+            transform-origin: center;
+        }
+
+        @media (max-width: 768px) {
+            .metric-card-featured {
+                grid-column: span 1;
+            }
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metrics-grid-enhanced {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding: 2.5rem;
+            padding-top: 2rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .metric-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        }
+
+        .metric-card:hover::before,
+        .metric-card:hover::after {
+            opacity: 1;
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .metric-icon {
+            font-size: 1.5rem;
+            filter: drop-shadow(0 0 15px rgba(102, 126, 234, 0.6));
+        }
+
+        .metric-value-large {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+
+        .temp-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .temp-value {
+            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%) !important;
+        }
+
+        .temp-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-sublabel {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success-gradient);
+            border-radius: 12px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .mem-bar {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+        }
+
+        .power-bar {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            box-shadow: 0 0 10px rgba(67, 234, 123, 0.5);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #43e97b;
+            margin-right: 0.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px #43e97b; }
+            50% { opacity: 0.5; box-shadow: 0 0 20px #43e97b; }
+        }
+
+        .metric {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .metric:hover::before {
+            transform: scaleX(1);
+        }
+
+        .metric:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .charts-section {
+            padding: 0 2.5rem 2.5rem 2.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 260px;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
+            border-radius: 16px;
+            padding: 20px 20px 15px 50px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            overflow: visible;
+        }
+
+        .chart-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .processes-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .processes-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .process-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            margin: 0.75rem 0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .process-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(8px);
+        }
+
+        .process-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .process-memory {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .system-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .system-metric {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .system-metric:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .system-metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .system-metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .gpu-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid, .metrics-grid-enhanced {
+                grid-template-columns: 1fr;
+            }
+            
+            .system-info {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gradient);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-gradient);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 GPU Hot</h1>
+            <p>Real-time NVIDIA GPU monitoring dashboard</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Live Monitoring</span>
+            </div>
+            <div id="connection-status">Connecting...</div>
+        </div>
+
+        <div id="gpu-container" class="gpu-grid">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading GPU data...
+            </div>
+        </div>
+
+        <div class="processes-section">
+            <div class="processes-title">
+                🔄 Active GPU Processes
+            </div>
+            <div id="processes-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading processes...
+                </div>
+            </div>
+        </div>
+
+        <div class="system-info">
+            <div class="system-metric">
+                <div class="system-metric-value" id="cpu-usage">0%</div>
+                <div class="system-metric-label">CPU Usage</div>
+            </div>
+            <div class="system-metric">
+                <div class="system-metric-value" id="memory-usage">0%</div>
+                <div class="system-metric-label">Memory Usage</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Socket.IO connection
+        const socket = io();
+        
+        // Chart configurations with modern styling
+        const chartConfigs = {
+            utilization: {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'GPU Utilization %',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHitRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    layout: {
+                        padding: { left: 0, right: 15, top: 15, bottom: 5 }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.12)',
+                                borderDash: [4, 4],
+                                drawBorder: false
+                            },
+                            ticks: {
+                                stepSize: 20,
+                                color: 'rgba(255, 255, 255, 0.65)',
+                                font: { size: 11 },
+                                padding: 8,
+                                callback: function(value) { return value + '%'; }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#667eea',
+                            borderWidth: 1,
+                            cornerRadius: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) { return context.parsed.y + '%'; }
+                            }
+                        }
+                    }
+                }
+            },
+            temperature: {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Temperature °C',
+                        data: [],
+                        borderColor: '#f5576c',
+                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHitRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    layout: {
+                        padding: { left: 0, right: 15, top: 15, bottom: 5 }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            min: 0,
+                            suggestedMax: 90,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.12)',
+                                borderDash: [4, 4],
+                                drawBorder: false
+                            },
+                            ticks: {
+                                stepSize: 15,
+                                color: 'rgba(255, 255, 255, 0.65)',
+                                font: { size: 11 },
+                                padding: 8,
+                                callback: function(value) { return value + '°C'; }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#f5576c',
+                            borderWidth: 1,
+                            cornerRadius: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) { return context.parsed.y + ' °C'; }
+                            }
+                        }
+                    }
+                }
+            },
+            memory: {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Memory Usage %',
+                        data: [],
+                        borderColor: '#4facfe',
+                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHitRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    layout: {
+                        padding: { left: 0, right: 15, top: 15, bottom: 5 }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.12)',
+                                borderDash: [4, 4],
+                                drawBorder: false
+                            },
+                            ticks: {
+                                stepSize: 20,
+                                color: 'rgba(255, 255, 255, 0.65)',
+                                font: { size: 11 },
+                                padding: 8,
+                                callback: function(value) { return value + '%'; }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#4facfe',
+                            borderWidth: 1,
+                            cornerRadius: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) { return context.parsed.y + ' %'; }
+                            }
+                        }
+                    }
+                }
+            },
+            power: {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Power Draw W',
+                        data: [],
+                        borderColor: '#43e97b',
+                        backgroundColor: 'rgba(67, 233, 123, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHitRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    layout: {
+                        padding: { left: 0, right: 15, top: 15, bottom: 5 }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            min: 0,
+                            suggestedMax: 200,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.12)',
+                                borderDash: [4, 4],
+                                drawBorder: false
+                            },
+                            ticks: {
+                                stepSize: 50,
+                                color: 'rgba(255, 255, 255, 0.65)',
+                                font: { size: 11 },
+                                padding: 8,
+                                callback: function(value) { return value + ' W'; }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#43e97b',
+                            borderWidth: 1,
+                            cornerRadius: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) { return context.parsed.y + ' W'; }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // Store charts and data
+        const charts = {};
+        const chartData = {};
+
+        // Initialize chart data for a GPU
+        function initGPUData(gpuId) {
+            chartData[gpuId] = {
+                utilization: { labels: [], data: [] },
+                temperature: { labels: [], data: [] },
+                memory: { labels: [], data: [] },
+                power: { labels: [], data: [] }
+            };
+        }
+
+        // Update chart data
+        function updateChart(gpuId, chartType, value) {
+            if (!chartData[gpuId]) initGPUData(gpuId);
+            
+            const data = chartData[gpuId][chartType];
+            const now = new Date().toLocaleTimeString();
+            
+            data.labels.push(now);
+            data.data.push(value);
+            
+            // Keep only last 30 data points for smoother performance
+            if (data.labels.length > 30) {
+                data.labels.shift();
+                data.data.shift();
+            }
+            
+            // Update chart if it exists
+            if (charts[gpuId] && charts[gpuId][chartType]) {
+                charts[gpuId][chartType].update('none');
+            }
+        }
+
+        // Create GPU card HTML
+        function createGPUCard(gpuId, gpuInfo) {
+            const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
+            const powerPercent = (gpuInfo.power_draw / gpuInfo.power_limit) * 100;
+            
+            return `
+                <div class="gpu-card" id="gpu-${gpuId}">
+                    <div class="gpu-header-enhanced">
+                        <div class="gpu-icon-container">
+                            <div class="gpu-icon">🎮</div>
+                            <div class="gpu-icon-glow"></div>
+                        </div>
+                        <div class="gpu-info-section">
+                            <div class="gpu-title-large">GPU ${gpuId}</div>
+                            <div class="gpu-name">${gpuInfo.name}</div>
+                            <div class="gpu-specs">
+                                <span class="spec-item">
+                                    <span class="spec-icon">🔥</span>
+                                    <span id="fan-${gpuId}">${gpuInfo.fan_speed}%</span> Fan
+                                </span>
+                            </div>
+                        </div>
+                        <div class="gpu-status-badge">
+                            <span class="status-dot"></span>
+                            <span class="status-text">ONLINE</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metrics-grid-enhanced">
+                        <div class="metric-card metric-card-featured">
+                            <div class="metric-header">
+                                <span class="metric-icon">⚡</span>
+                                <span class="metric-label">GPU Utilization</span>
+                            </div>
+                            <div class="circular-progress-container">
+                                <svg class="circular-progress" viewBox="0 0 120 120">
+                                    <defs>
+                                        <linearGradient id="util-gradient-${gpuId}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="progress-ring-bg" cx="60" cy="60" r="50"/>
+                                    <circle class="progress-ring" id="util-ring-${gpuId}" cx="60" cy="60" r="50" 
+                                        stroke="url(#util-gradient-${gpuId})"
+                                        style="stroke-dashoffset: ${314 - (314 * gpuInfo.utilization / 100)}"/>
+                                    <text x="60" y="60" class="progress-text" id="util-text-${gpuId}">${gpuInfo.utilization}%</text>
+                                </svg>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="util-bar-${gpuId}" style="width: ${gpuInfo.utilization}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🌡️</span>
+                                <span class="metric-label">Temperature</span>
+                            </div>
+                            <div class="temp-display">
+                                <div class="metric-value-large temp-value" id="temp-${gpuId}">${gpuInfo.temperature}°C</div>
+                                <div class="temp-status" id="temp-status-${gpuId}">
+                                    ${gpuInfo.temperature < 60 ? '❄️ Cool' : gpuInfo.temperature < 75 ? '🌤️ Normal' : '🔥 Warm'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">💾</span>
+                                <span class="metric-label">Memory Usage</span>
+                            </div>
+                            <div class="metric-value-large" id="mem-${gpuId}">${Math.round(gpuInfo.memory_used)}MB</div>
+                            <div class="metric-sublabel" id="mem-total-${gpuId}">of ${Math.round(gpuInfo.memory_total)}MB</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill mem-bar" id="mem-bar-${gpuId}" style="width: ${memPercent}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">⚡</span>
+                                <span class="metric-label">Power Draw</span>
+                            </div>
+                            <div class="metric-value-large" id="power-${gpuId}">${gpuInfo.power_draw.toFixed(1)}W</div>
+                            <div class="metric-sublabel" id="power-limit-${gpuId}">of ${gpuInfo.power_limit.toFixed(0)}W</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill power-bar" id="power-bar-${gpuId}" style="width: ${powerPercent}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="charts-section">
+                        <div class="chart-container">
+                            <div class="chart-title">📊 Utilization History</div>
+                            <canvas id="chart-utilization-${gpuId}"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <div class="chart-title">🌡️ Temperature History</div>
+                            <canvas id="chart-temperature-${gpuId}"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <div class="chart-title">💾 Memory History</div>
+                            <canvas id="chart-memory-${gpuId}"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <div class="chart-title">⚡ Power History</div>
+                            <canvas id="chart-power-${gpuId}"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize charts for a GPU
+        function initGPUCharts(gpuId) {
+            const chartTypes = ['utilization', 'temperature', 'memory', 'power'];
+            charts[gpuId] = {};
+            
+            chartTypes.forEach(type => {
+                const canvas = document.getElementById(`chart-${type}-${gpuId}`);
+                if (canvas) {
+                    const config = { ...chartConfigs[type] };
+                    config.data = {
+                        labels: chartData[gpuId][type].labels,
+                        datasets: [{
+                            ...config.data.datasets[0],
+                            data: chartData[gpuId][type].data
+                        }]
+                    };
+                    charts[gpuId][type] = new Chart(canvas, config);
+                }
+            });
+        }
+
+        // Update GPU display
+        function updateGPUDisplay(gpuId, gpuInfo) {
+            // Update metric values
+            const utilEl = document.getElementById(`util-${gpuId}`);
+            const tempEl = document.getElementById(`temp-${gpuId}`);
+            const memEl = document.getElementById(`mem-${gpuId}`);
+            const powerEl = document.getElementById(`power-${gpuId}`);
+            const fanEl = document.getElementById(`fan-${gpuId}`);
+            
+            if (utilEl) utilEl.textContent = `${gpuInfo.utilization}%`;
+            if (tempEl) tempEl.textContent = `${gpuInfo.temperature}°C`;
+            if (memEl) memEl.textContent = `${Math.round(gpuInfo.memory_used)}MB`;
+            if (powerEl) powerEl.textContent = `${gpuInfo.power_draw.toFixed(1)}W`;
+            if (fanEl) fanEl.textContent = `${gpuInfo.fan_speed}%`;
+            
+            // Update temperature status
+            const tempStatus = document.getElementById(`temp-status-${gpuId}`);
+            if (tempStatus) {
+                if (gpuInfo.temperature < 60) {
+                    tempStatus.textContent = '❄️ Cool';
+                } else if (gpuInfo.temperature < 75) {
+                    tempStatus.textContent = '🌤️ Normal';
+                } else {
+                    tempStatus.textContent = '🔥 Warm';
+                }
+            }
+            
+            // Update circular gauge
+            const utilRing = document.getElementById(`util-ring-${gpuId}`);
+            const utilText = document.getElementById(`util-text-${gpuId}`);
+            if (utilRing) {
+                const offset = 314 - (314 * gpuInfo.utilization / 100);
+                utilRing.style.strokeDashoffset = offset;
+            }
+            if (utilText) utilText.textContent = `${gpuInfo.utilization}%`;
+            
+            // Update progress bars
+            const utilBar = document.getElementById(`util-bar-${gpuId}`);
+            const memBar = document.getElementById(`mem-bar-${gpuId}`);
+            const powerBar = document.getElementById(`power-bar-${gpuId}`);
+            
+            const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
+            const powerPercent = (gpuInfo.power_draw / gpuInfo.power_limit) * 100;
+            
+            if (utilBar) utilBar.style.width = `${gpuInfo.utilization}%`;
+            if (memBar) memBar.style.width = `${memPercent}%`;
+            if (powerBar) powerBar.style.width = `${powerPercent}%`;
+            
+            // Update charts
+            updateChart(gpuId, 'utilization', gpuInfo.utilization);
+            updateChart(gpuId, 'temperature', gpuInfo.temperature);
+            updateChart(gpuId, 'memory', memPercent);
+            updateChart(gpuId, 'power', gpuInfo.power_draw);
+        }
+
+        // Update processes display
+        function updateProcesses(processes) {
+            const container = document.getElementById('processes-container');
+            if (processes.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No active GPU processes</div>';
+                return;
+            }
+            
+            container.innerHTML = processes.map(proc => `
+                <div class="process-item">
+                    <div class="process-name">${proc.name} (PID: ${proc.pid})</div>
+                    <div class="process-memory">${Math.round(proc.memory)}MB</div>
+                </div>
+            `).join('');
+        }
+
+        // Update system info
+        function updateSystemInfo(systemInfo) {
+            const cpuEl = document.getElementById('cpu-usage');
+            const memEl = document.getElementById('memory-usage');
+            
+            if (cpuEl) cpuEl.textContent = `${Math.round(systemInfo.cpu_percent)}%`;
+            if (memEl) memEl.textContent = `${Math.round(systemInfo.memory_percent)}%`;
+        }
+
+        // Handle incoming GPU data
+        socket.on('gpu_data', function(data) {
+            const gpuContainer = document.getElementById('gpu-container');
+            
+            // Clear loading state
+            if (gpuContainer.innerHTML.includes('Loading GPU data')) {
+                gpuContainer.innerHTML = '';
+            }
+            
+            // Update or create GPU cards
+            Object.keys(data.gpus).forEach(gpuId => {
+                const gpuInfo = data.gpus[gpuId];
+                const existingCard = document.getElementById(`gpu-${gpuId}`);
+                
+                if (!existingCard) {
+                    // Create new GPU card
+                    gpuContainer.insertAdjacentHTML('beforeend', createGPUCard(gpuId, gpuInfo));
+                    initGPUData(gpuId);
+                    initGPUCharts(gpuId);
+                } else {
+                    // Update existing card
+                    updateGPUDisplay(gpuId, gpuInfo);
+                }
+            });
+            
+            // Update processes and system info
+            updateProcesses(data.processes);
+            updateSystemInfo(data.system);
+        });
+
+        // Handle connection status
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            document.getElementById('connection-status').textContent = 'Connected';
+            document.getElementById('connection-status').style.color = '#43e97b';
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+            document.getElementById('connection-status').textContent = 'Disconnected';
+            document.getElementById('connection-status').style.color = '#f5576c';
+        });
+
+        // Handle connection errors
+        socket.on('connect_error', function() {
+            document.getElementById('connection-status').textContent = 'Connection Error';
+            document.getElementById('connection-status').style.color = '#f5576c';
+        });
+    </script>
+</body>
+</html>
