@@ -342,6 +342,25 @@
         /* Circular Progress Gauge */
         .metric-card-featured {
             grid-column: span 2;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .util-background-chart {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.2;
+        }
+
+        .metric-card-featured .metric-header,
+        .metric-card-featured .circular-progress-container,
+        .metric-card-featured .progress-bar {
+            position: relative;
+            z-index: 1;
         }
 
         .circular-progress-container {
@@ -1225,9 +1244,9 @@
         <!-- Overview Tab -->
         <div id="tab-overview" class="tab-content active">
             <div id="overview-container" class="overview-grid">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Loading GPU data...
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading GPU data...
                 </div>
             </div>
         </div>
@@ -1236,9 +1255,9 @@
 
         <div class="processes-section">
             <div class="processes-header" onclick="toggleProcesses()">
-                <div class="processes-title">
-                    🔄 Active GPU Processes
-                </div>
+            <div class="processes-title">
+                🔄 Active GPU Processes
+            </div>
                 <div class="processes-toggle">
                     <span id="process-count">0 processes</span>
                     <span class="toggle-icon">▼</span>
@@ -1246,9 +1265,9 @@
             </div>
             <div class="processes-content" id="processes-content">
                 <div class="processes-inner" id="processes-container">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        Loading processes...
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading processes...
                     </div>
                 </div>
             </div>
@@ -2001,6 +2020,7 @@
                     
                     <div class="metrics-grid-enhanced">
                         <div class="metric-card metric-card-featured">
+                            <canvas class="util-background-chart" id="util-bg-chart-${gpuId}"></canvas>
                             <div class="metric-header">
                                 <span class="metric-icon">⚡</span>
                                 <span class="metric-label">GPU Utilization</span>
@@ -2298,10 +2318,50 @@
             `;
         }
 
+        // Initialize utilization background chart
+        function initUtilBackgroundChart(gpuId) {
+            const canvas = document.getElementById(`util-bg-chart-${gpuId}`);
+            if (!canvas) return;
+            
+            if (!charts[gpuId]) charts[gpuId] = {};
+            if (charts[gpuId].utilBackground) return; // Already initialized
+            
+            charts[gpuId].utilBackground = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: chartData[gpuId].utilization.labels,
+                    datasets: [{
+                        data: chartData[gpuId].utilization.data,
+                        borderColor: 'rgba(102, 126, 234, 0.8)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.3)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { display: false },
+                        y: { display: false, min: 0, max: 100 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        }
+        
         // Initialize charts for a GPU
         function initGPUCharts(gpuId) {
             const chartTypes = ['utilization', 'temperature', 'memory', 'power'];
             if (!charts[gpuId]) charts[gpuId] = {};
+            
+            // Initialize background utilization chart
+            initUtilBackgroundChart(gpuId);
             
             chartTypes.forEach(type => {
                 const canvas = document.getElementById(`chart-${type}-${gpuId}`);
@@ -2328,7 +2388,7 @@
                 }
             });
         }
-        
+
         // Update GPU display
         function updateGPUDisplay(gpuId, gpuInfo) {
             // Update metric values
@@ -2427,6 +2487,11 @@
             updateChart(gpuId, 'temperature', gpuInfo.temperature);
             updateChart(gpuId, 'memory', memPercent);
             updateChart(gpuId, 'power', gpuInfo.power_draw);
+            
+            // Update background utilization chart
+            if (charts[gpuId] && charts[gpuId].utilBackground) {
+                charts[gpuId].utilBackground.update('none');
+            }
         }
 
         // Update processes display
@@ -2600,7 +2665,7 @@
                 updateGPUDisplay(gpuId, gpuInfo);
             }
         }
-        
+
         // Handle incoming GPU data
         socket.on('gpu_data', function(data) {
             const overviewContainer = document.getElementById('overview-container');
