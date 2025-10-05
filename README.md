@@ -10,7 +10,7 @@ Web-based monitoring for NVIDIA GPUs. Track 30+ metrics per GPU with live charts
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-orange?style=flat-square)](LICENSE)
 [![NVIDIA](https://img.shields.io/badge/NVIDIA-GPU-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/)
 
 [Features](#features) • [Quick Start](#quick-start) • [Installation](#installation) • [Documentation](#documentation) • [Contributing](#contributing)
@@ -194,7 +194,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**CC BY-NC-SA 4.0** - Free for personal and open source use. No commercial use allowed.
+
+- ✅ Use it for personal projects
+- ✅ Modify and improve it  
+- ✅ Share it with others
+- ❌ No commercial use
+- 🔄 Share modifications under the same license
+
+See the [LICENSE](LICENSE) file for full details.
 
 ## Acknowledgments
 
