@@ -1,272 +1,215 @@
-# 🔥 GPU Hot
+<div align="center">
 
-A stunning, real-time web-based monitoring dashboard for NVIDIA GPUs with modern UI and beautiful visualizations. Monitor GPU utilization, temperature, memory usage, power consumption, and active processes with sleek, responsive charts and glassmorphism design.
+# GPU Hot
 
-![GPU Hot](https://img.shields.io/badge/GPU-Hot-blue?style=for-the-badge&logo=nvidia)
-![Python](https://img.shields.io/badge/Python-3.8+-green?style=for-the-badge&logo=python)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker)
-![WebSocket](https://img.shields.io/badge/WebSocket-Real--time-orange?style=for-the-badge)
+### Real-Time NVIDIA GPU Monitoring Dashboard
 
-## ✨ Features
+A professional web-based monitoring tool for NVIDIA GPUs with comprehensive metrics, live charts, and a modern interface.
 
-- **🎨 Modern UI**: Clean, dark theme with glassmorphism effects and smooth animations
-- **📊 Real-time Charts**: Beautiful line charts with gradient styling for all GPU metrics
-- **🔄 Live Updates**: WebSocket-powered updates every 2 seconds
-- **🎯 Multi-GPU Support**: Automatically detects and displays all available GPUs
-- **📱 Responsive Design**: Perfect on desktop, tablet, and mobile devices
-- **⚡ Process Monitoring**: Real-time GPU process tracking with memory usage
-- **💻 System Metrics**: CPU and RAM usage with gradient indicators
-- **🐳 Docker Ready**: One-command deployment with Docker Compose
-- **🎭 Interactive Elements**: Hover effects, smooth transitions, and micro-interactions
+![GPU Hot Dashboard](gpu-hot.png)
 
-## 📊 Monitored Metrics
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![NVIDIA](https://img.shields.io/badge/NVIDIA-GPU-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/)
 
-### GPU Metrics
-- **Utilization**: GPU compute utilization percentage
-- **Temperature**: GPU temperature in Celsius
-- **Memory Usage**: Used vs total GPU memory
-- **Power Draw**: Current power consumption in watts
-- **Fan Speed**: GPU fan speed percentage
+[Features](#features) • [Quick Start](#quick-start) • [Installation](#installation) • [Documentation](#documentation) • [Contributing](#contributing)
 
-### System Metrics
-- **CPU Usage**: System CPU utilization
-- **Memory Usage**: System RAM utilization
-
-### Process Information
-- **Active Processes**: Currently running GPU processes
-- **Memory Usage**: Per-process GPU memory consumption
-- **Process Names**: Names and PIDs of GPU processes
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **NVIDIA GPU** with NVIDIA drivers installed
-- **Docker and Docker Compose** (for containerized deployment)
-- **NVIDIA Container Toolkit** (required for Docker to access GPUs)
-- **Python 3.8+** (for local development)
-
-### Installing NVIDIA Container Toolkit
-
-Before running the Docker deployment, you need to install the NVIDIA Container Toolkit to enable GPU access in containers.
-
-> **📋 Important**: You must have NVIDIA drivers installed on your host system first. Verify by running `nvidia-smi` in your terminal.
-
-**Follow the official installation guide for your distribution:**  
-🔗 [NVIDIA Container Toolkit Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
-
-The installation guide includes detailed instructions for:
-- Ubuntu/Debian (apt)
-- RHEL/CentOS/Fedora (dnf)
-- OpenSUSE/SLE (zypper)
-- Docker, Containerd, CRI-O, and Podman configuration
-
-**Quick verification after installation:**
-```bash
-# Test GPU access in Docker
-docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
-```
-
-### Option 1: Docker Deployment (Recommended)
-
-1. **Clone and run**:
-   ```bash
-   git clone https://github.com/psalias2006/gpu-hot
-   cd gpu-hot
-   docker-compose up --build
-   ```
-
-2. **Access the dashboard**:
-   Open your browser and navigate to `http://localhost:1312`
-
-### Option 2: Local Development
-
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Run the application**:
-   ```bash
-   python app.py
-   ```
-
-3. **Access the dashboard**:
-   Open your browser and navigate to `http://localhost:1312`
-
-## 🐳 Docker Configuration
-
-The application includes optimized Docker configuration with self-contained nvidia-smi:
-
-- **Base Image**: `nvidia/cuda:12.1-devel-ubuntu22.04`
-- **GPU Support**: Full NVIDIA GPU access with built-in nvidia-smi
-- **Health Checks**: Automatic health monitoring every 30s
-- **Self-contained**: No need to mount host nvidia-smi
-- **Port**: Exposes port 1312
-- **Security**: Runs with GPU capabilities and proper isolation
-
-### Docker Compose Features
-
-- **🎯 GPU Access**: Full GPU visibility and monitoring
-- **📦 Self-contained**: nvidia-smi installed in container
-- **💚 Health Checks**: Automatic service health monitoring
-- **🔄 Restart Policy**: Automatic restart on failure
-- **🔒 Security**: Proper GPU capability management
-
-## 📁 Project Structure
-
-```
-gpu-hot/
-├── app.py                 # Main Flask application with WebSocket support
-├── templates/
-│   └── index.html        # Modern web dashboard with real-time charts
-├── requirements.txt      # Python dependencies
-├── Dockerfile           # Optimized Docker configuration
-├── docker-compose.yml   # Docker Compose setup with GPU support
-└── README.md           # This comprehensive guide
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-- `NVIDIA_VISIBLE_DEVICES`: Controls GPU visibility (default: all)
-- `NVIDIA_DRIVER_CAPABILITIES`: GPU capabilities (default: all)
-
-### Customization
-
-You can modify the following in `app.py`:
-
-- **Update Interval**: Change `time.sleep(2)` to adjust refresh rate (line 126)
-- **Port**: Modify the port in the `socketio.run()` call (line 173)
-- **Host**: Change host binding (default: 0.0.0.0)
-- **Chart Data Points**: Adjust the number of data points kept in charts (line 383)
-
-## 📈 API Endpoints
-
-### REST API
-
-- `GET /`: Main dashboard page
-- `GET /api/gpu-data`: Current GPU data (JSON)
-
-### WebSocket Events
-
-- `gpu_data`: Real-time GPU metrics and system information
-- `connect`: Client connection event
-- `disconnect`: Client disconnection event
-
-## 🛠️ Development
-
-### Local Development Setup
-
-1. **Install development dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Run in development mode**:
-   ```bash
-   python app.py
-   ```
-
-3. **Access the application**:
-   - 🎨 **Dashboard**: `http://localhost:1312` (Modern UI with real-time charts)
-   - 📊 **API**: `http://localhost:1312/api/gpu-data` (JSON endpoint)
-
-### Adding New Metrics
-
-To add new GPU metrics:
-
-1. **Modify nvidia-smi query** in `parse_nvidia_smi()` method
-2. **Update frontend** to display new metrics
-3. **Add chart configuration** for new metric types
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **nvidia-smi not found in Docker**:
-   - Ensure NVIDIA drivers are installed on the host
-   - Install NVIDIA Container Toolkit (see installation section above)
-   - Verify Docker has GPU access: `docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi`
-   - Restart Docker daemon after installing the toolkit
-
-2. **No GPU data or "could not select device driver"**:
-   - Verify GPU is accessible on host: `nvidia-smi`
-   - Check NVIDIA Container Toolkit is installed: `nvidia-ctk --version`
-   - Ensure Docker Compose file has proper GPU configuration
-   - Review Docker logs: `docker-compose logs`
-   - Try running with sudo if permission issues occur
-
-3. **Docker can't access GPUs**:
-   - Run: `sudo nvidia-ctk runtime configure --runtime=docker`
-   - Restart Docker: `sudo systemctl restart docker`
-   - Check Docker GPU support: `docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi`
-
-4. **WebSocket connection issues**:
-   - Check firewall settings
-   - Verify port 1312 is accessible
-   - Review browser console for errors
-   - Ensure WebSocket support in browser
-
-### Debug Mode
-
-Enable debug logging by setting `debug=True` in `app.py`:
-
-```python
-socketio.run(app, host='0.0.0.0', port=1312, debug=True)
-```
-
-## 🎨 UI Features
-
-### Modern Design Elements
-- **🌙 Dark Theme**: Professional dark interface with gradient accents
-- **💎 Glassmorphism**: Frosted glass effects with backdrop blur
-- **🎭 Animations**: Smooth transitions and hover effects
-- **📱 Responsive**: Perfect on all device sizes
-- **🎨 Gradients**: Beautiful color schemes for different metrics
-- **⚡ Real-time**: Live updates with smooth chart animations
-
-### Chart Types
-- **📈 Utilization**: GPU compute usage with blue gradient
-- **🌡️ Temperature**: GPU temperature with red gradient  
-- **💾 Memory**: Memory usage percentage with cyan gradient
-- **⚡ Power**: Power draw with green gradient
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Test thoroughly (both Docker and local)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🙏 Acknowledgments
-
-- **NVIDIA** for the excellent `nvidia-smi` tool
-- **Flask & Socket.IO** for the robust web framework
-- **Chart.js** for beautiful, responsive charts
-- **Inter Font** for the modern typography
-- **The open-source community** for inspiration and support
-
-## 📞 Support
-
-For issues and questions:
-
-1. 📖 Check the troubleshooting section above
-2. 🔍 Review existing issues on GitHub
-3. 🐛 Create a new issue with detailed information
-4. 💬 Join discussions in the community
+</div>
 
 ---
 
-**Made with ❤️ and lots of ☕ for the GPU monitoring community**
+## Features
 
-*Enjoy monitoring your GPUs with style! 🚀*
+- **Comprehensive GPU Metrics** - 30+ real-time metrics per GPU including utilization, temperature, memory, power, clocks, and encoder/decoder stats
+- **Multi-GPU Support** - Automatic detection and independent monitoring of all NVIDIA GPUs
+- **Live Historical Charts** - Real-time graphs with statistics (min/max/avg), threshold indicators, and contextual tooltips
+- **Process Monitoring** - Track active GPU processes with memory usage and PIDs
+- **Modern UI** - Clean, responsive interface with glassmorphism design and smooth animations
+- **WebSocket Updates** - Sub-second refresh rates (2s) for real-time monitoring
+- **Docker Deployment** - One-command setup with NVIDIA Container Toolkit support
+- **Zero Configuration** - Works out of the box with any NVIDIA GPU
+
+## Monitored Metrics
+
+### Core GPU Metrics
+- GPU & Memory Utilization (%)
+- Core & Memory Temperature (°C)
+- Memory Usage (Used/Free/Total MB)
+- Power Draw & Limits (W)
+- Fan Speed (%)
+- Clock Speeds (Graphics, SM, Memory, Video MHz)
+
+### Advanced Metrics
+- PCIe Generation & Lane Width (Current/Max)
+- Performance State (P-State)
+- Compute Mode
+- Encoder/Decoder Sessions & Stats
+- Driver & VBIOS Version
+- Throttle Status Detection
+
+### System Context
+- Host CPU & RAM Usage
+- Active GPU Processes with Memory Tracking
+
+## Quick Start
+
+### Docker Deployment (Recommended)
+
+```bash
+git clone https://github.com/psalias2006/gpu-hot
+cd gpu-hot
+docker-compose up --build
+```
+
+Access the dashboard at `http://localhost:1312`
+
+### Local Development
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+Access the dashboard at `http://localhost:1312`
+
+## Installation
+
+### Prerequisites
+
+- NVIDIA GPU with drivers installed (verify with `nvidia-smi`)
+- Docker & Docker Compose (for containerized deployment)
+- NVIDIA Container Toolkit (for Docker GPU access)
+- Python 3.8+ (for local development)
+
+### NVIDIA Container Toolkit Setup
+
+Required for Docker deployment to access GPUs.
+
+**Installation:**
+
+Follow the official installation guide for your distribution:  
+📖 [NVIDIA Container Toolkit Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+
+The guide includes instructions for Ubuntu, Debian, RHEL, CentOS, Fedora, and other distributions.
+
+**Verify Installation:**
+```bash
+docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
+```
+
+## Documentation
+
+### Project Structure
+
+```
+gpu-hot/
+├── app.py                 # Flask application with WebSocket server
+├── templates/
+│   └── index.html        # Web dashboard with live charts
+├── requirements.txt      # Python dependencies
+├── Dockerfile           # Container configuration
+├── docker-compose.yml   # Docker Compose setup
+└── README.md           # Documentation
+```
+
+### API Endpoints
+
+**HTTP:**
+- `GET /` - Dashboard interface
+- `GET /api/gpu-data` - Current GPU metrics (JSON)
+
+**WebSocket:**
+- `gpu_data` - Real-time metrics broadcast (2s interval)
+- `connect` / `disconnect` - Connection events
+
+### Configuration
+
+**Environment Variables:**
+- `NVIDIA_VISIBLE_DEVICES` - GPU visibility (default: all)
+- `NVIDIA_DRIVER_CAPABILITIES` - GPU capabilities (default: all)
+
+**Customization in `app.py`:**
+- Update interval: Modify `eventlet.sleep(2)` for refresh rate
+- Port: Change in `socketio.run()` (default: 1312)
+- Chart history: Adjust data retention (default: 30 points)
+
+### Docker Configuration
+
+- Base: `nvidia/cuda:12.1-devel-ubuntu22.04`
+- Self-contained nvidia-smi (no host mounting required)
+- Health checks every 30s
+- Automatic restart on failure
+- Exposes port 1312
+
+### Development
+
+**Adding New Metrics:**
+1. Modify nvidia-smi query in `parse_nvidia_smi()`
+2. Update frontend to display new metrics
+3. Add chart configuration if needed
+
+**Local Development:**
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+Access at `http://localhost:1312` (Dashboard) or `http://localhost:1312/api/gpu-data` (API)
+
+## Troubleshooting
+
+### nvidia-smi not found
+- Verify NVIDIA drivers: `nvidia-smi`
+- Install NVIDIA Container Toolkit (see Installation section)
+- Restart Docker daemon: `sudo systemctl restart docker`
+- Test GPU access: `docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi`
+
+### No GPU data
+- Check host GPU access: `nvidia-smi`
+- Verify Container Toolkit: `nvidia-ctk --version`
+- Review logs: `docker-compose logs`
+- Configure Docker runtime: `sudo nvidia-ctk runtime configure --runtime=docker`
+
+### WebSocket issues
+- Check port 1312 accessibility
+- Review browser console for errors
+- Verify firewall settings
+
+### Enable debug logging
+```python
+# In app.py
+socketio.run(app, host='0.0.0.0', port=1312, debug=True)
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/NewFeature`)
+3. Commit your changes (`git commit -m 'Add NewFeature'`)
+4. Push to the branch (`git push origin feature/NewFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- NVIDIA for nvidia-smi
+- Flask & Socket.IO teams
+- Chart.js for visualization
+- Open-source community
+
+---
+
+<div align="center">
+
+**GPU Hot** - Professional GPU Monitoring
+
+[Report Bug](https://github.com/psalias2006/gpu-hot/issues) • [Request Feature](https://github.com/psalias2006/gpu-hot/issues)
+
+</div>
 
