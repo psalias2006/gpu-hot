@@ -50,38 +50,22 @@ A stunning, real-time web-based monitoring dashboard for NVIDIA GPUs with modern
 
 Before running the Docker deployment, you need to install the NVIDIA Container Toolkit to enable GPU access in containers.
 
-> **📋 Note**: Ensure NVIDIA drivers are already installed on your host system. Verify by running `nvidia-smi` in your terminal.
+> **📋 Important**: You must have NVIDIA drivers installed on your host system first. Verify by running `nvidia-smi` in your terminal.
 
-#### Ubuntu/Debian
+**Follow the official installation guide for your distribution:**  
+🔗 [NVIDIA Container Toolkit Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 
+The installation guide includes detailed instructions for:
+- Ubuntu/Debian (apt)
+- RHEL/CentOS/Fedora (dnf)
+- OpenSUSE/SLE (zypper)
+- Docker, Containerd, CRI-O, and Podman configuration
+
+**Quick verification after installation:**
 ```bash
-# Configure the production repository
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-
-# Update package list
-sudo apt-get update
-
-# Install the NVIDIA Container Toolkit packages
-sudo apt-get install -y nvidia-container-toolkit
-
-# Configure Docker to use the NVIDIA runtime
-sudo nvidia-ctk runtime configure --runtime=docker
-
-# Restart Docker daemon to apply changes
-sudo systemctl restart docker
-
-# Verify installation - this should display your GPU information
+# Test GPU access in Docker
 docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
 ```
-
-#### Other Linux Distributions
-
-For RHEL/CentOS, Fedora, or other distributions, see the official documentation:
-- **Installation Guide**: [https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
-- **GitHub Repository**: [https://github.com/NVIDIA/nvidia-container-toolkit](https://github.com/NVIDIA/nvidia-container-toolkit)
 
 ### Option 1: Docker Deployment (Recommended)
 
