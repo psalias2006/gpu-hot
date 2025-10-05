@@ -651,23 +651,74 @@
 
         .chart-container {
             position: relative;
-            height: 260px;
+            height: 300px;
             margin-bottom: 1.5rem;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
             border-radius: 16px;
-            padding: 20px 20px 35px 70px;
+            padding: 20px 20px 55px 70px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 10px 30px rgba(0,0,0,0.25);
             overflow: hidden;
         }
 
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
         .chart-title {
             font-size: 0.9rem;
             color: var(--text-secondary);
-            margin-bottom: 1rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 500;
+        }
+
+        .chart-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .chart-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+        }
+
+        .chart-stat-label {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-stat-value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-top: 0.15rem;
+        }
+
+        .chart-stat-value.current {
+            color: #4facfe;
+        }
+
+        .chart-stat-value.min {
+            color: #43e97b;
+        }
+
+        .chart-stat-value.max {
+            color: #fa709a;
+        }
+
+        .chart-stat-value.avg {
+            color: #f093fb;
         }
 
         .processes-section {
@@ -880,23 +931,38 @@
         // Initialize Socket.IO connection
         const socket = io();
         
-        // Chart configurations with modern styling
+        // Chart configurations with modern styling and thresholds
         const chartConfigs = {
             utilization: {
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'GPU Utilization %',
-                        data: [],
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.35,
-                        fill: true,
-                        pointRadius: 0,
-                        pointHitRadius: 6
-                    }]
+                    datasets: [
+                        {
+                            label: 'GPU Utilization',
+                            data: [],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.15)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                            pointHitRadius: 10,
+                            pointBackgroundColor: '#667eea',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'High Load (80%)',
+                            data: [],
+                            borderColor: 'rgba(250, 112, 154, 0.5)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -934,15 +1000,37 @@
                             display: false
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
                             titleColor: '#ffffff',
                             bodyColor: '#ffffff',
                             borderColor: '#667eea',
-                            borderWidth: 1,
-                            cornerRadius: 10,
-                            displayColors: false,
+                            borderWidth: 2,
+                            cornerRadius: 12,
+                            displayColors: true,
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
                             callbacks: {
-                                label: function(context) { return context.parsed.y + '%'; }
+                                title: function(context) {
+                                    return 'GPU Utilization';
+                                },
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    if (label.includes('High Load')) {
+                                        return label;
+                                    }
+                                    return `${label}: ${value.toFixed(1)}%`;
+                                },
+                                afterLabel: function(context) {
+                                    if (!context.dataset.label.includes('High Load')) {
+                                        const value = context.parsed.y;
+                                        if (value > 90) return '🔥 Very High';
+                                        if (value > 80) return '⚡ High';
+                                        if (value > 50) return '✓ Active';
+                                        return '💤 Low';
+                                    }
+                                }
                             }
                         }
                     }
@@ -952,17 +1040,42 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Temperature °C',
-                        data: [],
-                        borderColor: '#f5576c',
-                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.35,
-                        fill: true,
-                        pointRadius: 0,
-                        pointHitRadius: 6
-                    }]
+                    datasets: [
+                        {
+                            label: 'GPU Temperature',
+                            data: [],
+                            borderColor: '#f5576c',
+                            backgroundColor: 'rgba(245, 87, 108, 0.15)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                            pointHitRadius: 10,
+                            pointBackgroundColor: '#f5576c',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Warning (75°C)',
+                            data: [],
+                            borderColor: 'rgba(254, 202, 87, 0.6)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: 'Danger (85°C)',
+                            data: [],
+                            borderColor: 'rgba(250, 112, 154, 0.8)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            borderDash: [10, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -1000,15 +1113,37 @@
                             display: false
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
                             titleColor: '#ffffff',
                             bodyColor: '#ffffff',
                             borderColor: '#f5576c',
-                            borderWidth: 1,
-                            cornerRadius: 10,
-                            displayColors: false,
+                            borderWidth: 2,
+                            cornerRadius: 12,
+                            displayColors: true,
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
                             callbacks: {
-                                label: function(context) { return context.parsed.y + ' °C'; }
+                                title: function(context) {
+                                    return 'GPU Temperature';
+                                },
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    if (label.includes('Warning') || label.includes('Danger')) {
+                                        return label;
+                                    }
+                                    return `${label}: ${value.toFixed(1)}°C`;
+                                },
+                                afterLabel: function(context) {
+                                    if (!context.dataset.label.includes('Warning') && !context.dataset.label.includes('Danger')) {
+                                        const value = context.parsed.y;
+                                        if (value > 85) return '🚨 DANGER';
+                                        if (value > 75) return '⚠️ Warning';
+                                        if (value > 60) return '🌡️ Normal';
+                                        return '❄️ Cool';
+                                    }
+                                }
                             }
                         }
                     }
@@ -1018,17 +1153,32 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Memory Usage %',
-                        data: [],
-                        borderColor: '#4facfe',
-                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.35,
-                        fill: true,
-                        pointRadius: 0,
-                        pointHitRadius: 6
-                    }]
+                    datasets: [
+                        {
+                            label: 'Memory Usage',
+                            data: [],
+                            borderColor: '#4facfe',
+                            backgroundColor: 'rgba(79, 172, 254, 0.15)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                            pointHitRadius: 10,
+                            pointBackgroundColor: '#4facfe',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'High Usage (90%)',
+                            data: [],
+                            borderColor: 'rgba(250, 112, 154, 0.6)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -1066,15 +1216,37 @@
                             display: false
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
                             titleColor: '#ffffff',
                             bodyColor: '#ffffff',
                             borderColor: '#4facfe',
-                            borderWidth: 1,
-                            cornerRadius: 10,
-                            displayColors: false,
+                            borderWidth: 2,
+                            cornerRadius: 12,
+                            displayColors: true,
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
                             callbacks: {
-                                label: function(context) { return context.parsed.y + ' %'; }
+                                title: function(context) {
+                                    return 'VRAM Usage';
+                                },
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    if (label.includes('High Usage')) {
+                                        return label;
+                                    }
+                                    return `${label}: ${value.toFixed(1)}%`;
+                                },
+                                afterLabel: function(context) {
+                                    if (!context.dataset.label.includes('High Usage')) {
+                                        const value = context.parsed.y;
+                                        if (value > 95) return '🚨 Critical';
+                                        if (value > 90) return '⚠️ Very High';
+                                        if (value > 75) return '📊 High';
+                                        return '✓ Normal';
+                                    }
+                                }
                             }
                         }
                     }
@@ -1084,17 +1256,22 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Power Draw W',
-                        data: [],
-                        borderColor: '#43e97b',
-                        backgroundColor: 'rgba(67, 233, 123, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.35,
-                        fill: true,
-                        pointRadius: 0,
-                        pointHitRadius: 6
-                    }]
+                    datasets: [
+                        {
+                            label: 'Power Draw',
+                            data: [],
+                            borderColor: '#43e97b',
+                            backgroundColor: 'rgba(67, 233, 123, 0.15)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                            pointHitRadius: 10,
+                            pointBackgroundColor: '#43e97b',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -1132,15 +1309,32 @@
                             display: false
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
                             titleColor: '#ffffff',
                             bodyColor: '#ffffff',
                             borderColor: '#43e97b',
-                            borderWidth: 1,
-                            cornerRadius: 10,
-                            displayColors: false,
+                            borderWidth: 2,
+                            cornerRadius: 12,
+                            displayColors: true,
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
                             callbacks: {
-                                label: function(context) { return context.parsed.y + ' W'; }
+                                title: function(context) {
+                                    return 'Power Draw';
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return `Power: ${value.toFixed(1)} W`;
+                                },
+                                afterLabel: function(context) {
+                                    const value = context.parsed.y;
+                                    if (value > 200) return '⚡ Maximum Performance';
+                                    if (value > 150) return '🔥 High Performance';
+                                    if (value > 100) return '💪 Active';
+                                    if (value > 50) return '✓ Moderate';
+                                    return '💤 Idle';
+                                }
                             }
                         }
                     }
@@ -1155,11 +1349,34 @@
         // Initialize chart data for a GPU
         function initGPUData(gpuId) {
             chartData[gpuId] = {
-                utilization: { labels: [], data: [] },
-                temperature: { labels: [], data: [] },
-                memory: { labels: [], data: [] },
+                utilization: { labels: [], data: [], thresholdData: [] },
+                temperature: { labels: [], data: [], warningData: [], dangerData: [] },
+                memory: { labels: [], data: [], thresholdData: [] },
                 power: { labels: [], data: [] }
             };
+        }
+
+        // Calculate statistics for chart data
+        function calculateStats(data) {
+            if (data.length === 0) return { min: 0, max: 0, avg: 0, current: 0 };
+            const current = data[data.length - 1];
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const avg = data.reduce((a, b) => a + b, 0) / data.length;
+            return { min, max, avg, current };
+        }
+
+        // Update statistics display for a chart
+        function updateChartStats(gpuId, chartType, stats, unit) {
+            const currentEl = document.getElementById(`stat-${chartType}-current-${gpuId}`);
+            const minEl = document.getElementById(`stat-${chartType}-min-${gpuId}`);
+            const maxEl = document.getElementById(`stat-${chartType}-max-${gpuId}`);
+            const avgEl = document.getElementById(`stat-${chartType}-avg-${gpuId}`);
+            
+            if (currentEl) currentEl.textContent = `${Math.round(stats.current)}${unit}`;
+            if (minEl) minEl.textContent = `${Math.round(stats.min)}${unit}`;
+            if (maxEl) maxEl.textContent = `${Math.round(stats.max)}${unit}`;
+            if (avgEl) avgEl.textContent = `${Math.round(stats.avg)}${unit}`;
         }
 
         // Update chart data
@@ -1172,11 +1389,37 @@
             data.labels.push(now);
             data.data.push(value);
             
+            // Add threshold data based on chart type
+            if (chartType === 'utilization') {
+                data.thresholdData.push(80); // High load threshold at 80%
+            } else if (chartType === 'temperature') {
+                data.warningData.push(75); // Warning at 75°C
+                data.dangerData.push(85);  // Danger at 85°C
+            } else if (chartType === 'memory') {
+                data.thresholdData.push(90); // High usage at 90%
+            }
+            
             // Keep only last 30 data points for smoother performance
             if (data.labels.length > 30) {
                 data.labels.shift();
                 data.data.shift();
+                if (data.thresholdData) data.thresholdData.shift();
+                if (data.warningData) data.warningData.shift();
+                if (data.dangerData) data.dangerData.shift();
             }
+            
+            // Calculate and update statistics
+            const stats = calculateStats(data.data);
+            const unitMap = {
+                'utilization': '%',
+                'util': '%',
+                'temperature': '°C',
+                'temp': '°C',
+                'memory': '%',
+                'power': 'W'
+            };
+            const unit = unitMap[chartType] || '';
+            updateChartStats(gpuId, chartType, stats, unit);
             
             // Update chart if it exists
             if (charts[gpuId] && charts[gpuId][chartType]) {
@@ -1420,22 +1663,102 @@
                     
                     <div class="charts-section">
                         <div class="chart-container">
-                            <div class="chart-title">📊 Utilization History</div>
+                            <div class="chart-header">
+                                <div class="chart-title">📊 GPU Utilization History</div>
+                                <div class="chart-stats">
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Current</span>
+                                        <span class="chart-stat-value current" id="stat-util-current-${gpuId}">0%</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Min</span>
+                                        <span class="chart-stat-value min" id="stat-util-min-${gpuId}">0%</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Max</span>
+                                        <span class="chart-stat-value max" id="stat-util-max-${gpuId}">0%</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Avg</span>
+                                        <span class="chart-stat-value avg" id="stat-util-avg-${gpuId}">0%</span>
+                                    </div>
+                                </div>
+                            </div>
                             <canvas id="chart-utilization-${gpuId}"></canvas>
                         </div>
                         
                         <div class="chart-container">
-                            <div class="chart-title">🌡️ Temperature History</div>
+                            <div class="chart-header">
+                                <div class="chart-title">🌡️ GPU Temperature History</div>
+                                <div class="chart-stats">
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Current</span>
+                                        <span class="chart-stat-value current" id="stat-temp-current-${gpuId}">0°C</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Min</span>
+                                        <span class="chart-stat-value min" id="stat-temp-min-${gpuId}">0°C</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Max</span>
+                                        <span class="chart-stat-value max" id="stat-temp-max-${gpuId}">0°C</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Avg</span>
+                                        <span class="chart-stat-value avg" id="stat-temp-avg-${gpuId}">0°C</span>
+                                    </div>
+                                </div>
+                            </div>
                             <canvas id="chart-temperature-${gpuId}"></canvas>
                         </div>
                         
                         <div class="chart-container">
-                            <div class="chart-title">💾 Memory History</div>
+                            <div class="chart-header">
+                                <div class="chart-title">💾 Memory Usage History</div>
+                                <div class="chart-stats">
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Current</span>
+                                        <span class="chart-stat-value current" id="stat-memory-current-${gpuId}">0%</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Min</span>
+                                        <span class="chart-stat-value min" id="stat-memory-min-${gpuId}">0%</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Max</span>
+                                        <span class="chart-stat-value max" id="stat-memory-max-${gpuId}">0%</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Avg</span>
+                                        <span class="chart-stat-value avg" id="stat-memory-avg-${gpuId}">0%</span>
+                                    </div>
+                                </div>
+                            </div>
                             <canvas id="chart-memory-${gpuId}"></canvas>
                         </div>
                         
                         <div class="chart-container">
-                            <div class="chart-title">⚡ Power History</div>
+                            <div class="chart-header">
+                                <div class="chart-title">⚡ Power Draw History</div>
+                                <div class="chart-stats">
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Current</span>
+                                        <span class="chart-stat-value current" id="stat-power-current-${gpuId}">0W</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Min</span>
+                                        <span class="chart-stat-value min" id="stat-power-min-${gpuId}">0W</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Max</span>
+                                        <span class="chart-stat-value max" id="stat-power-max-${gpuId}">0W</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Avg</span>
+                                        <span class="chart-stat-value avg" id="stat-power-avg-${gpuId}">0W</span>
+                                    </div>
+                                </div>
+                            </div>
                             <canvas id="chart-power-${gpuId}"></canvas>
                         </div>
                     </div>
@@ -1451,14 +1774,24 @@
             chartTypes.forEach(type => {
                 const canvas = document.getElementById(`chart-${type}-${gpuId}`);
                 if (canvas) {
-                    const config = { ...chartConfigs[type] };
-                    config.data = {
-                        labels: chartData[gpuId][type].labels,
-                        datasets: [{
-                            ...config.data.datasets[0],
-                            data: chartData[gpuId][type].data
-                        }]
-                    };
+                    const config = JSON.parse(JSON.stringify(chartConfigs[type])); // Deep clone
+                    
+                    // Link datasets to chartData
+                    if (type === 'utilization') {
+                        config.data.datasets[0].data = chartData[gpuId][type].data;
+                        config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
+                    } else if (type === 'temperature') {
+                        config.data.datasets[0].data = chartData[gpuId][type].data;
+                        config.data.datasets[1].data = chartData[gpuId][type].warningData;
+                        config.data.datasets[2].data = chartData[gpuId][type].dangerData;
+                    } else if (type === 'memory') {
+                        config.data.datasets[0].data = chartData[gpuId][type].data;
+                        config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
+                    } else {
+                        config.data.datasets[0].data = chartData[gpuId][type].data;
+                    }
+                    
+                    config.data.labels = chartData[gpuId][type].labels;
                     charts[gpuId][type] = new Chart(canvas, config);
                 }
             });
