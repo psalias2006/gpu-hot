@@ -4,7 +4,7 @@
 
 ### Real-Time NVIDIA GPU Monitoring Dashboard
 
-A professional web-based monitoring tool for NVIDIA GPUs with comprehensive metrics, live charts, and a modern interface.
+Web-based monitoring for NVIDIA GPUs. Track 30+ metrics per GPU with live charts and real-time updates.
 
 ![GPU Hot Dashboard](gpu-hot.png)
 
@@ -21,11 +21,11 @@ A professional web-based monitoring tool for NVIDIA GPUs with comprehensive metr
 
 ## Features
 
-- **Comprehensive GPU Metrics** - 30+ real-time metrics per GPU including utilization, temperature, memory, power, clocks, and encoder/decoder stats
+- **30+ GPU Metrics** - Utilization, temperature, memory, power, clocks, encoder/decoder stats, and more per GPU
 - **Multi-GPU Support** - Automatic detection and independent monitoring of all NVIDIA GPUs
 - **Live Historical Charts** - Real-time graphs with statistics (min/max/avg), threshold indicators, and contextual tooltips
 - **Process Monitoring** - Track active GPU processes with memory usage and PIDs
-- **Modern UI** - Clean, responsive interface with glassmorphism design and smooth animations
+- **Clean UI** - Responsive interface with glassmorphism design and smooth animations
 - **WebSocket Updates** - Sub-second refresh rates (2s) for real-time monitoring
 - **Docker Deployment** - One-command setup with NVIDIA Container Toolkit support
 - **Zero Configuration** - Works out of the box with any NVIDIA GPU
@@ -207,7 +207,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**GPU Hot** - Professional GPU Monitoring
+**GPU Hot** - Real-Time GPU Monitoring
 
 [Report Bug](https://github.com/psalias2006/gpu-hot/issues) • [Request Feature](https://github.com/psalias2006/gpu-hot/issues)
 
