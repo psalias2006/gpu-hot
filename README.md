@@ -195,13 +195,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 **CC BY-NC-SA 4.0** - Free for personal and open source use. No commercial use allowed.
-
-- ✅ Use it for personal projects
-- ✅ Modify and improve it  
-- ✅ Share it with others
-- ❌ No commercial use
-- 🔄 Share modifications under the same license
-
 See the [LICENSE](LICENSE) file for full details.
 
 ## Acknowledgments
