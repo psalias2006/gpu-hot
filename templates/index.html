@@ -489,8 +489,31 @@
             gap: 1rem;
         }
 
-        .temp-value {
-            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%) !important;
+        .temp-gauge {
+            width: 100%;
+            max-width: 200px;
+            height: 12px;
+            background: linear-gradient(90deg, 
+                #48dbfb 0%, 
+                #4facfe 20%, 
+                #feca57 50%, 
+                #ff9a3c 70%, 
+                #ff6b6b 100%);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .temp-gauge::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
         }
 
         .temp-status {
@@ -632,7 +655,7 @@
             margin-bottom: 1.5rem;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
             border-radius: 16px;
-            padding: 20px 20px 15px 50px;
+            padding: 20px 20px 15px 15px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 10px 30px rgba(0,0,0,0.25);
             overflow: visible;
@@ -881,7 +904,7 @@
                         mode: 'index'
                     },
                     layout: {
-                        padding: { left: 0, right: 15, top: 15, bottom: 5 }
+                        padding: { left: 10, right: 15, top: 15, bottom: 5 }
                     },
                     scales: {
                         x: {
@@ -947,7 +970,7 @@
                         mode: 'index'
                     },
                     layout: {
-                        padding: { left: 0, right: 15, top: 15, bottom: 5 }
+                        padding: { left: 10, right: 15, top: 15, bottom: 5 }
                     },
                     scales: {
                         x: {
@@ -1013,7 +1036,7 @@
                         mode: 'index'
                     },
                     layout: {
-                        padding: { left: 0, right: 15, top: 15, bottom: 5 }
+                        padding: { left: 10, right: 15, top: 15, bottom: 5 }
                     },
                     scales: {
                         x: {
@@ -1079,7 +1102,7 @@
                         mode: 'index'
                     },
                     layout: {
-                        padding: { left: 0, right: 15, top: 15, bottom: 5 }
+                        padding: { left: 10, right: 15, top: 15, bottom: 5 }
                     },
                     scales: {
                         x: {
@@ -1219,7 +1242,8 @@
                                 <span class="metric-label">Temperature</span>
                             </div>
                             <div class="temp-display">
-                                <div class="metric-value-large temp-value" id="temp-${gpuId}">${gpuInfo.temperature}°C</div>
+                                <div class="metric-value-large" id="temp-${gpuId}">${gpuInfo.temperature}°C</div>
+                                <div class="temp-gauge"></div>
                                 <div class="temp-status" id="temp-status-${gpuId}">
                                     ${gpuInfo.temperature < 60 ? '❄️ Cool' : gpuInfo.temperature < 75 ? '🌤️ Normal' : '🔥 Warm'}
                                 </div>
