@@ -46,7 +46,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: 
+            background:
                 radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
@@ -513,11 +513,11 @@
             width: 100%;
             max-width: 200px;
             height: 12px;
-            background: linear-gradient(90deg, 
-                #48dbfb 0%, 
-                #4facfe 20%, 
-                #feca57 50%, 
-                #ff9a3c 70%, 
+            background: linear-gradient(90deg,
+                #48dbfb 0%,
+                #4facfe 20%,
+                #feca57 50%,
+                #ff9a3c 70%,
                 #ff6b6b 100%);
             border-radius: 20px;
             position: relative;
@@ -1156,7 +1156,7 @@
             .overview-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .overview-metrics {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -1166,37 +1166,37 @@
             .container {
                 padding: 1rem;
             }
-            
+
             .header h1 {
                 font-size: 2.5rem;
             }
-            
+
             .view-selector {
                 overflow-x: auto;
                 scrollbar-width: thin;
             }
-            
+
             .view-option {
                 font-size: 0.8rem;
                 padding: 0.55rem 1.25rem;
             }
-            
+
             .overview-metrics {
                 grid-template-columns: 1fr;
             }
-            
+
             .metrics-grid, .metrics-grid-enhanced {
                 grid-template-columns: 1fr;
             }
-            
+
             .system-info {
                 grid-template-columns: 1fr;
             }
-            
+
             .chart-container {
                 height: 280px;
             }
-            
+
             .processes-title {
                 font-size: 1.2rem;
             }
@@ -1292,7 +1292,7 @@
     <script>
         // Initialize Socket.IO connection
         const socket = io();
-        
+
         // Global state
         let currentTab = 'overview';
         let registeredGPUs = new Set();
@@ -1302,22 +1302,22 @@
             memory: { labels: [], data: [] }
         };
         let hasAutoSwitched = false; // Track if we've done initial auto-switch
-        
+
         // Toggle processes section
         function toggleProcesses() {
             const content = document.getElementById('processes-content');
             const header = document.querySelector('.processes-header');
             const icon = document.querySelector('.toggle-icon');
-            
+
             content.classList.toggle('expanded');
             header.classList.toggle('expanded');
             icon.classList.toggle('expanded');
         }
-        
+
         // Tab switching with smooth transitions
         window.switchToView = function(viewName) {
             currentTab = viewName;
-            
+
             // Update view selector states
             document.querySelectorAll('.view-option').forEach(btn => {
                 btn.classList.remove('active');
@@ -1325,16 +1325,16 @@
                     btn.classList.add('active');
                 }
             });
-            
+
             // Switch tab content with animation
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-            
+
             const targetContent = document.getElementById(`tab-${viewName}`);
             if (targetContent) {
                 targetContent.classList.add('active');
-                
+
                 // Trigger chart resize for visible charts
                 if (viewName.startsWith('gpu-')) {
                     const gpuId = viewName.replace('gpu-', '');
@@ -1348,7 +1348,7 @@
                 }
             }
         }
-        
+
         // Chart configurations with modern styling and thresholds
         const chartConfigs = {
             utilization: {
@@ -1790,7 +1790,7 @@
             const minEl = document.getElementById(`stat-${chartType}-min-${gpuId}`);
             const maxEl = document.getElementById(`stat-${chartType}-max-${gpuId}`);
             const avgEl = document.getElementById(`stat-${chartType}-avg-${gpuId}`);
-            
+
             if (currentEl) currentEl.textContent = `${Math.round(stats.current)}${unit}`;
             if (minEl) minEl.textContent = `${Math.round(stats.min)}${unit}`;
             if (maxEl) maxEl.textContent = `${Math.round(stats.max)}${unit}`;
@@ -1800,13 +1800,13 @@
         // Update chart data
         function updateChart(gpuId, chartType, value) {
             if (!chartData[gpuId]) initGPUData(gpuId);
-            
+
             const data = chartData[gpuId][chartType];
             const now = new Date().toLocaleTimeString();
-            
+
             data.labels.push(now);
-            data.data.push(value);
-            
+            data.data.push(Number(value) || 0);
+
             // Add threshold data based on chart type
             if (chartType === 'utilization') {
                 data.thresholdData.push(80); // High load threshold at 80%
@@ -1816,7 +1816,7 @@
             } else if (chartType === 'memory') {
                 data.thresholdData.push(90); // High usage at 90%
             }
-            
+
             // Keep only last 30 data points for smoother performance
             if (data.labels.length > 30) {
                 data.labels.shift();
@@ -1825,7 +1825,7 @@
                 if (data.warningData) data.warningData.shift();
                 if (data.dangerData) data.dangerData.shift();
             }
-            
+
             // Calculate and update statistics
             const stats = calculateStats(data.data);
             const unitMap = {
@@ -1838,7 +1838,7 @@
             };
             const unit = unitMap[chartType] || '';
             updateChartStats(gpuId, chartType, stats, unit);
-            
+
             // Update chart if it exists
             if (charts[gpuId] && charts[gpuId][chartType]) {
                 charts[gpuId][chartType].update('none');
@@ -1848,7 +1848,7 @@
         // Create overview GPU card (compact view)
         function createOverviewCard(gpuId, gpuInfo) {
             const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
-            
+
             return `
                 <div class="overview-gpu-card" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')" style="pointer-events: auto;">
                     <div class="overview-header">
@@ -1863,7 +1863,7 @@
                             <span class="status-text">ONLINE</span>
                         </div>
                     </div>
-                    
+
                     <div class="overview-metrics">
                         <div class="overview-metric">
                             <div class="overview-metric-icon">⚡</div>
@@ -1886,7 +1886,7 @@
                             <div class="overview-metric-label">Power Draw</div>
                         </div>
                     </div>
-                    
+
                     <div class="overview-chart-section">
                         <div class="overview-mini-chart">
                             <canvas id="overview-chart-${gpuId}"></canvas>
@@ -1895,14 +1895,24 @@
                 </div>
             `;
         }
-        
+
         // Initialize overview mini chart
-        function initOverviewMiniChart(gpuId) {
+        function initOverviewMiniChart(gpuId, currentValue) {
             const canvas = document.getElementById(`overview-chart-${gpuId}`);
             if (!canvas) return;
-            
+
             if (!chartData[gpuId]) initGPUData(gpuId);
-            
+            // Pre-fill with a short history so the chart looks alive immediately
+            if (chartData[gpuId].utilization.labels.length === 0) {
+                const seedValue = Number(currentValue);
+                const points = 10; // ~ last 20s based on 2s updates
+                for (let i = points - 1; i >= 0; i--) {
+                    const t = new Date(Date.now() - i * 2000).toLocaleTimeString();
+                    chartData[gpuId].utilization.labels.push(t);
+                    chartData[gpuId].utilization.data.push(Number.isFinite(seedValue) ? seedValue : 0);
+                }
+            }
+
             const config = {
                 type: 'line',
                 data: {
@@ -1914,7 +1924,8 @@
                         borderWidth: 2.5,
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 0
+                        pointRadius: 0,
+                        pointHoverRadius: 3
                     }]
                 },
                 options: {
@@ -1953,39 +1964,39 @@
                     }
                 }
             };
-            
+
             if (!charts[gpuId]) charts[gpuId] = {};
             charts[gpuId].overviewMini = new Chart(canvas, config);
         }
-        
+
         // Update overview card
         function updateOverviewCard(gpuId, gpuInfo) {
             const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
-            
+
             const utilEl = document.getElementById(`overview-util-${gpuId}`);
             const tempEl = document.getElementById(`overview-temp-${gpuId}`);
             const memEl = document.getElementById(`overview-mem-${gpuId}`);
             const powerEl = document.getElementById(`overview-power-${gpuId}`);
-            
+
             if (utilEl) utilEl.textContent = `${gpuInfo.utilization}%`;
             if (tempEl) tempEl.textContent = `${gpuInfo.temperature}°C`;
             if (memEl) memEl.textContent = `${Math.round(memPercent)}%`;
             if (powerEl) powerEl.textContent = `${gpuInfo.power_draw.toFixed(0)}W`;
-            
+
             // Update chart data for the mini chart
-            updateChart(gpuId, 'utilization', gpuInfo.utilization);
-            
+            updateChart(gpuId, 'utilization', Number(gpuInfo.utilization) || 0);
+
             // Update mini chart
             if (charts[gpuId] && charts[gpuId].overviewMini) {
                 charts[gpuId].overviewMini.update('none');
             }
         }
-        
+
         // Create detailed GPU card HTML (for individual tabs)
         function createGPUCard(gpuId, gpuInfo) {
             const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
             const powerPercent = (gpuInfo.power_draw / gpuInfo.power_limit) * 100;
-            
+
             return `
                 <div class="gpu-card" id="gpu-${gpuId}">
                     <div class="gpu-header-enhanced">
@@ -2020,7 +2031,7 @@
                             <span class="status-text">ONLINE</span>
                         </div>
                     </div>
-                    
+
                     <div class="metrics-grid-enhanced">
                         <div class="metric-card metric-card-featured">
                             <canvas class="util-background-chart" id="util-bg-chart-${gpuId}"></canvas>
@@ -2037,7 +2048,7 @@
                                         </linearGradient>
                                     </defs>
                                     <circle class="progress-ring-bg" cx="60" cy="60" r="50"/>
-                                    <circle class="progress-ring" id="util-ring-${gpuId}" cx="60" cy="60" r="50" 
+                                    <circle class="progress-ring" id="util-ring-${gpuId}" cx="60" cy="60" r="50"
                                         stroke="url(#util-gradient-${gpuId})"
                                         style="stroke-dashoffset: ${314 - (314 * gpuInfo.utilization / 100)}"/>
                                     <text x="60" y="60" class="progress-text" id="util-text-${gpuId}">${gpuInfo.utilization}%</text>
@@ -2047,7 +2058,7 @@
                                 <div class="progress-fill" id="util-bar-${gpuId}" style="width: ${gpuInfo.utilization}%"></div>
                             </div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🌡️</span>
@@ -2061,7 +2072,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">💾</span>
@@ -2073,7 +2084,7 @@
                                 <div class="progress-fill mem-bar" id="mem-bar-${gpuId}" style="width: ${memPercent}%"></div>
                             </div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">⚡</span>
@@ -2085,7 +2096,7 @@
                                 <div class="progress-fill power-bar" id="power-bar-${gpuId}" style="width: ${powerPercent}%"></div>
                             </div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🔧</span>
@@ -2094,7 +2105,7 @@
                             <div class="metric-value-large" id="clock-gr-${gpuId}">${gpuInfo.clock_graphics || 0}</div>
                             <div class="metric-sublabel">MHz</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">💿</span>
@@ -2103,7 +2114,7 @@
                             <div class="metric-value-large" id="clock-mem-${gpuId}">${gpuInfo.clock_memory || 0}</div>
                             <div class="metric-sublabel">MHz</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🎯</span>
@@ -2115,7 +2126,7 @@
                                 <div class="progress-fill" id="mem-util-bar-${gpuId}" style="width: ${gpuInfo.memory_utilization || 0}%"></div>
                             </div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🔗</span>
@@ -2124,7 +2135,7 @@
                             <div class="metric-value-large" id="pcie-${gpuId}">Gen ${gpuInfo.pcie_gen || 'N/A'}</div>
                             <div class="metric-sublabel">x${gpuInfo.pcie_width || 'N/A'} lanes</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">⚙️</span>
@@ -2133,7 +2144,7 @@
                             <div class="metric-value-large" id="pstate-${gpuId}">${gpuInfo.performance_state || 'N/A'}</div>
                             <div class="metric-sublabel">Power Mode</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🎬</span>
@@ -2142,7 +2153,7 @@
                             <div class="metric-value-large" id="encoder-${gpuId}">${gpuInfo.encoder_sessions || 0}</div>
                             <div class="metric-sublabel">${(gpuInfo.encoder_fps || 0).toFixed(1)} FPS avg</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">⏱️</span>
@@ -2151,7 +2162,7 @@
                             <div class="metric-value-large" id="clock-sm-${gpuId}">${gpuInfo.clock_sm || 0}</div>
                             <div class="metric-sublabel">MHz / ${gpuInfo.clock_max_sm || 0} Max</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🌡️</span>
@@ -2160,7 +2171,7 @@
                             <div class="metric-value-large" id="temp-mem-${gpuId}">${gpuInfo.temperature_memory || 0}°C</div>
                             <div class="metric-sublabel">VRAM Temperature</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">💿</span>
@@ -2169,7 +2180,7 @@
                             <div class="metric-value-large" id="mem-free-${gpuId}">${Math.round(gpuInfo.memory_free || 0)}MB</div>
                             <div class="metric-sublabel">Available VRAM</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">📹</span>
@@ -2178,7 +2189,7 @@
                             <div class="metric-value-large" id="decoder-${gpuId}">${gpuInfo.decoder_sessions || 0}</div>
                             <div class="metric-sublabel">${(gpuInfo.decoder_fps || 0).toFixed(1)} FPS avg</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🎥</span>
@@ -2187,7 +2198,7 @@
                             <div class="metric-value-large" id="clock-video-${gpuId}">${gpuInfo.clock_video || 0}</div>
                             <div class="metric-sublabel">MHz</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">📊</span>
@@ -2196,7 +2207,7 @@
                             <div class="metric-value-large" id="compute-mode-${gpuId}" style="font-size: 1.5rem;">${gpuInfo.compute_mode || 'N/A'}</div>
                             <div class="metric-sublabel">Execution Mode</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🔌</span>
@@ -2205,7 +2216,7 @@
                             <div class="metric-value-large" id="pcie-max-${gpuId}">Gen ${gpuInfo.pcie_gen_max || 'N/A'}</div>
                             <div class="metric-sublabel">x${gpuInfo.pcie_width_max || 'N/A'} Max</div>
                         </div>
-                        
+
                         <div class="metric-card">
                             <div class="metric-header">
                                 <span class="metric-icon">🚨</span>
@@ -2215,7 +2226,7 @@
                             <div class="metric-sublabel">Performance</div>
                         </div>
                     </div>
-                    
+
                     <div class="charts-section">
                         <div class="chart-container">
                             <div class="chart-header">
@@ -2241,7 +2252,7 @@
                             </div>
                             <canvas id="chart-utilization-${gpuId}"></canvas>
                         </div>
-                        
+
                         <div class="chart-container">
                             <div class="chart-header">
                                 <div class="chart-title">🌡️ GPU Temperature History</div>
@@ -2266,7 +2277,7 @@
                             </div>
                             <canvas id="chart-temperature-${gpuId}"></canvas>
                         </div>
-                        
+
                         <div class="chart-container">
                             <div class="chart-header">
                                 <div class="chart-title">💾 Memory Usage History</div>
@@ -2291,7 +2302,7 @@
                             </div>
                             <canvas id="chart-memory-${gpuId}"></canvas>
                         </div>
-                        
+
                         <div class="chart-container">
                             <div class="chart-header">
                                 <div class="chart-title">⚡ Power Draw History</div>
@@ -2325,10 +2336,10 @@
         function initUtilBackgroundChart(gpuId) {
             const canvas = document.getElementById(`util-bg-chart-${gpuId}`);
             if (!canvas) return;
-            
+
             if (!charts[gpuId]) charts[gpuId] = {};
             if (charts[gpuId].utilBackground) return; // Already initialized
-            
+
             charts[gpuId].utilBackground = new Chart(canvas, {
                 type: 'line',
                 data: {
@@ -2357,20 +2368,20 @@
                 }
             });
         }
-        
+
         // Initialize charts for a GPU
         function initGPUCharts(gpuId) {
             const chartTypes = ['utilization', 'temperature', 'memory', 'power'];
             if (!charts[gpuId]) charts[gpuId] = {};
-            
+
             // Initialize background utilization chart
             initUtilBackgroundChart(gpuId);
-            
+
             chartTypes.forEach(type => {
                 const canvas = document.getElementById(`chart-${type}-${gpuId}`);
                 if (canvas) {
                     const config = JSON.parse(JSON.stringify(chartConfigs[type])); // Deep clone
-                    
+
                     // Link datasets to chartData
                     if (type === 'utilization') {
                         config.data.datasets[0].data = chartData[gpuId][type].data;
@@ -2385,7 +2396,7 @@
                     } else {
                         config.data.datasets[0].data = chartData[gpuId][type].data;
                     }
-                    
+
                     config.data.labels = chartData[gpuId][type].labels;
                     charts[gpuId][type] = new Chart(canvas, config);
                 }
@@ -2400,13 +2411,13 @@
             const memEl = document.getElementById(`mem-${gpuId}`);
             const powerEl = document.getElementById(`power-${gpuId}`);
             const fanEl = document.getElementById(`fan-${gpuId}`);
-            
+
             if (utilEl) utilEl.textContent = `${gpuInfo.utilization}%`;
             if (tempEl) tempEl.textContent = `${gpuInfo.temperature}°C`;
             if (memEl) memEl.textContent = `${Math.round(gpuInfo.memory_used)}MB`;
             if (powerEl) powerEl.textContent = `${gpuInfo.power_draw.toFixed(1)}W`;
             if (fanEl) fanEl.textContent = `${gpuInfo.fan_speed}%`;
-            
+
             // Update temperature status
             const tempStatus = document.getElementById(`temp-status-${gpuId}`);
             if (tempStatus) {
@@ -2418,7 +2429,7 @@
                     tempStatus.textContent = '🔥 Warm';
                 }
             }
-            
+
             // Update circular gauge
             const utilRing = document.getElementById(`util-ring-${gpuId}`);
             const utilText = document.getElementById(`util-text-${gpuId}`);
@@ -2427,19 +2438,19 @@
                 utilRing.style.strokeDashoffset = offset;
             }
             if (utilText) utilText.textContent = `${gpuInfo.utilization}%`;
-            
+
             // Update progress bars
             const utilBar = document.getElementById(`util-bar-${gpuId}`);
             const memBar = document.getElementById(`mem-bar-${gpuId}`);
             const powerBar = document.getElementById(`power-bar-${gpuId}`);
-            
+
             const memPercent = (gpuInfo.memory_used / gpuInfo.memory_total) * 100;
             const powerPercent = (gpuInfo.power_draw / gpuInfo.power_limit) * 100;
-            
+
             if (utilBar) utilBar.style.width = `${gpuInfo.utilization}%`;
             if (memBar) memBar.style.width = `${memPercent}%`;
             if (powerBar) powerBar.style.width = `${powerPercent}%`;
-            
+
             // Update new metrics
             const clockGrEl = document.getElementById(`clock-gr-${gpuId}`);
             const clockMemEl = document.getElementById(`clock-mem-${gpuId}`);
@@ -2449,7 +2460,7 @@
             const pcieEl = document.getElementById(`pcie-${gpuId}`);
             const pstateEl = document.getElementById(`pstate-${gpuId}`);
             const encoderEl = document.getElementById(`encoder-${gpuId}`);
-            
+
             if (clockGrEl) clockGrEl.textContent = `${gpuInfo.clock_graphics || 0}`;
             if (clockMemEl) clockMemEl.textContent = `${gpuInfo.clock_memory || 0}`;
             if (clockSmEl) clockSmEl.textContent = `${gpuInfo.clock_sm || 0}`;
@@ -2458,13 +2469,13 @@
             if (pcieEl) pcieEl.textContent = `Gen ${gpuInfo.pcie_gen || 'N/A'}`;
             if (pstateEl) pstateEl.textContent = `${gpuInfo.performance_state || 'N/A'}`;
             if (encoderEl) encoderEl.textContent = `${gpuInfo.encoder_sessions || 0}`;
-            
+
             // Update header badges
             const pstateHeaderEl = document.getElementById(`pstate-header-${gpuId}`);
             const pcieHeaderEl = document.getElementById(`pcie-header-${gpuId}`);
             if (pstateHeaderEl) pstateHeaderEl.textContent = `${gpuInfo.performance_state || 'N/A'}`;
             if (pcieHeaderEl) pcieHeaderEl.textContent = `${gpuInfo.pcie_gen || 'N/A'}`;
-            
+
             // Update new advanced metrics
             const tempMemEl = document.getElementById(`temp-mem-${gpuId}`);
             const memFreeEl = document.getElementById(`mem-free-${gpuId}`);
@@ -2473,7 +2484,7 @@
             const computeModeEl = document.getElementById(`compute-mode-${gpuId}`);
             const pcieMaxEl = document.getElementById(`pcie-max-${gpuId}`);
             const throttleEl = document.getElementById(`throttle-${gpuId}`);
-            
+
             if (tempMemEl) tempMemEl.textContent = `${gpuInfo.temperature_memory || 0}°C`;
             if (memFreeEl) memFreeEl.textContent = `${Math.round(gpuInfo.memory_free || 0)}MB`;
             if (decoderEl) decoderEl.textContent = `${gpuInfo.decoder_sessions || 0}`;
@@ -2484,13 +2495,13 @@
                 const isThrottling = gpuInfo.throttle_reasons && gpuInfo.throttle_reasons !== 'None' && gpuInfo.throttle_reasons !== '[N/A]';
                 throttleEl.textContent = isThrottling ? '⚠️ Active' : '✅ None';
             }
-            
+
             // Update charts
             updateChart(gpuId, 'utilization', gpuInfo.utilization);
             updateChart(gpuId, 'temperature', gpuInfo.temperature);
             updateChart(gpuId, 'memory', memPercent);
             updateChart(gpuId, 'power', gpuInfo.power_draw);
-            
+
             // Update background utilization chart
             if (charts[gpuId] && charts[gpuId].utilBackground) {
                 charts[gpuId].utilBackground.update('none');
@@ -2501,14 +2512,14 @@
         function updateProcesses(processes) {
             const container = document.getElementById('processes-container');
             const countEl = document.getElementById('process-count');
-            
+
             // Update count
             if (countEl) {
-                countEl.textContent = processes.length === 0 ? 'No processes' : 
-                                     processes.length === 1 ? '1 process' : 
+                countEl.textContent = processes.length === 0 ? 'No processes' :
+                                     processes.length === 1 ? '1 process' :
                                      `${processes.length} processes`;
             }
-            
+
             if (processes.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -2519,7 +2530,7 @@
                 `;
                 return;
             }
-            
+
             container.innerHTML = processes.map(proc => `
                 <div class="process-item">
                     <div class="process-name">
@@ -2538,7 +2549,7 @@
         function initSystemCharts() {
             const cpuCanvas = document.getElementById('cpu-chart');
             const memCanvas = document.getElementById('memory-chart');
-            
+
             if (cpuCanvas && !systemCharts.cpu) {
                 systemCharts.cpu = new Chart(cpuCanvas, {
                     type: 'line',
@@ -2568,7 +2579,7 @@
                     }
                 });
             }
-            
+
             if (memCanvas && !systemCharts.memory) {
                 systemCharts.memory = new Chart(memCanvas, {
                     type: 'line',
@@ -2599,23 +2610,23 @@
                 });
             }
         }
-        
+
         // Update system info with sparklines
         function updateSystemInfo(systemInfo) {
             const cpuEl = document.getElementById('cpu-usage');
             const memEl = document.getElementById('memory-usage');
-            
+
             if (cpuEl) cpuEl.textContent = `${Math.round(systemInfo.cpu_percent)}%`;
             if (memEl) memEl.textContent = `${Math.round(systemInfo.memory_percent)}%`;
-            
+
             // Update system chart data
             const now = new Date().toLocaleTimeString();
-            
+
             systemData.cpu.labels.push(now);
             systemData.cpu.data.push(systemInfo.cpu_percent);
             systemData.memory.labels.push(now);
             systemData.memory.data.push(systemInfo.memory_percent);
-            
+
             // Keep only last 20 points
             if (systemData.cpu.labels.length > 20) {
                 systemData.cpu.labels.shift();
@@ -2623,12 +2634,12 @@
                 systemData.memory.labels.shift();
                 systemData.memory.data.shift();
             }
-            
+
             // Initialize charts if needed
             if (!systemCharts.cpu || !systemCharts.memory) {
                 initSystemCharts();
             }
-            
+
             // Update charts
             if (systemCharts.cpu) systemCharts.cpu.update('none');
             if (systemCharts.memory) systemCharts.memory.update('none');
@@ -2645,24 +2656,25 @@
                 viewOption.textContent = `GPU ${gpuId}`;
                 viewOption.onclick = () => switchToView(`gpu-${gpuId}`);
                 viewSelector.appendChild(viewOption);
-                
+
                 // Create tab content
                 const tabContent = document.createElement('div');
                 tabContent.id = `tab-gpu-${gpuId}`;
                 tabContent.className = 'tab-content';
                 tabContent.innerHTML = `<div class="detailed-view"></div>`;
                 document.getElementById('tab-overview').after(tabContent);
-                
+
                 registeredGPUs.add(gpuId);
             }
-            
+
             // Update or create detailed GPU card in tab
             const detailedContainer = document.querySelector(`#tab-gpu-${gpuId} .detailed-view`);
             const existingCard = document.getElementById(`gpu-${gpuId}`);
-            
+
             if (!existingCard && detailedContainer) {
                 detailedContainer.innerHTML = createGPUCard(gpuId, gpuInfo);
-                initGPUData(gpuId);
+                // Do not reinitialize chartData here; it would break existing chart references
+                if (!chartData[gpuId]) initGPUData(gpuId);
                 initGPUCharts(gpuId);
             } else if (existingCard) {
                 updateGPUDisplay(gpuId, gpuInfo);
@@ -2672,36 +2684,36 @@
         // Handle incoming GPU data
         socket.on('gpu_data', function(data) {
             const overviewContainer = document.getElementById('overview-container');
-            
+
             // Clear loading state
             if (overviewContainer.innerHTML.includes('Loading GPU data')) {
                 overviewContainer.innerHTML = '';
             }
-            
+
             const gpuCount = Object.keys(data.gpus).length;
-            
+
             // Process each GPU
             Object.keys(data.gpus).forEach(gpuId => {
                 const gpuInfo = data.gpus[gpuId];
-                
+
                 // Initialize chart data if needed
                 if (!chartData[gpuId]) {
                     initGPUData(gpuId);
                 }
-                
+
                 // Update or create overview card
                 const existingOverview = overviewContainer.querySelector(`[data-gpu-id="${gpuId}"]`);
                 if (!existingOverview) {
                     overviewContainer.insertAdjacentHTML('beforeend', createOverviewCard(gpuId, gpuInfo));
-                    initOverviewMiniChart(gpuId);
+                    initOverviewMiniChart(gpuId, gpuInfo.utilization);
                 } else {
                     updateOverviewCard(gpuId, gpuInfo);
                 }
-                
+
                 // Ensure GPU has its own detail tab
                 ensureGPUTab(gpuId, gpuInfo);
             });
-            
+
             // Auto-switch to single GPU view if only 1 GPU detected (first time only)
             if (gpuCount === 1 && !hasAutoSwitched) {
                 const singleGpuId = Object.keys(data.gpus)[0];
@@ -2710,7 +2722,7 @@
                 }, 300); // Small delay to ensure DOM is ready
                 hasAutoSwitched = true;
             }
-            
+
             // Update processes and system info
             updateProcesses(data.processes);
             updateSystemInfo(data.system);
