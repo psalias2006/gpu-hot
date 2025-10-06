@@ -1972,6 +1972,9 @@
             if (memEl) memEl.textContent = `${Math.round(memPercent)}%`;
             if (powerEl) powerEl.textContent = `${gpuInfo.power_draw.toFixed(0)}W`;
             
+            // Update chart data for the mini chart
+            updateChart(gpuId, 'utilization', gpuInfo.utilization);
+            
             // Update mini chart
             if (charts[gpuId] && charts[gpuId].overviewMini) {
                 charts[gpuId].overviewMini.update('none');
