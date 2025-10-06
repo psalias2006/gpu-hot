@@ -4,29 +4,40 @@
 
 ### Real-Time NVIDIA GPU Monitoring Dashboard
 
-Web-based monitoring for NVIDIA GPUs. Track 30+ metrics per GPU with live charts and real-time updates.
+Web-based monitoring for NVIDIA GPUs. Track key metrics per GPU with live charts and real-time updates.
 
 <img src="gpu-hot.png" alt="GPU Hot Dashboard" width="800" />
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-orange?style=flat-square)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![NVIDIA](https://img.shields.io/badge/NVIDIA-GPU-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/)
 
-[Features](#features) • [Quick Start](#quick-start) • [Installation](#installation) • [Documentation](#documentation) • [Contributing](#contributing)
+[What it does](#what-it-does) • [Quick Start](#quick-start) • [Installation](#installation) • [Documentation](#documentation) • [Contributing](#contributing)
 
 </div>
 
 ---
 
-## Features
+## Basic idea
 
-- **30+ GPU Metrics** - Utilization, temperature, memory, power, clocks, encoder/decoder stats, and more per GPU
+Designed for remote servers with multiple NVIDIA GPUs where you want a quick
+browser view of utilization and health. A small, self‑contained dashboard that
+starts with one container and serves over a single port.
+
+- Start one container; get a live dashboard in seconds
+- Auto‑detect and monitor all GPUs on the host
+- Real‑time charts for utilization, memory, temps, clocks, power, and processes
+- No external databases or agents; minimal footprint
+
+## What it does
+
+- **Comprehensive GPU Metrics** - Utilization, temperature, memory, power, clocks, encoder/decoder stats, and more per GPU
 - **Multi-GPU Support** - Automatic detection and independent monitoring of all NVIDIA GPUs
 - **Live Historical Charts** - Real-time graphs with statistics (min/max/avg), threshold indicators, and contextual tooltips
 - **Process Monitoring** - Track active GPU processes with memory usage and PIDs
 - **Clean UI** - Responsive interface with glassmorphism design and smooth animations
-- **WebSocket Updates** - Sub-second refresh rates (2s) for real-time monitoring
+- **WebSocket Updates** - ~2s interval for real-time monitoring
 - **Docker Deployment** - One-command setup with NVIDIA Container Toolkit support
 - **Zero Configuration** - Works out of the box with any NVIDIA GPU
 
@@ -60,15 +71,6 @@ Web-based monitoring for NVIDIA GPUs. Track 30+ metrics per GPU with live charts
 git clone https://github.com/psalias2006/gpu-hot
 cd gpu-hot
 docker-compose up --build
-```
-
-Access the dashboard at `http://localhost:1312`
-
-### Local Development
-
-```bash
-pip install -r requirements.txt
-python app.py
 ```
 
 Access the dashboard at `http://localhost:1312`
@@ -165,16 +167,6 @@ Access at `http://localhost:1312` (Dashboard) or `http://localhost:1312/api/gpu-
 - Restart Docker daemon: `sudo systemctl restart docker`
 - Test GPU access: `docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi`
 
-### No GPU data
-- Check host GPU access: `nvidia-smi`
-- Verify Container Toolkit: `nvidia-ctk --version`
-- Review logs: `docker-compose logs`
-- Configure Docker runtime: `sudo nvidia-ctk runtime configure --runtime=docker`
-
-### WebSocket issues
-- Check port 1312 accessibility
-- Review browser console for errors
-- Verify firewall settings
 
 ### Enable debug logging
 ```python
