@@ -47,7 +47,18 @@ const chartConfigs = {
             },
             scales: {
                 x: {
-                    display: false
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.4)',
+                        font: { size: 10 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
                 },
                 y: {
                     min: 0,
@@ -160,7 +171,18 @@ const chartConfigs = {
             },
             scales: {
                 x: {
-                    display: false
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.4)',
+                        font: { size: 10 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
                 },
                 y: {
                     min: 0,
@@ -263,7 +285,18 @@ const chartConfigs = {
             },
             scales: {
                 x: {
-                    display: false
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.4)',
+                        font: { size: 10 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
                 },
                 y: {
                     min: 0,
@@ -356,7 +389,18 @@ const chartConfigs = {
             },
             scales: {
                 x: {
-                    display: false
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.4)',
+                        font: { size: 10 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
                 },
                 y: {
                     min: 0,
