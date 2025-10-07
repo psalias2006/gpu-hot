@@ -1910,6 +1910,7 @@
                     const t = new Date(Date.now() - i * 2000).toLocaleTimeString();
                     chartData[gpuId].utilization.labels.push(t);
                     chartData[gpuId].utilization.data.push(Number.isFinite(seedValue) ? seedValue : 0);
+                    chartData[gpuId].utilization.thresholdData.push(80); // Pre-fill threshold data
                 }
             }
 
@@ -2234,19 +2235,19 @@
                                 <div class="chart-stats">
                                     <div class="chart-stat">
                                         <span class="chart-stat-label">Current</span>
-                                        <span class="chart-stat-value current" id="stat-util-current-${gpuId}">0%</span>
+                                        <span class="chart-stat-value current" id="stat-utilization-current-${gpuId}">0%</span>
                                     </div>
                                     <div class="chart-stat">
                                         <span class="chart-stat-label">Min</span>
-                                        <span class="chart-stat-value min" id="stat-util-min-${gpuId}">0%</span>
+                                        <span class="chart-stat-value min" id="stat-utilization-min-${gpuId}">0%</span>
                                     </div>
                                     <div class="chart-stat">
                                         <span class="chart-stat-label">Max</span>
-                                        <span class="chart-stat-value max" id="stat-util-max-${gpuId}">0%</span>
+                                        <span class="chart-stat-value max" id="stat-utilization-max-${gpuId}">0%</span>
                                     </div>
                                     <div class="chart-stat">
                                         <span class="chart-stat-label">Avg</span>
-                                        <span class="chart-stat-value avg" id="stat-util-avg-${gpuId}">0%</span>
+                                        <span class="chart-stat-value avg" id="stat-utilization-avg-${gpuId}">0%</span>
                                     </div>
                                 </div>
                             </div>
@@ -2259,19 +2260,19 @@
                                 <div class="chart-stats">
                                     <div class="chart-stat">
                                         <span class="chart-stat-label">Current</span>
-                                        <span class="chart-stat-value current" id="stat-temp-current-${gpuId}">0°C</span>
+                                        <span class="chart-stat-value current" id="stat-temperature-current-${gpuId}">0°C</span>
                                     </div>
                                     <div class="chart-stat">
                                         <span class="chart-stat-label">Min</span>
-                                        <span class="chart-stat-value min" id="stat-temp-min-${gpuId}">0°C</span>
+                                        <span class="chart-stat-value min" id="stat-temperature-min-${gpuId}">0°C</span>
                                     </div>
                                     <div class="chart-stat">
                                         <span class="chart-stat-label">Max</span>
-                                        <span class="chart-stat-value max" id="stat-temp-max-${gpuId}">0°C</span>
+                                        <span class="chart-stat-value max" id="stat-temperature-max-${gpuId}">0°C</span>
                                     </div>
                                     <div class="chart-stat">
                                         <span class="chart-stat-label">Avg</span>
-                                        <span class="chart-stat-value avg" id="stat-temp-avg-${gpuId}">0°C</span>
+                                        <span class="chart-stat-value avg" id="stat-temperature-avg-${gpuId}">0°C</span>
                                     </div>
                                 </div>
                             </div>
