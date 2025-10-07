@@ -1842,6 +1842,9 @@
             // Update chart if it exists
             if (charts[gpuId] && charts[gpuId][chartType]) {
                 charts[gpuId][chartType].update('none');
+                console.log(`Updated ${chartType} chart for GPU ${gpuId} with value ${value}`);
+            } else {
+                console.warn(`Chart ${chartType} for GPU ${gpuId} not found - chart object:`, charts[gpuId]);
             }
         }
 
@@ -2379,7 +2382,7 @@
 
             chartTypes.forEach(type => {
                 const canvas = document.getElementById(`chart-${type}-${gpuId}`);
-                if (canvas) {
+                if (canvas && !charts[gpuId][type]) { // Only create if doesn't exist
                     const config = JSON.parse(JSON.stringify(chartConfigs[type])); // Deep clone
 
                     // Link datasets to chartData
@@ -2399,6 +2402,9 @@
 
                     config.data.labels = chartData[gpuId][type].labels;
                     charts[gpuId][type] = new Chart(canvas, config);
+                    console.log(`Initialized ${type} chart for GPU ${gpuId}`);
+                } else if (!canvas) {
+                    console.warn(`Canvas for ${type} chart of GPU ${gpuId} not found`);
                 }
             });
         }
@@ -2672,11 +2678,14 @@
             const existingCard = document.getElementById(`gpu-${gpuId}`);
 
             if (!existingCard && detailedContainer) {
+                console.log(`Creating new GPU card for GPU ${gpuId}`);
                 detailedContainer.innerHTML = createGPUCard(gpuId, gpuInfo);
                 // Do not reinitialize chartData here; it would break existing chart references
                 if (!chartData[gpuId]) initGPUData(gpuId);
+                console.log(`Initializing charts for GPU ${gpuId}`);
                 initGPUCharts(gpuId);
                 // Update charts with initial data
+                console.log(`Updating GPU display for GPU ${gpuId} with data:`, gpuInfo);
                 updateGPUDisplay(gpuId, gpuInfo);
             } else if (existingCard) {
                 updateGPUDisplay(gpuId, gpuInfo);
@@ -2685,6 +2694,7 @@
 
         // Handle incoming GPU data
         socket.on('gpu_data', function(data) {
+            console.log('Received GPU data:', data);
             const overviewContainer = document.getElementById('overview-container');
 
             // Clear loading state
@@ -2693,6 +2703,7 @@
             }
 
             const gpuCount = Object.keys(data.gpus).length;
+            console.log(`Processing ${gpuCount} GPU(s)`);
 
             // Process each GPU
             Object.keys(data.gpus).forEach(gpuId => {
