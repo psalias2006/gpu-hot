@@ -1910,6 +1910,7 @@
                     const t = new Date(Date.now() - i * 2000).toLocaleTimeString();
                     chartData[gpuId].utilization.labels.push(t);
                     chartData[gpuId].utilization.data.push(Number.isFinite(seedValue) ? seedValue : 0);
+                    chartData[gpuId].utilization.thresholdData.push(80); // Pre-fill threshold data
                 }
             }
 
