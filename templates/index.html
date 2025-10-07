@@ -2676,6 +2676,8 @@
                 // Do not reinitialize chartData here; it would break existing chart references
                 if (!chartData[gpuId]) initGPUData(gpuId);
                 initGPUCharts(gpuId);
+                // Update charts with initial data
+                updateGPUDisplay(gpuId, gpuInfo);
             } else if (existingCard) {
                 updateGPUDisplay(gpuId, gpuInfo);
             }
