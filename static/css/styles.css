@@ -234,45 +234,8 @@ body::before {
     50% { transform: translateX(100%); }
 }
 
-.gpu-icon-container {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.gpu-icon {
-    font-size: 3rem;
-    filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.8));
-    animation: float 3s ease-in-out infinite;
-    z-index: 2;
-    position: relative;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-}
-
-.gpu-icon-glow {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(102, 126, 234, 0.4) 0%, transparent 70%);
-    border-radius: 50%;
-    animation: pulse-glow 2s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-    0%, 100% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.2); opacity: 0.8; }
-}
-
 .gpu-info-section {
     flex: 1;
-    margin-left: 2rem;
     z-index: 2;
 }
 
@@ -303,10 +266,6 @@ body::before {
     border-radius: 12px;
     font-size: 0.85rem;
     color: var(--text-secondary);
-}
-
-.spec-icon {
-    font-size: 1rem;
 }
 
 .gpu-status-badge {
@@ -473,11 +432,6 @@ body::before {
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-secondary);
-}
-
-.metric-icon {
-    font-size: 1.5rem;
-    filter: drop-shadow(0 0 15px rgba(102, 126, 234, 0.6));
 }
 
 .metric-value-large {
@@ -803,12 +757,6 @@ body::before {
     color: var(--text-secondary);
 }
 
-.empty-state-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.75rem;
-    opacity: 0.3;
-}
-
 .empty-state-text {
     font-size: 0.95rem;
     font-weight: 600;
@@ -1085,12 +1033,6 @@ body::before {
 
 .overview-metric:hover {
     background: rgba(255, 255, 255, 0.03);
-}
-
-.overview-metric-icon {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-    filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.6));
 }
 
 .overview-metric-value {

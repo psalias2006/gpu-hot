@@ -23,22 +23,18 @@ function createOverviewCard(gpuId, gpuInfo) {
 
             <div class="overview-metrics">
                 <div class="overview-metric">
-                    <div class="overview-metric-icon">⚡</div>
                     <div class="overview-metric-value" id="overview-util-${gpuId}">${gpuInfo.utilization}%</div>
                     <div class="overview-metric-label">GPU Usage</div>
                 </div>
                 <div class="overview-metric">
-                    <div class="overview-metric-icon">🌡️</div>
                     <div class="overview-metric-value" id="overview-temp-${gpuId}">${gpuInfo.temperature}°C</div>
                     <div class="overview-metric-label">Temperature</div>
                 </div>
                 <div class="overview-metric">
-                    <div class="overview-metric-icon">💾</div>
                     <div class="overview-metric-value" id="overview-mem-${gpuId}">${Math.round(memPercent)}%</div>
                     <div class="overview-metric-label">Memory</div>
                 </div>
                 <div class="overview-metric">
-                    <div class="overview-metric-icon">⚡</div>
                     <div class="overview-metric-value" id="overview-power-${gpuId}">${gpuInfo.power_draw.toFixed(0)}W</div>
                     <div class="overview-metric-label">Power Draw</div>
                 </div>
@@ -84,28 +80,20 @@ function createGPUCard(gpuId, gpuInfo) {
     return `
         <div class="gpu-card" id="gpu-${gpuId}">
             <div class="gpu-header-enhanced">
-                <div class="gpu-icon-container">
-                    <div class="gpu-icon">🎮</div>
-                    <div class="gpu-icon-glow"></div>
-                </div>
                 <div class="gpu-info-section">
                     <div class="gpu-title-large">GPU ${gpuId}</div>
                     <div class="gpu-name">${gpuInfo.name}</div>
                     <div class="gpu-specs">
                         <span class="spec-item">
-                            <span class="spec-icon">🔥</span>
                             <span id="fan-${gpuId}">${gpuInfo.fan_speed}%</span> Fan
                         </span>
                         <span class="spec-item">
-                            <span class="spec-icon">⚙️</span>
                             <span id="pstate-header-${gpuId}">${gpuInfo.performance_state || 'N/A'}</span>
                         </span>
                         <span class="spec-item">
-                            <span class="spec-icon">🔗</span>
                             PCIe Gen <span id="pcie-header-${gpuId}">${gpuInfo.pcie_gen || 'N/A'}</span>
                         </span>
                         <span class="spec-item">
-                            <span class="spec-icon">💿</span>
                             Driver ${gpuInfo.driver_version || 'N/A'}
                         </span>
                     </div>
@@ -120,7 +108,6 @@ function createGPUCard(gpuId, gpuInfo) {
                 <div class="metric-card metric-card-featured">
                     <canvas class="util-background-chart" id="util-bg-chart-${gpuId}"></canvas>
                     <div class="metric-header">
-                        <span class="metric-icon">⚡</span>
                         <span class="metric-label">GPU Utilization</span>
                     </div>
                     <div class="circular-progress-container">
@@ -145,21 +132,19 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🌡️</span>
                         <span class="metric-label">Temperature</span>
                     </div>
                     <div class="temp-display">
                         <div class="metric-value-large" id="temp-${gpuId}">${gpuInfo.temperature}°C</div>
                         <div class="temp-gauge"></div>
                         <div class="temp-status" id="temp-status-${gpuId}">
-                            ${gpuInfo.temperature < 60 ? '❄️ Cool' : gpuInfo.temperature < 75 ? '🌤️ Normal' : '🔥 Warm'}
+                            ${gpuInfo.temperature < 60 ? 'Cool' : gpuInfo.temperature < 75 ? 'Normal' : 'Warm'}
                         </div>
                     </div>
                 </div>
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">💾</span>
                         <span class="metric-label">Memory Usage</span>
                     </div>
                     <div class="metric-value-large" id="mem-${gpuId}">${Math.round(gpuInfo.memory_used)}MB</div>
@@ -171,7 +156,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">⚡</span>
                         <span class="metric-label">Power Draw</span>
                     </div>
                     <div class="metric-value-large" id="power-${gpuId}">${gpuInfo.power_draw.toFixed(1)}W</div>
@@ -183,7 +167,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🔧</span>
                         <span class="metric-label">Graphics Clock</span>
                     </div>
                     <div class="metric-value-large" id="clock-gr-${gpuId}">${gpuInfo.clock_graphics || 0}</div>
@@ -192,7 +175,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">💿</span>
                         <span class="metric-label">Memory Clock</span>
                     </div>
                     <div class="metric-value-large" id="clock-mem-${gpuId}">${gpuInfo.clock_memory || 0}</div>
@@ -201,7 +183,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🎯</span>
                         <span class="metric-label">Memory Utilization</span>
                     </div>
                     <div class="metric-value-large" id="mem-util-${gpuId}">${gpuInfo.memory_utilization || 0}%</div>
@@ -213,7 +194,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🔗</span>
                         <span class="metric-label">PCIe Link</span>
                     </div>
                     <div class="metric-value-large" id="pcie-${gpuId}">Gen ${gpuInfo.pcie_gen || 'N/A'}</div>
@@ -222,7 +202,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">⚙️</span>
                         <span class="metric-label">Performance State</span>
                     </div>
                     <div class="metric-value-large" id="pstate-${gpuId}">${gpuInfo.performance_state || 'N/A'}</div>
@@ -231,7 +210,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🎬</span>
                         <span class="metric-label">Encoder Sessions</span>
                     </div>
                     <div class="metric-value-large" id="encoder-${gpuId}">${gpuInfo.encoder_sessions || 0}</div>
@@ -240,7 +218,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">⏱️</span>
                         <span class="metric-label">SM Clock</span>
                     </div>
                     <div class="metric-value-large" id="clock-sm-${gpuId}">${gpuInfo.clock_sm || 0}</div>
@@ -249,7 +226,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🌡️</span>
                         <span class="metric-label">Memory Temp</span>
                     </div>
                     <div class="metric-value-large" id="temp-mem-${gpuId}">${gpuInfo.temperature_memory || 0}°C</div>
@@ -258,7 +234,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">💿</span>
                         <span class="metric-label">Free Memory</span>
                     </div>
                     <div class="metric-value-large" id="mem-free-${gpuId}">${Math.round(gpuInfo.memory_free || 0)}MB</div>
@@ -267,7 +242,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">📹</span>
                         <span class="metric-label">Decoder Sessions</span>
                     </div>
                     <div class="metric-value-large" id="decoder-${gpuId}">${gpuInfo.decoder_sessions || 0}</div>
@@ -276,7 +250,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🎥</span>
                         <span class="metric-label">Video Clock</span>
                     </div>
                     <div class="metric-value-large" id="clock-video-${gpuId}">${gpuInfo.clock_video || 0}</div>
@@ -285,7 +258,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">📊</span>
                         <span class="metric-label">Compute Mode</span>
                     </div>
                     <div class="metric-value-large" id="compute-mode-${gpuId}" style="font-size: 1.5rem;">${gpuInfo.compute_mode || 'N/A'}</div>
@@ -294,7 +266,6 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🔌</span>
                         <span class="metric-label">Max PCIe</span>
                     </div>
                     <div class="metric-value-large" id="pcie-max-${gpuId}">Gen ${gpuInfo.pcie_gen_max || 'N/A'}</div>
@@ -303,10 +274,9 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🚨</span>
                         <span class="metric-label">Throttle Status</span>
                     </div>
-                    <div class="metric-value-large" id="throttle-${gpuId}" style="font-size: 1.2rem;">${gpuInfo.throttle_reasons === 'Active' || gpuInfo.throttle_reasons !== 'None' ? '⚠️ Active' : '✅ None'}</div>
+                    <div class="metric-value-large" id="throttle-${gpuId}" style="font-size: 1.2rem;">${gpuInfo.throttle_reasons === 'Active' || gpuInfo.throttle_reasons !== 'None' ? 'Active' : 'None'}</div>
                     <div class="metric-sublabel">Performance</div>
                 </div>
             </div>
@@ -314,7 +284,7 @@ function createGPUCard(gpuId, gpuInfo) {
             <div class="charts-section">
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-title">📊 GPU Utilization History</div>
+                        <div class="chart-title">GPU Utilization History</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -339,7 +309,7 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-title">🌡️ GPU Temperature History</div>
+                        <div class="chart-title">GPU Temperature History</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -364,7 +334,7 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-title">💾 Memory Usage History</div>
+                        <div class="chart-title">Memory Usage History</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -389,7 +359,7 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-title">⚡ Power Draw History</div>
+                        <div class="chart-title">Power Draw History</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -435,11 +405,11 @@ function updateGPUDisplay(gpuId, gpuInfo) {
     const tempStatus = document.getElementById(`temp-status-${gpuId}`);
     if (tempStatus) {
         if (gpuInfo.temperature < 60) {
-            tempStatus.textContent = '❄️ Cool';
+            tempStatus.textContent = 'Cool';
         } else if (gpuInfo.temperature < 75) {
-            tempStatus.textContent = '🌤️ Normal';
+            tempStatus.textContent = 'Normal';
         } else {
-            tempStatus.textContent = '🔥 Warm';
+            tempStatus.textContent = 'Warm';
         }
     }
 
@@ -506,7 +476,7 @@ function updateGPUDisplay(gpuId, gpuInfo) {
     if (pcieMaxEl) pcieMaxEl.textContent = `Gen ${gpuInfo.pcie_gen_max || 'N/A'}`;
     if (throttleEl) {
         const isThrottling = gpuInfo.throttle_reasons && gpuInfo.throttle_reasons !== 'None' && gpuInfo.throttle_reasons !== '[N/A]';
-        throttleEl.textContent = isThrottling ? '⚠️ Active' : '✅ None';
+        throttleEl.textContent = isThrottling ? 'Active' : 'None';
     }
 
     // Update charts
@@ -536,7 +506,6 @@ function updateProcesses(processes) {
     if (processes.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon">💤</div>
                 <div class="empty-state-text">No Active GPU Processes</div>
                 <div class="empty-state-subtext">Your GPUs are currently idle</div>
             </div>
