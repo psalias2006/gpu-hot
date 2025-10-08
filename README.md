@@ -2,14 +2,15 @@
 
 # GPU Hot
 ### Real-Time NVIDIA GPU Monitoring Dashboard
-Single-container web dashboard for NVIDIA GPU monitoring with real-time charts.
 
-<img src="gpu-hot.png" alt="GPU Hot Dashboard" width="800" />
+Single-container web dashboard for NVIDIA GPU monitoring with real-time charts.
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![NVIDIA](https://img.shields.io/badge/NVIDIA-GPU-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/)
+
+<img src="gpu-hot.png" alt="GPU Hot Dashboard" width="800" />
 
 </div>
 
