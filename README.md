@@ -1,7 +1,7 @@
 <div align="center">
 
 # GPU Hot
-
+### Real-Time NVIDIA GPU Monitoring Dashboard
 Single-container web dashboard for NVIDIA GPU monitoring with real-time charts.
 
 <img src="gpu-hot.png" alt="GPU Hot Dashboard" width="800" />
