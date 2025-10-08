@@ -381,6 +381,81 @@ function createGPUCard(gpuId, gpuInfo) {
                     </div>
                     <canvas id="chart-power-${gpuId}"></canvas>
                 </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Fan Speed History</div>
+                        <div class="chart-stats">
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Current</span>
+                                <span class="chart-stat-value current" id="stat-fanSpeed-current-${gpuId}">0%</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Min</span>
+                                <span class="chart-stat-value min" id="stat-fanSpeed-min-${gpuId}">0%</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Max</span>
+                                <span class="chart-stat-value max" id="stat-fanSpeed-max-${gpuId}">0%</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Avg</span>
+                                <span class="chart-stat-value avg" id="stat-fanSpeed-avg-${gpuId}">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="chart-fanSpeed-${gpuId}"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Clock Speeds History</div>
+                        <div class="chart-stats">
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Current</span>
+                                <span class="chart-stat-value current" id="stat-clocks-current-${gpuId}">0 MHz</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Min</span>
+                                <span class="chart-stat-value min" id="stat-clocks-min-${gpuId}">0 MHz</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Max</span>
+                                <span class="chart-stat-value max" id="stat-clocks-max-${gpuId}">0 MHz</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Avg</span>
+                                <span class="chart-stat-value avg" id="stat-clocks-avg-${gpuId}">0 MHz</span>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="chart-clocks-${gpuId}"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Power Efficiency History</div>
+                        <div class="chart-stats">
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Current</span>
+                                <span class="chart-stat-value current" id="stat-efficiency-current-${gpuId}">0 %/W</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Min</span>
+                                <span class="chart-stat-value min" id="stat-efficiency-min-${gpuId}">0 %/W</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Max</span>
+                                <span class="chart-stat-value max" id="stat-efficiency-max-${gpuId}">0 %/W</span>
+                            </div>
+                            <div class="chart-stat">
+                                <span class="chart-stat-label">Avg</span>
+                                <span class="chart-stat-value avg" id="stat-efficiency-avg-${gpuId}">0 %/W</span>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="chart-efficiency-${gpuId}"></canvas>
+                </div>
             </div>
         </div>
     `;
@@ -484,6 +559,12 @@ function updateGPUDisplay(gpuId, gpuInfo) {
     updateChart(gpuId, 'temperature', gpuInfo.temperature);
     updateChart(gpuId, 'memory', memPercent);
     updateChart(gpuId, 'power', gpuInfo.power_draw);
+    updateChart(gpuId, 'fanSpeed', gpuInfo.fan_speed);
+    updateChart(gpuId, 'clocks', gpuInfo.clock_graphics, gpuInfo.clock_sm, gpuInfo.clock_memory);
+    
+    // Calculate and update power efficiency (utilization per watt)
+    const efficiency = gpuInfo.power_draw > 0 ? gpuInfo.utilization / gpuInfo.power_draw : 0;
+    updateChart(gpuId, 'efficiency', efficiency);
 
     // Update background utilization chart
     if (charts[gpuId] && charts[gpuId].utilBackground) {

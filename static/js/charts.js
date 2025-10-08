@@ -454,6 +454,330 @@ const chartConfigs = {
                 }
             }
         }
+    },
+    fanSpeed: {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Fan Speed',
+                    data: [],
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#38bdf8',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            layout: {
+                padding: { left: 0, right: 10, top: 10, bottom: 0 }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.55)',
+                        font: { size: 12 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
+                },
+                y: {
+                    min: 0,
+                    max: 100,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.12)',
+                        borderDash: [4, 4],
+                        drawBorder: false
+                    },
+                    ticks: {
+                        stepSize: 20,
+                        color: 'rgba(255, 255, 255, 0.65)',
+                        font: { size: 11 },
+                        padding: 8,
+                        callback: function(value) { return value + '%'; }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#38bdf8',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        title: function(context) {
+                            return 'Fan Speed';
+                        },
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            return `Fan Speed: ${value.toFixed(1)}%`;
+                        },
+                        afterLabel: function(context) {
+                            const value = context.parsed.y;
+                            if (value > 90) return '🌪️ Maximum';
+                            if (value > 70) return '💨 High';
+                            if (value > 40) return '🌬️ Active';
+                            if (value > 10) return '✓ Low';
+                            return '⏸️ Idle';
+                        }
+                    }
+                }
+            }
+        }
+    },
+    clocks: {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Graphics Clock',
+                    data: [],
+                    borderColor: '#a78bfa',
+                    backgroundColor: 'rgba(167, 139, 250, 0.1)',
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#a78bfa',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'SM Clock',
+                    data: [],
+                    borderColor: '#fb923c',
+                    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#fb923c',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'Memory Clock',
+                    data: [],
+                    borderColor: '#34d399',
+                    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#34d399',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            layout: {
+                padding: { left: 0, right: 10, top: 10, bottom: 0 }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.55)',
+                        font: { size: 12 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
+                },
+                y: {
+                    min: 0,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.12)',
+                        borderDash: [4, 4],
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.65)',
+                        font: { size: 11 },
+                        padding: 8,
+                        callback: function(value) { return value + ' MHz'; }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        font: { size: 11 },
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        padding: 10,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#a78bfa',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        title: function(context) {
+                            return 'Clock Speeds';
+                        },
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            return `${label}: ${value.toFixed(0)} MHz`;
+                        }
+                    }
+                }
+            }
+        }
+    },
+    efficiency: {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Power Efficiency',
+                    data: [],
+                    borderColor: '#fbbf24',
+                    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#fbbf24',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            layout: {
+                padding: { left: 0, right: 10, top: 10, bottom: 0 }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.55)',
+                        font: { size: 12 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
+                },
+                y: {
+                    min: 0,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.12)',
+                        borderDash: [4, 4],
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.65)',
+                        font: { size: 11 },
+                        padding: 8,
+                        callback: function(value) { return value.toFixed(2) + ' %/W'; }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#fbbf24',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        title: function(context) {
+                            return 'Power Efficiency';
+                        },
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            return `Efficiency: ${value.toFixed(2)} %/W`;
+                        },
+                        afterLabel: function(context) {
+                            const value = context.parsed.y;
+                            if (value > 0.8) return '⭐ Excellent';
+                            if (value > 0.5) return '✓ Good';
+                            if (value > 0.3) return '📊 Fair';
+                            if (value > 0.1) return '⚡ Active';
+                            return '💤 Idle';
+                        }
+                    }
+                }
+            }
+        }
     }
 };
 
@@ -467,7 +791,10 @@ function initGPUData(gpuId) {
         utilization: { labels: [], data: [], thresholdData: [] },
         temperature: { labels: [], data: [], warningData: [], dangerData: [] },
         memory: { labels: [], data: [], thresholdData: [] },
-        power: { labels: [], data: [] }
+        power: { labels: [], data: [] },
+        fanSpeed: { labels: [], data: [] },
+        clocks: { labels: [], graphicsData: [], smData: [], memoryData: [] },
+        efficiency: { labels: [], data: [] }
     };
 }
 
@@ -488,21 +815,37 @@ function updateChartStats(gpuId, chartType, stats, unit) {
     const maxEl = document.getElementById(`stat-${chartType}-max-${gpuId}`);
     const avgEl = document.getElementById(`stat-${chartType}-avg-${gpuId}`);
 
-    if (currentEl) currentEl.textContent = `${Math.round(stats.current)}${unit}`;
-    if (minEl) minEl.textContent = `${Math.round(stats.min)}${unit}`;
-    if (maxEl) maxEl.textContent = `${Math.round(stats.max)}${unit}`;
-    if (avgEl) avgEl.textContent = `${Math.round(stats.avg)}${unit}`;
+    // Use decimal formatting for efficiency values
+    const formatter = (value) => {
+        if (chartType === 'efficiency') {
+            return value.toFixed(2);
+        }
+        return Math.round(value);
+    };
+
+    if (currentEl) currentEl.textContent = `${formatter(stats.current)}${unit}`;
+    if (minEl) minEl.textContent = `${formatter(stats.min)}${unit}`;
+    if (maxEl) maxEl.textContent = `${formatter(stats.max)}${unit}`;
+    if (avgEl) avgEl.textContent = `${formatter(stats.avg)}${unit}`;
 }
 
 // Update chart data
-function updateChart(gpuId, chartType, value) {
+function updateChart(gpuId, chartType, value, value2, value3) {
     if (!chartData[gpuId]) initGPUData(gpuId);
 
     const data = chartData[gpuId][chartType];
     const now = new Date().toLocaleTimeString();
 
     data.labels.push(now);
-    data.data.push(Number(value) || 0);
+    
+    // Handle multi-value charts (like clocks)
+    if (chartType === 'clocks') {
+        data.graphicsData.push(Number(value) || 0);
+        data.smData.push(Number(value2) || 0);
+        data.memoryData.push(Number(value3) || 0);
+    } else {
+        data.data.push(Number(value) || 0);
+    }
 
     // Add threshold data based on chart type
     if (chartType === 'utilization') {
@@ -517,21 +860,28 @@ function updateChart(gpuId, chartType, value) {
     // Keep only last 30 data points for smoother performance
     if (data.labels.length > 30) {
         data.labels.shift();
-        data.data.shift();
+        if (data.data) data.data.shift();
+        if (data.graphicsData) data.graphicsData.shift();
+        if (data.smData) data.smData.shift();
+        if (data.memoryData) data.memoryData.shift();
         if (data.thresholdData) data.thresholdData.shift();
         if (data.warningData) data.warningData.shift();
         if (data.dangerData) data.dangerData.shift();
     }
 
     // Calculate and update statistics
-    const stats = calculateStats(data.data);
+    const statsData = chartType === 'clocks' ? data.graphicsData : data.data;
+    const stats = calculateStats(statsData);
     const unitMap = {
         'utilization': '%',
         'util': '%',
         'temperature': '°C',
         'temp': '°C',
         'memory': '%',
-        'power': 'W'
+        'power': 'W',
+        'fanSpeed': '%',
+        'clocks': ' MHz',
+        'efficiency': ' %/W'
     };
     const unit = unitMap[chartType] || '';
     updateChartStats(gpuId, chartType, stats, unit);
@@ -581,7 +931,7 @@ function initUtilBackgroundChart(gpuId) {
 
 // Initialize charts for a GPU
 function initGPUCharts(gpuId) {
-    const chartTypes = ['utilization', 'temperature', 'memory', 'power'];
+    const chartTypes = ['utilization', 'temperature', 'memory', 'power', 'fanSpeed', 'clocks', 'efficiency'];
     if (!charts[gpuId]) charts[gpuId] = {};
 
     // Initialize background utilization chart
@@ -603,6 +953,10 @@ function initGPUCharts(gpuId) {
             } else if (type === 'memory') {
                 config.data.datasets[0].data = chartData[gpuId][type].data;
                 config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
+            } else if (type === 'clocks') {
+                config.data.datasets[0].data = chartData[gpuId][type].graphicsData;
+                config.data.datasets[1].data = chartData[gpuId][type].smData;
+                config.data.datasets[2].data = chartData[gpuId][type].memoryData;
             } else {
                 config.data.datasets[0].data = chartData[gpuId][type].data;
             }
