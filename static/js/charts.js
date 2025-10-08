@@ -815,10 +815,18 @@ function updateChartStats(gpuId, chartType, stats, unit) {
     const maxEl = document.getElementById(`stat-${chartType}-max-${gpuId}`);
     const avgEl = document.getElementById(`stat-${chartType}-avg-${gpuId}`);
 
-    if (currentEl) currentEl.textContent = `${Math.round(stats.current)}${unit}`;
-    if (minEl) minEl.textContent = `${Math.round(stats.min)}${unit}`;
-    if (maxEl) maxEl.textContent = `${Math.round(stats.max)}${unit}`;
-    if (avgEl) avgEl.textContent = `${Math.round(stats.avg)}${unit}`;
+    // Use decimal formatting for efficiency values
+    const formatter = (value) => {
+        if (chartType === 'efficiency') {
+            return value.toFixed(2);
+        }
+        return Math.round(value);
+    };
+
+    if (currentEl) currentEl.textContent = `${formatter(stats.current)}${unit}`;
+    if (minEl) minEl.textContent = `${formatter(stats.min)}${unit}`;
+    if (maxEl) maxEl.textContent = `${formatter(stats.max)}${unit}`;
+    if (avgEl) avgEl.textContent = `${formatter(stats.avg)}${unit}`;
 }
 
 // Update chart data
