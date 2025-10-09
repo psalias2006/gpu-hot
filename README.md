@@ -24,6 +24,16 @@ Runs in a single container on one port. No configuration required - start the co
 
 ## Quick Start
 
+### Using Pre-built Docker Image (Recommended)
+
+```bash
+docker run -d --name gpu-hot --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
+```
+
+Open `http://localhost:1312`
+
+### Building from Source
+
 ```bash
 docker-compose up --build
 ```
@@ -91,7 +101,13 @@ This is the middle ground: web interface with charts, zero configuration.
 
 ## Installation
 
-### Docker (Recommended)
+### Pre-built Image (Easiest)
+
+```bash
+docker run -d --name gpu-hot --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
+```
+
+### Build from Source
 
 ```bash
 git clone https://github.com/psalias2006/gpu-hot
