@@ -147,8 +147,8 @@ function createGPUCard(gpuId, gpuInfo) {
                     <div class="metric-header">
                         <span class="metric-label">Memory Usage</span>
                     </div>
-                    <div class="metric-value-large" id="mem-${gpuId}">${Math.round(gpuInfo.memory_used)}MB</div>
-                    <div class="metric-sublabel" id="mem-total-${gpuId}">of ${Math.round(gpuInfo.memory_total)}MB</div>
+                    <div class="metric-value-large" id="mem-${gpuId}">${formatMemory(gpuInfo.memory_used)}</div>
+                    <div class="metric-sublabel" id="mem-total-${gpuId}">of ${formatMemory(gpuInfo.memory_total)}</div>
                     <div class="progress-bar">
                         <div class="progress-fill mem-bar" id="mem-bar-${gpuId}" style="width: ${memPercent}%"></div>
                     </div>
@@ -236,7 +236,7 @@ function createGPUCard(gpuId, gpuInfo) {
                     <div class="metric-header">
                         <span class="metric-label">Free Memory</span>
                     </div>
-                    <div class="metric-value-large" id="mem-free-${gpuId}">${Math.round(gpuInfo.memory_free || 0)}MB</div>
+                    <div class="metric-value-large" id="mem-free-${gpuId}">${formatMemory(gpuInfo.memory_free || 0)}</div>
                     <div class="metric-sublabel">Available VRAM</div>
                 </div>
 
@@ -461,6 +461,14 @@ function createGPUCard(gpuId, gpuInfo) {
     `;
 }
 
+// Helper function to format memory values
+function formatMemory(mb) {
+    if (mb >= 1024) {
+        return `${(mb / 1024).toFixed(1)}GB`;
+    }
+    return `${Math.round(mb)}MB`;
+}
+
 // Update GPU display
 function updateGPUDisplay(gpuId, gpuInfo) {
     // Update metric values
@@ -472,7 +480,7 @@ function updateGPUDisplay(gpuId, gpuInfo) {
 
     if (utilEl) utilEl.textContent = `${gpuInfo.utilization}%`;
     if (tempEl) tempEl.textContent = `${gpuInfo.temperature}°C`;
-    if (memEl) memEl.textContent = `${Math.round(gpuInfo.memory_used)}MB`;
+    if (memEl) memEl.textContent = formatMemory(gpuInfo.memory_used);
     if (powerEl) powerEl.textContent = `${gpuInfo.power_draw.toFixed(1)}W`;
     if (fanEl) fanEl.textContent = `${gpuInfo.fan_speed}%`;
 
@@ -534,6 +542,10 @@ function updateGPUDisplay(gpuId, gpuInfo) {
     if (pstateHeaderEl) pstateHeaderEl.textContent = `${gpuInfo.performance_state || 'N/A'}`;
     if (pcieHeaderEl) pcieHeaderEl.textContent = `${gpuInfo.pcie_gen || 'N/A'}`;
 
+    // Update memory total sublabel
+    const memTotalEl = document.getElementById(`mem-total-${gpuId}`);
+    if (memTotalEl) memTotalEl.textContent = `of ${formatMemory(gpuInfo.memory_total)}`;
+
     // Update new advanced metrics
     const tempMemEl = document.getElementById(`temp-mem-${gpuId}`);
     const memFreeEl = document.getElementById(`mem-free-${gpuId}`);
@@ -544,7 +556,7 @@ function updateGPUDisplay(gpuId, gpuInfo) {
     const throttleEl = document.getElementById(`throttle-${gpuId}`);
 
     if (tempMemEl) tempMemEl.textContent = `${gpuInfo.temperature_memory || 0}°C`;
-    if (memFreeEl) memFreeEl.textContent = `${Math.round(gpuInfo.memory_free || 0)}MB`;
+    if (memFreeEl) memFreeEl.textContent = formatMemory(gpuInfo.memory_free || 0);
     if (decoderEl) decoderEl.textContent = `${gpuInfo.decoder_sessions || 0}`;
     if (clockVideoEl) clockVideoEl.textContent = `${gpuInfo.clock_video || 0}`;
     if (computeModeEl) computeModeEl.textContent = `${gpuInfo.compute_mode || 'N/A'}`;
@@ -601,7 +613,7 @@ function updateProcesses(processes) {
                 <span style="color: var(--text-secondary); font-size: 0.85rem; margin-left: 0.5rem;">PID: ${proc.pid}</span>
             </div>
             <div class="process-memory">
-                <span style="font-size: 1.1rem; font-weight: 700;">${Math.round(proc.memory)}MB</span>
+                <span style="font-size: 1.1rem; font-weight: 700;">${formatMemory(proc.memory)}</span>
                 <span style="color: var(--text-secondary); font-size: 0.8rem; margin-left: 0.25rem;">VRAM</span>
             </div>
         </div>
