@@ -1,6 +1,4 @@
-"""
-WebSocket event handlers for real-time monitoring
-"""
+"""WebSocket handlers for real-time monitoring"""
 
 import eventlet
 import psutil
@@ -24,21 +22,18 @@ def register_handlers(socketio, monitor):
 
 
 def monitor_loop(socketio, monitor):
-    """Background monitoring loop"""
+    """Background loop that collects and emits GPU data"""
     while monitor.running:
         try:
-            # Collect GPU data
             gpu_data = monitor.get_gpu_data()
             processes = monitor.get_processes()
             
-            # System info
             system_info = {
                 'cpu_percent': psutil.cpu_percent(percpu=False),
                 'memory_percent': psutil.virtual_memory().percent,
                 'timestamp': datetime.now().isoformat()
             }
             
-            # Emit to all clients
             socketio.emit('gpu_data', {
                 'gpus': gpu_data,
                 'processes': processes,

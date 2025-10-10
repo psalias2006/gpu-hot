@@ -1,6 +1,4 @@
-"""
-Main metrics collector that orchestrates all metric gathering
-"""
+"""GPU metrics collector using NVML"""
 
 import time
 import pynvml
@@ -9,7 +7,7 @@ from .utils import safe_get, decode_bytes, to_mib, to_watts
 
 
 class MetricsCollector:
-    """Collect GPU metrics using NVML"""
+    """Collect all available GPU metrics via NVML"""
     
     def __init__(self):
         self.previous_samples = {}
@@ -23,34 +21,16 @@ class MetricsCollector:
         }
         current_time = time.time()
         
-        # Basic info
         self._add_basic_info(handle, data)
-        
-        # Performance
         self._add_performance(handle, data)
-        
-        # Memory
         self._add_memory(handle, data, gpu_id, current_time)
-        
-        # Power & Thermal
         self._add_power_thermal(handle, data)
-        
-        # Clocks
         self._add_clocks(handle, data)
-        
-        # Connectivity
         self._add_connectivity(handle, data)
-        
-        # Media engines
         self._add_media_engines(handle, data)
-        
-        # Health & Status
         self._add_health_status(handle, data)
-        
-        # Advanced features
         self._add_advanced(handle, data)
         
-        # Store for rate calculations
         self.previous_samples[gpu_id] = data.copy()
         self.last_sample_time[gpu_id] = current_time
         
@@ -132,68 +112,50 @@ class MetricsCollector:
     
     def _add_power_thermal(self, handle, data):
         """Power and thermal metrics"""
-        # Temperature
-        if temp := safe_get(pynvml.nvmlDeviceGetTemperature, handle, 
-                           pynvml.NVML_TEMPERATURE_GPU):
+        self._add_temperature(handle, data)
+        self._add_power(handle, data)
+        self._add_fan_speeds(handle, data)
+        self._add_throttling(handle, data)
+    
+    def _add_temperature(self, handle, data):
+        if temp := safe_get(pynvml.nvmlDeviceGetTemperature, handle, pynvml.NVML_TEMPERATURE_GPU):
             data['temperature'] = float(temp)
         
-        # Memory temperature (try different sensor IDs as fallback)
-        try:
-            # Try sensor ID 1 for memory temp (not all GPUs support this)
-            temp_mem = safe_get(pynvml.nvmlDeviceGetTemperature, handle, 1)
-            if temp_mem and temp_mem > 0:
+        if temp_mem := safe_get(pynvml.nvmlDeviceGetTemperature, handle, 1):
+            if temp_mem > 0:
                 data['temperature_memory'] = float(temp_mem)
-        except:
-            pass
-        
-        # Power
+    
+    def _add_power(self, handle, data):
         if power := safe_get(pynvml.nvmlDeviceGetPowerUsage, handle):
             data['power_draw'] = to_watts(power)
         
         if limit := safe_get(pynvml.nvmlDeviceGetPowerManagementLimit, handle):
             data['power_limit'] = to_watts(limit)
         
-        # Power constraints (min/max limits)
         if constraints := safe_get(pynvml.nvmlDeviceGetPowerManagementLimitConstraints, handle):
             if isinstance(constraints, tuple) and len(constraints) >= 2:
                 data['power_limit_min'] = to_watts(constraints[0])
                 data['power_limit_max'] = to_watts(constraints[1])
         
-        # Total energy consumption (since driver load)
         if energy := safe_get(pynvml.nvmlDeviceGetTotalEnergyConsumption, handle):
-            data['energy_consumption'] = float(energy) / 1000.0  # Convert mJ to J
-            data['energy_consumption_wh'] = float(energy) / 3600000.0  # Convert mJ to Wh
-        
-        # Voltage violation status
-        try:
-            if hasattr(pynvml, 'nvmlDeviceGetViolationStatus') and hasattr(pynvml, 'NVML_PERF_POLICY_POWER'):
-                if violation := safe_get(pynvml.nvmlDeviceGetViolationStatus, handle, 
-                                        pynvml.NVML_PERF_POLICY_POWER):
-                    if isinstance(violation, tuple) and len(violation) >= 2:
-                        data['power_violation_time'] = float(violation[0])
-        except:
-            pass
-        
-        # Fan speeds (try multiple fans)
+            data['energy_consumption'] = float(energy) / 1000.0
+            data['energy_consumption_wh'] = float(energy) / 3600000.0
+    
+    def _add_fan_speeds(self, handle, data):
         if fan := safe_get(pynvml.nvmlDeviceGetFanSpeed, handle):
             data['fan_speed'] = float(fan)
         
-        # Try to get individual fan speeds for multi-fan GPUs
-        try:
-            if hasattr(pynvml, 'nvmlDeviceGetNumFans') and hasattr(pynvml, 'nvmlDeviceGetFanSpeed_v2'):
-                if num_fans := safe_get(pynvml.nvmlDeviceGetNumFans, handle):
-                    fans = []
-                    for i in range(num_fans):
-                        if speed := safe_get(pynvml.nvmlDeviceGetFanSpeed_v2, handle, i):
-                            fans.append(float(speed))
-                    if fans:
-                        data['fan_speeds'] = fans
-        except:
-            pass
-        
-        # Throttling
+        if hasattr(pynvml, 'nvmlDeviceGetNumFans') and hasattr(pynvml, 'nvmlDeviceGetFanSpeed_v2'):
+            if num_fans := safe_get(pynvml.nvmlDeviceGetNumFans, handle):
+                fans = []
+                for i in range(num_fans):
+                    if speed := safe_get(pynvml.nvmlDeviceGetFanSpeed_v2, handle, i):
+                        fans.append(float(speed))
+                if fans:
+                    data['fan_speeds'] = fans
+    
+    def _add_throttling(self, handle, data):
         if throttle := safe_get(pynvml.nvmlDeviceGetCurrentClocksThrottleReasons, handle):
-            reasons = []
             throttle_map = [
                 (pynvml.nvmlClocksThrottleReasonGpuIdle, 'GPU Idle'),
                 (pynvml.nvmlClocksThrottleReasonApplicationsClocksSetting, 'App Settings'),
@@ -318,83 +280,50 @@ class MetricsCollector:
     
     def _add_advanced(self, handle, data):
         """Advanced features"""
-        # Persistence mode
         if mode := safe_get(pynvml.nvmlDeviceGetPersistenceMode, handle):
             data['persistence_mode'] = 'Enabled' if mode else 'Disabled'
         
-        # Display
         if display := safe_get(pynvml.nvmlDeviceGetDisplayActive, handle):
             data['display_active'] = bool(display)
         
-        # Multi-GPU board
         if multi := safe_get(pynvml.nvmlDeviceGetMultiGpuBoard, handle):
             data['multi_gpu_board'] = bool(multi)
         
-        # GPU reset required (not available in all pynvml versions)
-        try:
-            if hasattr(pynvml, 'nvmlDeviceGetResetRequired'):
-                if reset := safe_get(pynvml.nvmlDeviceGetResetRequired, handle):
-                    data['reset_required'] = bool(reset)
-        except:
-            pass
+        if procs := safe_get(pynvml.nvmlDeviceGetGraphicsRunningProcesses, handle, default=[]):
+            data['graphics_processes_count'] = len(procs)
         
-        # Graphics processes (in addition to compute processes)
-        try:
-            if procs := safe_get(pynvml.nvmlDeviceGetGraphicsRunningProcesses, handle, default=[]):
-                data['graphics_processes_count'] = len(procs)
-        except:
-            pass
-        
-        # MIG mode (Multi-Instance GPU for datacenter GPUs)
-        try:
-            if hasattr(pynvml, 'nvmlDeviceGetMigMode'):
-                if mig := safe_get(pynvml.nvmlDeviceGetMigMode, handle):
-                    if isinstance(mig, tuple) and len(mig) >= 2:
-                        data['mig_mode_current'] = 'Enabled' if mig[0] else 'Disabled'
-                        data['mig_mode_pending'] = 'Enabled' if mig[1] else 'Disabled'
-        except:
-            pass
-        
-        # Inforom versions
-        try:
-            if hasattr(pynvml, 'nvmlDeviceGetInforomVersion'):
-                inforom_objects = ['IMG', 'OEM', 'ECC', 'PWR']
-                inforom_versions = {}
-                for obj in inforom_objects:
-                    if ver := safe_get(pynvml.nvmlDeviceGetInforomVersion, handle, obj):
-                        inforom_versions[obj.lower()] = decode_bytes(ver)
-                if inforom_versions:
-                    data['inforom_version'] = inforom_versions
-        except:
-            pass
-        
-        # NVLink (if available)
-        try:
-            if hasattr(pynvml, 'nvmlDeviceGetNvLinkState'):
-                nvlinks = []
-                nvlink_total_bandwidth = 0
-                for link_id in range(6):  # Check up to 6 links
-                    try:
-                        if state := safe_get(pynvml.nvmlDeviceGetNvLinkState, handle, link_id):
-                            link_data = {'id': link_id, 'active': bool(state)}
-                            
-                            # Get link capabilities
-                            if hasattr(pynvml, 'nvmlDeviceGetNvLinkCapability') and hasattr(pynvml, 'NVML_NVLINK_CAP_P2P_SUPPORTED'):
-                                if caps := safe_get(pynvml.nvmlDeviceGetNvLinkCapability, handle, link_id, 
-                                                  pynvml.NVML_NVLINK_CAP_P2P_SUPPORTED):
-                                    link_data['p2p_supported'] = bool(caps)
-                            
-                            nvlinks.append(link_data)
-                            if state:
-                                nvlink_total_bandwidth += 1
-                        else:
-                            break
-                    except:
-                        break
-                
-                if nvlinks:
-                    data['nvlink_links'] = nvlinks
-                    data['nvlink_active_count'] = nvlink_total_bandwidth
-        except:
-            pass
+        self._add_mig_mode(handle, data)
+        self._add_nvlink(handle, data)
+    
+    def _add_mig_mode(self, handle, data):
+        if hasattr(pynvml, 'nvmlDeviceGetMigMode'):
+            if mig := safe_get(pynvml.nvmlDeviceGetMigMode, handle):
+                if isinstance(mig, tuple) and len(mig) >= 2:
+                    data['mig_mode_current'] = 'Enabled' if mig[0] else 'Disabled'
+                    data['mig_mode_pending'] = 'Enabled' if mig[1] else 'Disabled'
+    
+    def _add_nvlink(self, handle, data):
+        if hasattr(pynvml, 'nvmlDeviceGetNvLinkState'):
+            nvlinks = []
+            active_count = 0
+            
+            for link_id in range(6):
+                if state := safe_get(pynvml.nvmlDeviceGetNvLinkState, handle, link_id):
+                    link_data = {'id': link_id, 'active': bool(state)}
+                    
+                    if hasattr(pynvml, 'nvmlDeviceGetNvLinkCapability'):
+                        if hasattr(pynvml, 'NVML_NVLINK_CAP_P2P_SUPPORTED'):
+                            if caps := safe_get(pynvml.nvmlDeviceGetNvLinkCapability, handle, 
+                                              link_id, pynvml.NVML_NVLINK_CAP_P2P_SUPPORTED):
+                                link_data['p2p_supported'] = bool(caps)
+                    
+                    nvlinks.append(link_data)
+                    if state:
+                        active_count += 1
+                else:
+                    break
+            
+            if nvlinks:
+                data['nvlink_links'] = nvlinks
+                data['nvlink_active_count'] = active_count
 

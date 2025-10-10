@@ -9,5 +9,5 @@ PORT = 1312
 DEBUG = True
 
 # Monitoring Configuration
-UPDATE_INTERVAL = 1  # Update every 2 seconds
+UPDATE_INTERVAL = 1  # Update interval in seconds
 

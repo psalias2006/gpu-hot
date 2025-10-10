@@ -1,12 +1,10 @@
-"""
-Utility functions for metrics collection
-"""
+"""Utility functions for metrics collection"""
 
 import pynvml
 
 
 def safe_get(func, *args, default=None):
-    """Safely call NVML function, return None if unsupported"""
+    """Safely call NVML function, returns default if unsupported"""
     try:
         result = func(*args)
         return result if result is not None else default

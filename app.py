@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-GPU Hot - Real-time NVIDIA GPU Monitoring
-"""
+"""GPU Hot - Real-time NVIDIA GPU Monitoring Dashboard"""
 
 import eventlet
 eventlet.monkey_patch()
@@ -13,13 +11,11 @@ from core.routes import register_routes
 from core.handlers import register_handlers
 
 
-# Initialize
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config.SECRET_KEY
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 monitor = GPUMonitor()
 
-# Register
 register_routes(app, monitor)
 register_handlers(socketio, monitor)
 
