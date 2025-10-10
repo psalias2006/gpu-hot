@@ -778,6 +778,254 @@ const chartConfigs = {
                 }
             }
         }
+    },
+    pcie: {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'RX Throughput',
+                    data: [],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'TX Throughput',
+                    data: [],
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            layout: {
+                padding: { left: 0, right: 10, top: 10, bottom: 0 }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.55)',
+                        font: { size: 12 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
+                },
+                y: {
+                    min: 0,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.12)',
+                        borderDash: [4, 4],
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.65)',
+                        font: { size: 11 },
+                        padding: 8,
+                        callback: function(value) { return value.toFixed(0) + ' KB/s'; }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#3b82f6',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        title: function(context) {
+                            return 'PCIe Throughput';
+                        },
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            const label = context.dataset.label;
+                            return `${label}: ${value.toFixed(0)} KB/s`;
+                        }
+                    }
+                }
+            }
+        }
+    },
+    appclocks: {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Graphics Clock',
+                    data: [],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'Memory Clock',
+                    data: [],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#f59e0b',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'SM Clock',
+                    data: [],
+                    borderColor: '#ec4899',
+                    backgroundColor: 'rgba(236, 72, 153, 0.15)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#ec4899',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'Video Clock',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            layout: {
+                padding: { left: 0, right: 10, top: 10, bottom: 0 }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.55)',
+                        font: { size: 12 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
+                },
+                y: {
+                    min: 0,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.12)',
+                        borderDash: [4, 4],
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.65)',
+                        font: { size: 11 },
+                        padding: 8,
+                        callback: function(value) { return value.toFixed(0) + ' MHz'; }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#667eea',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        title: function(context) {
+                            return 'Application Clocks';
+                        },
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            const label = context.dataset.label;
+                            return `${label}: ${value.toFixed(0)} MHz`;
+                        }
+                    }
+                }
+            }
+        }
     }
 };
 
@@ -794,7 +1042,9 @@ function initGPUData(gpuId) {
         power: { labels: [], data: [] },
         fanSpeed: { labels: [], data: [] },
         clocks: { labels: [], graphicsData: [], smData: [], memoryData: [] },
-        efficiency: { labels: [], data: [] }
+        efficiency: { labels: [], data: [] },
+        pcie: { labels: [], dataRX: [], dataTX: [] },
+        appclocks: { labels: [], dataGr: [], dataMem: [], dataSM: [], dataVideo: [] }
     };
 }
 
@@ -830,7 +1080,7 @@ function updateChartStats(gpuId, chartType, stats, unit) {
 }
 
 // Update chart data
-function updateChart(gpuId, chartType, value, value2, value3) {
+function updateChart(gpuId, chartType, value, value2, value3, value4) {
     if (!chartData[gpuId]) initGPUData(gpuId);
 
     const data = chartData[gpuId][chartType];
@@ -838,11 +1088,19 @@ function updateChart(gpuId, chartType, value, value2, value3) {
 
     data.labels.push(now);
     
-    // Handle multi-value charts (like clocks)
+    // Handle multi-value charts
     if (chartType === 'clocks') {
         data.graphicsData.push(Number(value) || 0);
         data.smData.push(Number(value2) || 0);
         data.memoryData.push(Number(value3) || 0);
+    } else if (chartType === 'pcie') {
+        data.dataRX.push(Number(value) || 0);
+        data.dataTX.push(Number(value2) || 0);
+    } else if (chartType === 'appclocks') {
+        data.dataGr.push(Number(value) || 0);
+        data.dataMem.push(Number(value2) || 0);
+        data.dataSM.push(Number(value3) || 0);
+        data.dataVideo.push(Number(value4) || 0);
     } else {
         data.data.push(Number(value) || 0);
     }
@@ -864,13 +1122,23 @@ function updateChart(gpuId, chartType, value, value2, value3) {
         if (data.graphicsData) data.graphicsData.shift();
         if (data.smData) data.smData.shift();
         if (data.memoryData) data.memoryData.shift();
+        if (data.dataRX) data.dataRX.shift();
+        if (data.dataTX) data.dataTX.shift();
+        if (data.dataGr) data.dataGr.shift();
+        if (data.dataMem) data.dataMem.shift();
+        if (data.dataSM) data.dataSM.shift();
+        if (data.dataVideo) data.dataVideo.shift();
         if (data.thresholdData) data.thresholdData.shift();
         if (data.warningData) data.warningData.shift();
         if (data.dangerData) data.dangerData.shift();
     }
 
     // Calculate and update statistics
-    const statsData = chartType === 'clocks' ? data.graphicsData : data.data;
+    let statsData = data.data;
+    if (chartType === 'clocks') statsData = data.graphicsData;
+    else if (chartType === 'pcie') statsData = data.dataRX;
+    else if (chartType === 'appclocks') statsData = data.dataGr;
+    
     const stats = calculateStats(statsData);
     const unitMap = {
         'utilization': '%',
@@ -881,7 +1149,9 @@ function updateChart(gpuId, chartType, value, value2, value3) {
         'power': 'W',
         'fanSpeed': '%',
         'clocks': ' MHz',
-        'efficiency': ' %/W'
+        'efficiency': ' %/W',
+        'pcie': ' KB/s',
+        'appclocks': ' MHz'
     };
     const unit = unitMap[chartType] || '';
     updateChartStats(gpuId, chartType, stats, unit);
@@ -931,7 +1201,7 @@ function initUtilBackgroundChart(gpuId) {
 
 // Initialize charts for a GPU
 function initGPUCharts(gpuId) {
-    const chartTypes = ['utilization', 'temperature', 'memory', 'power', 'fanSpeed', 'clocks', 'efficiency'];
+    const chartTypes = ['utilization', 'temperature', 'memory', 'power', 'fanSpeed', 'clocks', 'efficiency', 'pcie', 'appclocks'];
     if (!charts[gpuId]) charts[gpuId] = {};
 
     // Initialize background utilization chart
@@ -957,6 +1227,14 @@ function initGPUCharts(gpuId) {
                 config.data.datasets[0].data = chartData[gpuId][type].graphicsData;
                 config.data.datasets[1].data = chartData[gpuId][type].smData;
                 config.data.datasets[2].data = chartData[gpuId][type].memoryData;
+            } else if (type === 'pcie') {
+                config.data.datasets[0].data = chartData[gpuId][type].dataRX;
+                config.data.datasets[1].data = chartData[gpuId][type].dataTX;
+            } else if (type === 'appclocks') {
+                config.data.datasets[0].data = chartData[gpuId][type].dataGr;
+                config.data.datasets[1].data = chartData[gpuId][type].dataMem;
+                config.data.datasets[2].data = chartData[gpuId][type].dataSM;
+                config.data.datasets[3].data = chartData[gpuId][type].dataVideo;
             } else {
                 config.data.datasets[0].data = chartData[gpuId][type].data;
             }
