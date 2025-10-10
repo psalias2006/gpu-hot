@@ -3,4 +3,5 @@ Flask-SocketIO==5.3.6
 psutil==5.9.6
 python-socketio==5.8.0
 eventlet==0.33.3
+nvidia-ml-py==13.580.82
 
