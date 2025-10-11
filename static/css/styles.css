@@ -55,6 +55,11 @@ body::before {
     max-width: 1600px;
     margin: 0 auto;
     padding: 2rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Performance optimizations for smooth scrolling */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
 }
 
 .header {
@@ -145,6 +150,11 @@ body::before {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 32px;
     padding: 0;
+    /* Performance: isolate rendering context & GPU acceleration */
+    contain: layout style paint;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -376,6 +386,8 @@ body::before {
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 2rem;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Performance: isolate rendering */
+    contain: layout style;
     position: relative;
     overflow: hidden;
     backdrop-filter: blur(10px);
@@ -619,6 +631,9 @@ body::before {
     margin-bottom: 1.5rem;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
     border-radius: 16px;
+    /* Performance: optimize canvas rendering */
+    contain: layout style;
+    will-change: contents;
     padding: 20px 20px 55px 70px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 10px 30px rgba(0,0,0,0.25);
@@ -974,6 +989,11 @@ body::before {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 28px;
     padding: 0;
+    /* Performance: isolate rendering & GPU acceleration */
+    contain: layout style paint;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;

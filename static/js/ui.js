@@ -39,22 +39,22 @@ function switchToView(viewName) {
     if (targetContent) {
         targetContent.classList.add('active');
 
-        // Trigger chart resize for visible charts
+        // Trigger chart resize for visible charts using RAF for better timing
         if (viewName.startsWith('gpu-')) {
             const gpuId = viewName.replace('gpu-', '');
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 if (charts[gpuId]) {
                     Object.values(charts[gpuId]).forEach(chart => {
                         if (chart && chart.resize) chart.resize();
                     });
                 }
-            }, 100);
+            });
         }
     }
 }
 
 // Create or update GPU tab
-function ensureGPUTab(gpuId, gpuInfo) {
+function ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM = true) {
     if (!registeredGPUs.has(gpuId)) {
         // Add view option
         const viewSelector = document.getElementById('view-selector');
@@ -85,7 +85,7 @@ function ensureGPUTab(gpuId, gpuInfo) {
         if (!chartData[gpuId]) initGPUData(gpuId);
         initGPUCharts(gpuId);
     } else if (existingCard) {
-        updateGPUDisplay(gpuId, gpuInfo);
+        updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM);
     }
 }
 

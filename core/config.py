@@ -6,8 +6,8 @@ Configuration settings for GPU Hot
 SECRET_KEY = 'gpu_hot_secret'
 HOST = '0.0.0.0'
 PORT = 1312
-DEBUG = True
+DEBUG = False
 
 # Monitoring Configuration
-UPDATE_INTERVAL = 1  # Update interval in seconds
+UPDATE_INTERVAL = 0.5  # Update interval in seconds (sub-second monitoring)
 
