@@ -5,33 +5,33 @@
 // Initialize Socket.IO connection
 const socket = io();
 
-// Scroll detection to pause updates during scroll
+// Performance: Scroll detection to pause DOM updates during scroll
 let isScrolling = false;
 let scrollTimeout;
-const SCROLL_PAUSE_DURATION = 100; // ms to wait after scroll stops
+const SCROLL_PAUSE_DURATION = 100; // ms to wait after scroll stops before resuming updates
 
-// Detect scrolling and pause updates (on window, where actual scroll happens)
+/**
+ * Setup scroll event listeners to detect when user is scrolling
+ * Uses passive listeners for better performance
+ */
 function setupScrollDetection() {
-    // Wait for DOM ready
+    const handleScroll = () => {
+        isScrolling = true;
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+        }, SCROLL_PAUSE_DURATION);
+    };
+    
+    // Wait for DOM to be ready
     setTimeout(() => {
-        window.addEventListener('scroll', function() {
-            isScrolling = true;
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                isScrolling = false;
-            }, SCROLL_PAUSE_DURATION);
-        }, { passive: true });
+        // Listen to window scroll (primary scroll container)
+        window.addEventListener('scroll', handleScroll, { passive: true });
         
-        // Also catch container scroll as fallback
+        // Also listen to .container as fallback
         const container = document.querySelector('.container');
         if (container) {
-            container.addEventListener('scroll', function() {
-                isScrolling = true;
-                clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(() => {
-                    isScrolling = false;
-                }, SCROLL_PAUSE_DURATION);
-            }, { passive: true });
+            container.addEventListener('scroll', handleScroll, { passive: true });
         }
     }, 500);
 }
@@ -39,13 +39,14 @@ function setupScrollDetection() {
 // Initialize scroll detection
 setupScrollDetection();
 
-// Batched rendering system using requestAnimationFrame
-let pendingUpdates = new Map(); // Store pending GPU updates
-let rafScheduled = false;
+// Performance: Batched rendering system using requestAnimationFrame
+// Batches all DOM updates into a single frame to minimize reflows/repaints
+let pendingUpdates = new Map(); // Queue of pending GPU/system updates
+let rafScheduled = false; // Flag to prevent duplicate RAF scheduling
 
-// Throttling for DOM updates (text/cards) - tracks last update time per GPU
-const lastDOMUpdate = {};
-const DOM_UPDATE_INTERVAL = 1000; // Update text/cards every 1 second
+// Performance: Throttle text updates (less critical than charts)
+const lastDOMUpdate = {}; // Track last update time per GPU
+const DOM_UPDATE_INTERVAL = 1000; // Text/card updates every 1s, charts update every frame
 
 // Handle incoming GPU data
 socket.on('gpu_data', function(data) {
@@ -57,43 +58,41 @@ socket.on('gpu_data', function(data) {
     }
 
     const gpuCount = Object.keys(data.gpus).length;
-
     const now = Date.now();
     
-    // Skip ALL DOM updates if user is actively scrolling
+    // Performance: Skip ALL DOM updates during active scrolling
     if (isScrolling) {
-        // Still update ALL chart data arrays (lightweight) but skip rendering
+        // Still update chart data arrays (lightweight) to maintain continuity
+        // This ensures no data gaps when scroll ends
         Object.keys(data.gpus).forEach(gpuId => {
-            const gpuInfo = data.gpus[gpuId];
             if (!chartData[gpuId]) {
                 initGPUData(gpuId);
             }
-            // Add ALL metrics data points silently (no rendering)
-            updateAllChartDataOnly(gpuId, gpuInfo);
+            updateAllChartDataOnly(gpuId, data.gpus[gpuId]);
         });
-        return; // Skip all DOM updates during scroll
+        return; // Exit early - zero DOM work during scroll = smooth 60 FPS
     }
     
-    // Process each GPU - batch all updates into a single animation frame
+    // Process each GPU - queue updates for batched rendering
     Object.keys(data.gpus).forEach(gpuId => {
         const gpuInfo = data.gpus[gpuId];
 
-        // Initialize chart data if needed
+        // Initialize chart data structures if first time seeing this GPU
         if (!chartData[gpuId]) {
             initGPUData(gpuId);
         }
 
-        // Check if we should update DOM (text/cards) for this GPU
+        // Determine if text/card DOM should update (throttled) or just charts (every frame)
         const shouldUpdateDOM = !lastDOMUpdate[gpuId] || (now - lastDOMUpdate[gpuId]) >= DOM_UPDATE_INTERVAL;
 
-        // Store update in pending queue instead of executing immediately
+        // Queue this GPU's update instead of executing immediately
         pendingUpdates.set(gpuId, {
-            gpuInfo: gpuInfo,
-            shouldUpdateDOM: shouldUpdateDOM,
-            now: now
+            gpuInfo,
+            shouldUpdateDOM,
+            now
         });
 
-        // Update or create overview card (initial creation only - no batching needed)
+        // Handle initial card creation (can't be batched since we need the DOM element)
         const existingOverview = overviewContainer.querySelector(`[data-gpu-id="${gpuId}"]`);
         if (!existingOverview) {
             overviewContainer.insertAdjacentHTML('beforeend', createOverviewCard(gpuId, gpuInfo));
@@ -102,33 +101,40 @@ socket.on('gpu_data', function(data) {
         }
     });
     
-    // Schedule batched render if not already scheduled
-    if (!rafScheduled && pendingUpdates.size > 0) {
-        rafScheduled = true;
-        requestAnimationFrame(processBatchedUpdates);
-    }
-
-    // Store system updates for batching too
-    if (!isScrolling && (!lastDOMUpdate.system || (now - lastDOMUpdate.system) >= DOM_UPDATE_INTERVAL)) {
+    // Queue system updates (processes/CPU/RAM) for batching
+    if (!lastDOMUpdate.system || (now - lastDOMUpdate.system) >= DOM_UPDATE_INTERVAL) {
         pendingUpdates.set('_system', {
             processes: data.processes,
             system: data.system,
-            now: now
+            now
         });
+    }
+    
+    // Schedule single batched render (if not already scheduled)
+    // This ensures all updates happen in ONE animation frame
+    if (!rafScheduled && pendingUpdates.size > 0) {
+        rafScheduled = true;
+        requestAnimationFrame(processBatchedUpdates);
     }
     
     // Auto-switch to single GPU view if only 1 GPU detected (first time only)
     autoSwitchSingleGPU(gpuCount, Object.keys(data.gpus));
 });
 
-// Process all batched updates in a single animation frame
+/**
+ * Process all batched updates in a single animation frame
+ * Called by requestAnimationFrame at optimal timing (~60 FPS)
+ * 
+ * Performance benefit: All DOM updates execute in ONE layout/paint cycle
+ * instead of multiple cycles, eliminating layout thrashing
+ */
 function processBatchedUpdates() {
     rafScheduled = false;
     
-    // Batch all DOM updates together to minimize reflows
+    // Execute all queued updates in a single batch
     pendingUpdates.forEach((update, gpuId) => {
         if (gpuId === '_system') {
-            // System updates
+            // System updates (CPU, RAM, processes)
             updateProcesses(update.processes);
             updateSystemInfo(update.system);
             lastDOMUpdate.system = update.now;
@@ -136,13 +142,14 @@ function processBatchedUpdates() {
             // GPU updates
             const { gpuInfo, shouldUpdateDOM, now } = update;
             
-            // Update overview card
+            // Update overview card (always for charts, conditionally for text)
             updateOverviewCard(gpuId, gpuInfo, shouldUpdateDOM);
             if (shouldUpdateDOM) {
                 lastDOMUpdate[gpuId] = now;
             }
             
-            // Only update detail tab if it's currently visible
+            // Performance: Only update detail view if tab is visible
+            // Invisible tabs = zero wasted processing
             const isDetailTabVisible = currentTab === `gpu-${gpuId}`;
             if (isDetailTabVisible || !registeredGPUs.has(gpuId)) {
                 ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM && isDetailTabVisible);
@@ -150,61 +157,70 @@ function processBatchedUpdates() {
         }
     });
     
-    // Clear pending updates
+    // Clear queue for next batch
     pendingUpdates.clear();
 }
 
-// Helper function to update ALL chart data arrays without rendering (during scroll)
+/**
+ * Update chart data arrays without triggering any rendering (used during scroll)
+ * 
+ * This maintains data continuity during scroll by collecting metrics
+ * but skips expensive DOM/canvas updates for smooth 60 FPS scrolling
+ * 
+ * @param {string} gpuId - GPU identifier
+ * @param {object} gpuInfo - GPU metrics data
+ */
 function updateAllChartDataOnly(gpuId, gpuInfo) {
     if (!chartData[gpuId]) return;
     
-    const now = new Date().toLocaleTimeString();
+    const timestamp = new Date().toLocaleTimeString();
     const memory_used = gpuInfo.memory_used || 0;
     const memory_total = gpuInfo.memory_total || 1;
     const memPercent = (memory_used / memory_total) * 100;
+    const power_draw = gpuInfo.power_draw || 0;
     
-    // Update all chart types with current data
-    const updates = {
+    // Prepare all metric updates
+    const metrics = {
         utilization: gpuInfo.utilization || 0,
         temperature: gpuInfo.temperature || 0,
         memory: memPercent,
-        power: gpuInfo.power_draw || 0,
+        power: power_draw,
         fanSpeed: gpuInfo.fan_speed || 0,
-        efficiency: (gpuInfo.power_draw > 0 ? (gpuInfo.utilization || 0) / gpuInfo.power_draw : 0)
+        efficiency: power_draw > 0 ? (gpuInfo.utilization || 0) / power_draw : 0
     };
     
-    // Update each chart's data array
-    Object.keys(updates).forEach(chartType => {
+    // Update single-line charts
+    Object.entries(metrics).forEach(([chartType, value]) => {
         const data = chartData[gpuId][chartType];
-        if (data && data.labels && data.data) {
-            data.labels.push(now);
-            data.data.push(Number(updates[chartType]) || 0);
-            
-            // Add threshold data where needed
-            if (chartType === 'utilization') {
-                if (data.thresholdData) data.thresholdData.push(80);
-            } else if (chartType === 'temperature') {
-                if (data.warningData) data.warningData.push(75);
-                if (data.dangerData) data.dangerData.push(85);
-            } else if (chartType === 'memory') {
-                if (data.thresholdData) data.thresholdData.push(90);
-            }
-            
-            // Keep same limit as normal updates (120 points)
-            if (data.labels.length > 120) {
-                data.labels.shift();
-                data.data.shift();
-                if (data.thresholdData) data.thresholdData.shift();
-                if (data.warningData) data.warningData.shift();
-                if (data.dangerData) data.dangerData.shift();
-            }
+        if (!data?.labels || !data?.data) return;
+        
+        data.labels.push(timestamp);
+        data.data.push(Number(value) || 0);
+        
+        // Add threshold lines for specific charts
+        if (chartType === 'utilization' && data.thresholdData) {
+            data.thresholdData.push(80);
+        } else if (chartType === 'temperature') {
+            if (data.warningData) data.warningData.push(75);
+            if (data.dangerData) data.dangerData.push(85);
+        } else if (chartType === 'memory' && data.thresholdData) {
+            data.thresholdData.push(90);
+        }
+        
+        // Maintain rolling window (120 points = 60s at 0.5s interval)
+        if (data.labels.length > 120) {
+            data.labels.shift();
+            data.data.shift();
+            if (data.thresholdData) data.thresholdData.shift();
+            if (data.warningData) data.warningData.shift();
+            if (data.dangerData) data.dangerData.shift();
         }
     });
     
-    // Update multi-line charts (clocks, pcie, etc.)
+    // Update multi-line charts (clocks)
     const clocksData = chartData[gpuId].clocks;
-    if (clocksData) {
-        clocksData.labels.push(now);
+    if (clocksData?.labels) {
+        clocksData.labels.push(timestamp);
         clocksData.graphicsData.push(gpuInfo.clock_graphics || 0);
         clocksData.smData.push(gpuInfo.clock_sm || 0);
         clocksData.memoryData.push(gpuInfo.clock_memory || 0);
