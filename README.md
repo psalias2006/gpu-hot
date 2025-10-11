@@ -1,9 +1,9 @@
 <div align="center">
 
 # GPU Hot
-### Real-Time NVIDIA GPU Monitoring Dashboard
+### **Sub-Second NVIDIA GPU Monitoring Dashboard**
 
-Web interface for NVIDIA GPU monitoring with real-time charts.
+**Real-time dashboard with sub-second refresh rates.** Monitor your GPUs with unprecedented speed.
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -16,9 +16,9 @@ Web interface for NVIDIA GPU monitoring with real-time charts.
 
 ## Overview
 
-Self-contained dashboard for monitoring NVIDIA GPUs on remote servers. Access utilization and health metrics from a browser without SSH.
+**Single-container dashboard with sub-second GPU metrics.** 
 
-Runs in a single container on one port. No configuration required - start the container and open a browser.
+Monitor NVIDIA GPUs from any browser. No SSH, no configuration – just start and view in **real-time**.
 
 ---
 
@@ -53,10 +53,14 @@ python app.py
 
 ## Features
 
+**Sub-Second Updates:**
+- **Lightning-fast refresh rates**
+- Historical data tracking
+- WebSocket real-time streaming
+
 **Charts:**
 - Utilization, Temperature, Memory, Power
 - Fan Speed, Clock Speeds, Power Efficiency
-- 60 seconds of history (120 data points at 0.5s interval)
 
 **Monitoring:**
 - Multi-GPU detection
