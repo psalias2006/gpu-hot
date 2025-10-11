@@ -2,8 +2,11 @@
 
 import eventlet
 import psutil
+import logging
 from datetime import datetime
 from . import config
+
+logger = logging.getLogger(__name__)
 
 
 def register_handlers(socketio, monitor):
@@ -11,18 +14,27 @@ def register_handlers(socketio, monitor):
     
     @socketio.on('connect')
     def on_connect():
-        print('✓ Client connected')
+        logger.info('Client connected')
         if not monitor.running:
             monitor.running = True
             socketio.start_background_task(monitor_loop, socketio, monitor)
     
     @socketio.on('disconnect')
     def on_disconnect():
-        print('✗ Client disconnected')
+        logger.info('Client disconnected')
 
 
 def monitor_loop(socketio, monitor):
     """Background loop that collects and emits GPU data"""
+    # Determine update interval based on whether any GPU uses nvidia-smi
+    uses_nvidia_smi = any(monitor.use_smi.values()) if hasattr(monitor, 'use_smi') else False
+    update_interval = config.NVIDIA_SMI_INTERVAL if uses_nvidia_smi else config.UPDATE_INTERVAL
+    
+    if uses_nvidia_smi:
+        logger.info(f"Using nvidia-smi polling interval: {update_interval}s")
+    else:
+        logger.info(f"Using NVML polling interval: {update_interval}s")
+    
     while monitor.running:
         try:
             gpu_data = monitor.get_gpu_data()
@@ -41,7 +53,7 @@ def monitor_loop(socketio, monitor):
             }, namespace='/')
             
         except Exception as e:
-            print(f"Error in monitor loop: {e}")
+            logger.error(f"Error in monitor loop: {e}")
         
-        eventlet.sleep(config.UPDATE_INTERVAL)
+        eventlet.sleep(update_interval)
 

@@ -81,8 +81,9 @@ python app.py
 Optional. Edit `core/config.py`:
 
 ```python
-UPDATE_INTERVAL = 0.5    # Sampling interval (seconds)
-PORT = 1312              # Web server port
+UPDATE_INTERVAL = 0.5         # NVML polling interval (fast)
+NVIDIA_SMI_INTERVAL = 2.0     # nvidia-smi polling interval (slower to reduce overhead)
+PORT = 1312                   # Web server port
 DEBUG = False
 ```
 
