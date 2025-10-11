@@ -1254,12 +1254,12 @@ function initOverviewMiniChart(gpuId, currentValue) {
     // Pre-fill with a short history so the chart looks alive immediately
     if (chartData[gpuId].utilization.labels.length === 0) {
         const seedValue = Number(currentValue);
-        const points = 10; // ~ last 20s based on 2s updates
+        const points = 10; // ~ last 5s at 0.5s interval
         for (let i = points - 1; i >= 0; i--) {
-            const t = new Date(Date.now() - i * 2000).toLocaleTimeString();
+            const t = new Date(Date.now() - i * 500).toLocaleTimeString(); // 0.5s intervals
             chartData[gpuId].utilization.labels.push(t);
             chartData[gpuId].utilization.data.push(Number.isFinite(seedValue) ? seedValue : 0);
-            chartData[gpuId].utilization.thresholdData.push(80); // Pre-fill threshold data
+            chartData[gpuId].utilization.thresholdData.push(80);
         }
     }
 

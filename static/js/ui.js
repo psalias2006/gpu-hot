@@ -39,16 +39,16 @@ function switchToView(viewName) {
     if (targetContent) {
         targetContent.classList.add('active');
 
-        // Trigger chart resize for visible charts
+        // Trigger chart resize for visible charts using RAF for better timing
         if (viewName.startsWith('gpu-')) {
             const gpuId = viewName.replace('gpu-', '');
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 if (charts[gpuId]) {
                     Object.values(charts[gpuId]).forEach(chart => {
                         if (chart && chart.resize) chart.resize();
                     });
                 }
-            }, 100);
+            });
         }
     }
 }
