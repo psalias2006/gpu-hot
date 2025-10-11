@@ -75,7 +75,8 @@ def parse_nvidia_smi():
                         'performance_state': parts[27] if len(parts) > 27 and parts[27] not in ['N/A', '[N/A]', ''] else 'N/A',
                         'compute_mode': parts[28] if len(parts) > 28 and parts[28] not in ['N/A', '[N/A]', ''] else 'N/A',
                         'throttle_reasons': 'None',
-                        'timestamp': datetime.now().isoformat()
+                        'timestamp': datetime.now().isoformat(),
+                        '_fallback_mode': True
                     }
         
         if gpu_data:
@@ -151,7 +152,8 @@ def parse_nvidia_smi_fallback():
                         'performance_state': parts[13] if parts[13] not in ['N/A', '[N/A]', ''] else 'N/A',
                         'compute_mode': 'N/A',
                         'throttle_reasons': 'None',
-                        'timestamp': datetime.now().isoformat()
+                        'timestamp': datetime.now().isoformat(),
+                        '_fallback_mode': True
                     }
         
         if gpu_data:

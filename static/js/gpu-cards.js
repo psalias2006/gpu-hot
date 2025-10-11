@@ -107,6 +107,9 @@ function createGPUCard(gpuId, gpuInfo) {
                         <span class="spec-item">
                             Driver ${gpuInfo.driver_version || 'N/A'}
                         </span>
+                        <span class="spec-item spec-mode">
+                            ${gpuInfo._fallback_mode ? 'nvidia-smi' : 'NVML'}
+                        </span>
                     </div>
                 </div>
                 <div class="gpu-status-badge">
