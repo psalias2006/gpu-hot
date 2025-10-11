@@ -278,6 +278,16 @@ body::before {
     color: var(--text-secondary);
 }
 
+.spec-mode {
+    background: rgba(79, 172, 254, 0.15);
+    border: 1px solid rgba(79, 172, 254, 0.3);
+    color: #4facfe;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .gpu-status-badge {
     padding: 0.75rem 1.5rem;
     background: rgba(67, 234, 123, 0.15);

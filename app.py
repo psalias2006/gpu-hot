@@ -4,12 +4,18 @@
 import eventlet
 eventlet.monkey_patch()
 
+import logging
 from flask import Flask
 from flask_socketio import SocketIO
 from core import GPUMonitor, config
 from core.routes import register_routes
 from core.handlers import register_handlers
 
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config.SECRET_KEY
