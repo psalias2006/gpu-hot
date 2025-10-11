@@ -3,7 +3,7 @@
 # GPU Hot
 ### Real-Time NVIDIA GPU Monitoring Dashboard
 
-Single-container web dashboard for NVIDIA GPU monitoring with real-time charts.
+Web interface for NVIDIA GPU monitoring with real-time charts.
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -24,7 +24,7 @@ Runs in a single container on one port. No configuration required - start the co
 
 ## Quick Start
 
-### Using Pre-built Docker Image (Recommended)
+### Docker (recommended)
 
 ```bash
 docker run -d --name gpu-hot --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
@@ -32,82 +32,7 @@ docker run -d --name gpu-hot --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot
 
 Open `http://localhost:1312`
 
-### Building from Source
-
-```bash
-docker-compose up --build
-```
-
-Open `http://localhost:1312`
-
-**Requirements:** Docker, NVIDIA Container Toolkit ([install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html))
-
----
-
-## Why Not Just Use...
-
-**nvidia-smi CLI:**
-- Requires SSH access
-- No historical data or charts
-- Manual refresh only
-- Hard to compare multiple GPUs
-
-**prometheus/grafana:**
-- Complex setup (exporters, databases, dashboard configs)
-- Overkill for simple monitoring needs
-- Higher resource usage
-
-This is the middle ground: web interface with charts, zero configuration.
-
----
-
-## Features
-
-**7 Charts per GPU:**
-- Utilization, Temperature, Memory, Power Draw
-- Fan Speed, Clock Speeds (graphics/SM/memory), Power Efficiency
-
-**Monitoring:**
-- Automatic multi-GPU detection
-- GPU process tracking (PID, memory usage)
-- System CPU/RAM monitoring
-- Threshold indicators (temp: 75°C/85°C, util: 80%, memory: 90%)
-
-**Metrics Collected:**
-
-<details>
-<summary>Core Metrics</summary>
-
-- GPU & Memory Utilization (%)
-- Temperature - GPU core & memory (°C)
-- Memory - used/free/total (MB)
-- Power - draw & limits (W)
-- Fan Speed (%)
-- Clock Speeds - graphics, SM, memory, video (MHz)
-</details>
-
-<details>
-<summary>Advanced Metrics</summary>
-
-- PCIe Generation & Lane Width (current/max)
-- Performance State (P-State)
-- Compute Mode
-- Encoder/Decoder sessions & statistics
-- Driver & VBIOS versions
-- Throttle status
-</details>
-
----
-
-## Installation
-
-### Pre-built Image (Easiest)
-
-```bash
-docker run -d --name gpu-hot --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
-```
-
-### Build from Source
+### From source
 
 ```bash
 git clone https://github.com/psalias2006/gpu-hot
@@ -115,41 +40,69 @@ cd gpu-hot
 docker-compose up --build
 ```
 
-### Local Development
+### Local dev
 
 ```bash
 pip install -r requirements.txt
 python app.py
 ```
 
-### Verify GPU Access
+**Requirements:** Docker + NVIDIA Container Toolkit ([install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html))
 
-```bash
-docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
-```
+---
 
-If this fails, install NVIDIA Container Toolkit first.
+## Features
+
+**Charts:**
+- Utilization, Temperature, Memory, Power
+- Fan Speed, Clock Speeds, Power Efficiency
+- 60 seconds of history (120 data points at 0.5s interval)
+
+**Monitoring:**
+- Multi-GPU detection
+- Process tracking (PID, memory usage)
+- System CPU/RAM
+- WebSocket real-time updates
+
+**Metrics:**
+- GPU & Memory Utilization (%)
+- Temperature (GPU core, memory)
+- Memory (used/free/total)
+- Power draw & limits
+- Fan Speed (%)
+- Clock Speeds (graphics, SM, memory, video)
+- PCIe Gen & width
+- Performance State (P-State)
+- Compute Mode
+- Encoder/Decoder sessions
+- Throttle status
 
 ---
 
 ## Configuration
 
-None required. Optional customization:
+Optional. Edit `core/config.py`:
 
-**Environment Variables:**
+```python
+UPDATE_INTERVAL = 0.5    # Sampling interval (seconds)
+PORT = 1312              # Web server port
+DEBUG = False
+```
+
+Environment variables:
 ```bash
 NVIDIA_VISIBLE_DEVICES=0,1    # Specific GPUs (default: all)
 ```
 
-**Application (`app.py`):**
-```python
-eventlet.sleep(2)              # Update interval (seconds)
-socketio.run(app, port=1312)   # Port
+Frontend tuning in `static/js/socket-handlers.js`:
+```javascript
+DOM_UPDATE_INTERVAL = 1000       // Text updates frequency (ms)
+SCROLL_PAUSE_DURATION = 100      // Scroll optimization (ms)
 ```
 
-**Charts (`static/js/charts.js`):**
+Chart history in `static/js/charts.js`:
 ```javascript
-if (data.labels.length > 30)   // History length (data points)
+if (data.labels.length > 120)    // Data points to keep
 ```
 
 ---
@@ -158,14 +111,14 @@ if (data.labels.length > 30)   // History length (data points)
 
 ### HTTP
 ```bash
-GET /                    # Dashboard UI
-GET /api/gpu-data        # JSON metrics
+GET /              # Dashboard
+GET /api/gpu-data  # JSON metrics
 ```
 
 ### WebSocket
 ```javascript
 socket.on('gpu_data', (data) => {
-  // Real-time updates every 2s
+  // Updates every 0.5s
   // data.gpus, data.processes, data.system
 });
 ```
@@ -174,33 +127,30 @@ socket.on('gpu_data', (data) => {
 
 ## Extending
 
-### Add New Metric
+Add new metrics:
 
-**1. Backend (`app.py`):**
+**Backend (`core/metrics/collector.py`):**
 ```python
-def parse_nvidia_smi(self):
-    result = subprocess.run([
-        'nvidia-smi',
-        '--query-gpu=index,name,your.new.metric',
-        '--format=csv,noheader,nounits'
-    ], ...)
+# Add NVML query
+value = pynvml.nvmlDeviceGetYourMetric(handle)
+gpu_data['your_metric'] = value
 ```
 
-**2. Frontend (`static/js/gpu-cards.js`):**
+**Frontend (`static/js/gpu-cards.js`):**
 ```javascript
-// Add to createGPUCard() template
-<div class="metric-value" id="new-metric-${gpuId}">
-    ${gpuInfo.new_metric}
+// Add to card template
+<div class="metric-value" id="your-metric-${gpuId}">
+    ${gpuInfo.your_metric}
 </div>
+
+// Add to update function
+if (yourMetricEl) yourMetricEl.textContent = gpuInfo.your_metric;
 ```
 
-**3. Chart (optional `static/js/charts.js`):**
+**Chart (optional):**
 ```javascript
-chartConfigs.newMetric = {
-    type: 'line',
-    data: { ... },
-    options: { ... }
-};
+// static/js/charts.js
+chartConfigs.yourMetric = { type: 'line', ... };
 ```
 
 ---
@@ -209,17 +159,35 @@ chartConfigs.newMetric = {
 
 ```
 gpu-hot/
-├── app.py                      # Flask + WebSocket server
-├── static/js/
-│   ├── charts.js               # Chart configuration
-│   ├── gpu-cards.js            # UI rendering
-│   ├── socket-handlers.js      # WebSocket events
-│   ├── ui.js                   # View switching
-│   └── app.js                  # Bootstrap
-├── templates/index.html        # Dashboard
-├── Dockerfile                  # nvidia/cuda:12.1-devel-ubuntu22.04
+├── app.py                    # Flask + WebSocket server
+├── core/
+│   ├── config.py             # Configuration
+│   ├── monitor.py            # NVML GPU monitoring
+│   ├── handlers.py           # WebSocket handlers
+│   ├── routes.py             # HTTP routes
+│   └── metrics/
+│       ├── collector.py      # Metrics collection
+│       └── utils.py          # Metric utilities
+├── static/
+│   ├── js/
+│   │   ├── charts.js         # Chart configs
+│   │   ├── gpu-cards.js      # UI components
+│   │   ├── socket-handlers.js # WebSocket + rendering
+│   │   ├── ui.js             # View management
+│   │   └── app.js            # Init
+│   └── css/styles.css
+├── templates/index.html
+├── Dockerfile
 └── docker-compose.yml
 ```
+
+---
+
+## Performance
+
+Frontend uses `requestAnimationFrame` batching to minimize reflows. Scroll detection pauses DOM updates during scrolling.
+
+For heavy workloads or many GPUs, increase update intervals in `core/config.py`.
 
 ---
 
@@ -233,27 +201,26 @@ nvidia-smi
 # Test Docker GPU access
 docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
 
-# Restart Docker daemon
+# Restart Docker
 sudo systemctl restart docker
 ```
 
-**Debug logging:**
+**Performance issues:**
+- Increase `UPDATE_INTERVAL` in `core/config.py`
+- Reduce chart history in `static/js/charts.js`
+- Check browser console for errors
+
+**Debug mode:**
 ```python
-# app.py
-socketio.run(app, debug=True)
+# core/config.py
+DEBUG = True
 ```
 
 ---
 
 ## Contributing
 
-Pull requests welcome. For major changes, open an issue first.
-
-```bash
-git checkout -b feature/NewFeature
-git commit -m 'Add NewFeature'
-git push origin feature/NewFeature
-```
+PRs welcome. For major changes, open an issue first.
 
 ## License
 
