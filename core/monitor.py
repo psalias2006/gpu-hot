@@ -2,7 +2,12 @@
 
 import pynvml
 import psutil
+import logging
 from .metrics import MetricsCollector
+from .nvidia_smi_fallback import parse_nvidia_smi
+from .config import NVIDIA_SMI
+
+logger = logging.getLogger(__name__)
 
 
 class GPUMonitor:
@@ -12,6 +17,7 @@ class GPUMonitor:
         self.running = False
         self.gpu_data = {}
         self.collector = MetricsCollector()
+        self.use_smi = {}  # Track which GPUs use nvidia-smi (decided at boot)
         
         try:
             pynvml.nvmlInit()
@@ -19,33 +25,106 @@ class GPUMonitor:
             version = pynvml.nvmlSystemGetDriverVersion()
             if isinstance(version, bytes):
                 version = version.decode('utf-8')
-            print(f"✓ NVML initialized - Driver: {version}")
+            logger.info(f"NVML initialized - Driver: {version}")
+            
+            # Detect which GPUs need nvidia-smi (once at boot)
+            self._detect_smi_gpus()
+            
         except Exception as e:
-            print(f"✗ Failed to initialize NVML: {e}")
+            logger.error(f"Failed to initialize NVML: {e}")
             self.initialized = False
+    
+    def _detect_smi_gpus(self):
+        """Detect which GPUs need nvidia-smi fallback (called once at boot)"""
+        try:
+            device_count = pynvml.nvmlDeviceGetCount()
+            logger.info(f"Detected {device_count} GPU(s)")
+            
+            if NVIDIA_SMI:
+                logger.warning("NVIDIA_SMI=True - Forcing nvidia-smi for all GPUs")
+                for i in range(device_count):
+                    self.use_smi[str(i)] = True
+                return
+            
+            # Auto-detect per GPU
+            for i in range(device_count):
+                gpu_id = str(i)
+                try:
+                    handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+                    data = self.collector.collect_all(handle, gpu_id)
+                    gpu_name = data.get('name', 'Unknown')
+                    
+                    if 'utilization' not in data or data.get('utilization') is None:
+                        self.use_smi[gpu_id] = True
+                        logger.warning(f"GPU {i} ({gpu_name}): Utilization metric not available via NVML")
+                        logger.warning(f"GPU {i} ({gpu_name}): Switching to nvidia-smi mode")
+                    else:
+                        self.use_smi[gpu_id] = False
+                        logger.info(f"GPU {i} ({gpu_name}): Using NVML (utilization: {data.get('utilization')}%)")
+                        
+                except Exception as e:
+                    self.use_smi[gpu_id] = True
+                    logger.error(f"GPU {i}: NVML detection failed - {e}")
+                    logger.warning(f"GPU {i}: Falling back to nvidia-smi")
+            
+            # Summary
+            nvml_count = sum(1 for use_smi in self.use_smi.values() if not use_smi)
+            smi_count = sum(1 for use_smi in self.use_smi.values() if use_smi)
+            if smi_count > 0:
+                logger.info(f"Boot detection complete: {nvml_count} GPU(s) using NVML, {smi_count} GPU(s) using nvidia-smi")
+            else:
+                logger.info(f"Boot detection complete: All {nvml_count} GPU(s) using NVML")
+                    
+        except Exception as e:
+            logger.error(f"Failed to detect GPUs: {e}")
     
     def get_gpu_data(self):
         """Collect metrics from all detected GPUs"""
         if not self.initialized:
+            logger.error("Cannot get GPU data - NVML not initialized")
             return {}
         
         try:
             device_count = pynvml.nvmlDeviceGetCount()
             gpu_data = {}
             
-            for i in range(device_count):
+            # Get nvidia-smi data once if any GPU needs it
+            smi_data = None
+            if any(self.use_smi.values()):
                 try:
-                    handle = pynvml.nvmlDeviceGetHandleByIndex(i)
-                    gpu_data[str(i)] = self.collector.collect_all(handle, str(i))
+                    smi_data = parse_nvidia_smi()
+                except Exception as e:
+                    logger.error(f"nvidia-smi failed: {e}")
+            
+            for i in range(device_count):
+                gpu_id = str(i)
+                try:
+                    if self.use_smi.get(gpu_id, False):
+                        # Use nvidia-smi
+                        if smi_data and gpu_id in smi_data:
+                            gpu_data[gpu_id] = smi_data[gpu_id]
+                        else:
+                            logger.warning(f"GPU {i}: No data from nvidia-smi")
+                    else:
+                        # Use NVML
+                        handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+                        gpu_data[gpu_id] = self.collector.collect_all(handle, gpu_id)
+                        
                 except pynvml.NVMLError as e:
-                    print(f"Error reading GPU {i}: {e}")
+                    logger.error(f"GPU {i}: NVML error - {e}")
                     continue
+                except Exception as e:
+                    logger.error(f"GPU {i}: Unexpected error - {e}")
+                    continue
+            
+            if not gpu_data:
+                logger.error("No GPU data collected from any source")
             
             self.gpu_data = gpu_data
             return gpu_data
             
         except Exception as e:
-            print(f"Error getting GPU data: {e}")
+            logger.error(f"Failed to get GPU data: {e}")
             return {}
     
     def get_processes(self):
@@ -93,7 +172,7 @@ class GPUMonitor:
             return all_processes
             
         except Exception as e:
-            print(f"Error getting processes: {e}")
+            logger.error(f"Error getting processes: {e}")
             return []
     
     def _get_process_name(self, pid):
@@ -124,7 +203,7 @@ class GPUMonitor:
             try:
                 pynvml.nvmlShutdown()
                 self.initialized = False
-                print("✓ NVML shutdown")
+                logger.info("NVML shutdown")
             except Exception as e:
-                print(f"Error shutting down NVML: {e}")
+                logger.error(f"Error shutting down NVML: {e}")
 

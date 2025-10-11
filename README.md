@@ -91,6 +91,12 @@ Environment variables:
 NVIDIA_VISIBLE_DEVICES=0,1    # Specific GPUs (default: all)
 ```
 
+**nvidia-smi Fallback:**
+- Automatically detects GPUs that don't support NVML utilization metrics
+- Falls back to nvidia-smi for those GPUs
+- Compatible with older GPUs (Quadro P1000, Tesla, etc.)
+- Set `NVIDIA_SMI = True` to force nvidia-smi for all GPUs (testing)
+
 Frontend tuning in `static/js/socket-handlers.js`:
 ```javascript
 DOM_UPDATE_INTERVAL = 1000       // Text updates frequency (ms)
