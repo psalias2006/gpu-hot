@@ -1115,8 +1115,8 @@ function updateChart(gpuId, chartType, value, value2, value3, value4) {
         data.thresholdData.push(90); // High usage at 90%
     }
 
-    // Keep only last 30 data points for smoother performance
-    if (data.labels.length > 30) {
+    // Keep only last 120 data points (60 seconds at 0.5s interval)
+    if (data.labels.length > 120) {
         data.labels.shift();
         if (data.data) data.data.shift();
         if (data.graphicsData) data.graphicsData.shift();
@@ -1408,8 +1408,8 @@ function updateSystemInfo(systemInfo) {
     systemData.memory.labels.push(now);
     systemData.memory.data.push(systemInfo.memory_percent);
 
-    // Keep only last 20 points
-    if (systemData.cpu.labels.length > 20) {
+    // Keep only last 120 points (60 seconds at 0.5s interval)
+    if (systemData.cpu.labels.length > 120) {
         systemData.cpu.labels.shift();
         systemData.cpu.data.shift();
         systemData.memory.labels.shift();
