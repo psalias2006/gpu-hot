@@ -50,19 +50,9 @@ class MetricsCollector:
         if vbios := safe_get(pynvml.nvmlDeviceGetVbiosVersion, handle):
             data['vbios_version'] = decode_bytes(vbios)
         
-        # Brand type
-        if brand := safe_get(pynvml.nvmlDeviceGetBrand, handle):
-            brand_map = {
-                1: 'GeForce', 2: 'Quadro', 3: 'Tesla',
-                4: 'NVS', 5: 'GRID', 6: 'Titan'
-            }
-            data['brand'] = brand_map.get(brand, f'Unknown ({brand})')
-        
-        # Architecture
-        if arch := safe_get(pynvml.nvmlDeviceGetArchitecture, handle):
-            arch_map = {0: 'Kepler', 1: 'Maxwell', 2: 'Pascal', 3: 'Volta',
-                       4: 'Turing', 5: 'Ampere', 6: 'Ada', 7: 'Hopper'}
-            data['architecture'] = arch_map.get(arch, f'Unknown ({arch})')
+        # Brand and architecture with smart detection
+        self._detect_brand(handle, data)
+        self._detect_architecture(handle, data)
         
         # CUDA capability
         if cap := safe_get(pynvml.nvmlDeviceGetCudaComputeCapability, handle):
@@ -71,6 +61,53 @@ class MetricsCollector:
         # Serial number
         if serial := safe_get(pynvml.nvmlDeviceGetSerial, handle):
             data['serial'] = decode_bytes(serial)
+    
+    def _detect_brand(self, handle, data):
+        """Detect GPU brand from NVML"""
+        BRAND_MAP = {
+            1: 'GeForce', 2: 'Quadro', 3: 'Tesla',
+            4: 'NVS', 5: 'GRID', 6: 'Titan',
+            7: 'GeForce GTX', 8: 'GeForce RTX', 9: 'Titan RTX'
+        }
+        
+        if brand := safe_get(pynvml.nvmlDeviceGetBrand, handle):
+            data['brand'] = BRAND_MAP.get(brand, f'Brand {brand}')
+    
+    def _detect_architecture(self, handle, data):
+        """Detect GPU architecture with fallback to name-based detection"""
+        ARCH_MAP = {
+            0: 'Kepler', 1: 'Maxwell', 2: 'Pascal', 3: 'Volta',
+            4: 'Turing', 5: 'Ampere', 6: 'Ada Lovelace', 7: 'Hopper',
+            8: 'Ada Lovelace', 9: 'Ada Lovelace'  # Driver variations
+        }
+        
+        # Try NVML first
+        if arch := safe_get(pynvml.nvmlDeviceGetArchitecture, handle):
+            data['architecture'] = ARCH_MAP.get(arch, self._detect_arch_from_name(data.get('name', '')))
+        # Fallback to name-based detection
+        elif 'name' in data:
+            data['architecture'] = self._detect_arch_from_name(data['name'])
+    
+    def _detect_arch_from_name(self, gpu_name):
+        """Detect architecture from GPU model name"""
+        name = gpu_name.upper()
+        
+        arch_patterns = [
+            (['RTX 40', 'RTX 4', 'L40', 'L4'], 'Ada Lovelace'),
+            (['H100', 'H200'], 'Hopper'),
+            (['RTX 30', 'RTX 3', 'A100', 'A40', 'A30', 'A10', 'A6000', 'A5000', 'A4000', 'A2000'], 'Ampere'),
+            (['RTX 20', 'RTX 2', 'GTX 16', 'T1000', 'T2000', 'T600'], 'Turing'),
+            (['GTX 10', 'TITAN X', 'P100', 'P40', 'P6'], 'Pascal'),
+            (['GTX 9', 'TITAN M', 'M60', 'M40'], 'Maxwell'),
+            (['GTX 7', 'GTX 6', 'K80', 'K40'], 'Kepler'),
+            (['V100'], 'Volta'),
+        ]
+        
+        for patterns, arch in arch_patterns:
+            if any(pattern in name for pattern in patterns):
+                return arch
+        
+        return 'Unknown'
     
     def _add_performance(self, handle, data):
         """Performance metrics"""

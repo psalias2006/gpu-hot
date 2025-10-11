@@ -125,8 +125,8 @@ function createGPUCard(gpuId, gpuInfo) {
                         <svg class="circular-progress" viewBox="0 0 120 120">
                             <defs>
                                 <linearGradient id="util-gradient-${gpuId}" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                                    <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                    <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
                                 </linearGradient>
                             </defs>
                             <circle class="progress-ring-bg" cx="60" cy="60" r="50"/>
