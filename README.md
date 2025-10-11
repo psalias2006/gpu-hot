@@ -1,9 +1,9 @@
 <div align="center">
 
 # GPU Hot
-### **Sub-Second NVIDIA GPU Monitoring Dashboard**
+### **Real-time NVIDIA GPU Monitoring Dashboard**
 
-**Real-time dashboard with sub-second refresh rates.** Monitor your NVIDIA GPUs from any browser.
+Monitor NVIDIA GPUs from any browser. No SSH, no configuration – just start and view in real-time.
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -14,13 +14,6 @@
 
 </div>
 
-## Overview
-
-**Single-container dashboard with sub-second GPU metrics.** 
-
-Monitor NVIDIA GPUs from any browser. No SSH, no configuration – just start and view in **real-time**.
-
----
 
 ## Quick Start
 
