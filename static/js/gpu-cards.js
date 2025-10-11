@@ -51,23 +51,26 @@ function createOverviewCard(gpuId, gpuInfo) {
     `;
 }
 
-// Update overview card
-function updateOverviewCard(gpuId, gpuInfo) {
+// Update overview card (throttled for DOM updates, always updates charts)
+function updateOverviewCard(gpuId, gpuInfo, shouldUpdateDOM = true) {
     const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
     const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
     const memPercent = (memory_used / memory_total) * 100;
 
-    const utilEl = document.getElementById(`overview-util-${gpuId}`);
-    const tempEl = document.getElementById(`overview-temp-${gpuId}`);
-    const memEl = document.getElementById(`overview-mem-${gpuId}`);
-    const powerEl = document.getElementById(`overview-power-${gpuId}`);
+    // Only update DOM text when throttle allows
+    if (shouldUpdateDOM) {
+        const utilEl = document.getElementById(`overview-util-${gpuId}`);
+        const tempEl = document.getElementById(`overview-temp-${gpuId}`);
+        const memEl = document.getElementById(`overview-mem-${gpuId}`);
+        const powerEl = document.getElementById(`overview-power-${gpuId}`);
 
-    if (utilEl) utilEl.textContent = `${getMetricValue(gpuInfo, 'utilization', 0)}%`;
-    if (tempEl) tempEl.textContent = `${getMetricValue(gpuInfo, 'temperature', 0)}°C`;
-    if (memEl) memEl.textContent = `${Math.round(memPercent)}%`;
-    if (powerEl) powerEl.textContent = `${getMetricValue(gpuInfo, 'power_draw', 0).toFixed(0)}W`;
+        if (utilEl) utilEl.textContent = `${getMetricValue(gpuInfo, 'utilization', 0)}%`;
+        if (tempEl) tempEl.textContent = `${getMetricValue(gpuInfo, 'temperature', 0)}°C`;
+        if (memEl) memEl.textContent = `${Math.round(memPercent)}%`;
+        if (powerEl) powerEl.textContent = `${getMetricValue(gpuInfo, 'power_draw', 0).toFixed(0)}W`;
+    }
 
-    // Update chart data for the mini chart
+    // ALWAYS update chart data for the mini chart (smooth animations)
     updateChart(gpuId, 'utilization', Number(getMetricValue(gpuInfo, 'utilization', 0)));
 
     // Update mini chart
@@ -674,14 +677,8 @@ function createMetricCard(label, valueId, value, sublabel, gpuId, options = {}) 
 }
 
 // Update GPU display
-function updateGPUDisplay(gpuId, gpuInfo) {
-    // Update metric values
-    const utilEl = document.getElementById(`util-${gpuId}`);
-    const tempEl = document.getElementById(`temp-${gpuId}`);
-    const memEl = document.getElementById(`mem-${gpuId}`);
-    const powerEl = document.getElementById(`power-${gpuId}`);
-    const fanEl = document.getElementById(`fan-${gpuId}`);
-
+function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
+    // Extract metric values
     const utilization = getMetricValue(gpuInfo, 'utilization', 0);
     const temperature = getMetricValue(gpuInfo, 'temperature', 0);
     const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
@@ -690,182 +687,195 @@ function updateGPUDisplay(gpuId, gpuInfo) {
     const power_limit = getMetricValue(gpuInfo, 'power_limit', 1);
     const fan_speed = getMetricValue(gpuInfo, 'fan_speed', 0);
 
-    if (utilEl) utilEl.textContent = `${utilization}%`;
-    if (tempEl) tempEl.textContent = `${temperature}°C`;
-    if (memEl) memEl.textContent = formatMemory(memory_used);
-    if (powerEl) powerEl.textContent = `${power_draw.toFixed(1)}W`;
-    if (fanEl) fanEl.textContent = `${fan_speed}%`;
+    // Only update DOM text elements if throttle allows (reduce DOM thrashing during scroll)
+    if (shouldUpdateDOM) {
+        // Update metric values
+        const utilEl = document.getElementById(`util-${gpuId}`);
+        const tempEl = document.getElementById(`temp-${gpuId}`);
+        const memEl = document.getElementById(`mem-${gpuId}`);
+        const powerEl = document.getElementById(`power-${gpuId}`);
+        const fanEl = document.getElementById(`fan-${gpuId}`);
 
-    // Update temperature status
-    const tempStatus = document.getElementById(`temp-status-${gpuId}`);
-    if (tempStatus) {
-        if (temperature < 60) {
-            tempStatus.textContent = 'Cool';
-        } else if (temperature < 75) {
-            tempStatus.textContent = 'Normal';
-        } else {
-            tempStatus.textContent = 'Warm';
+        if (utilEl) utilEl.textContent = `${utilization}%`;
+        if (tempEl) tempEl.textContent = `${temperature}°C`;
+        if (memEl) memEl.textContent = formatMemory(memory_used);
+        if (powerEl) powerEl.textContent = `${power_draw.toFixed(1)}W`;
+        if (fanEl) fanEl.textContent = `${fan_speed}%`;
+
+        // Update temperature status
+        const tempStatus = document.getElementById(`temp-status-${gpuId}`);
+        if (tempStatus) {
+            if (temperature < 60) {
+                tempStatus.textContent = 'Cool';
+            } else if (temperature < 75) {
+                tempStatus.textContent = 'Normal';
+            } else {
+                tempStatus.textContent = 'Warm';
+            }
         }
-    }
 
-    // Update circular gauge
-    const utilRing = document.getElementById(`util-ring-${gpuId}`);
-    const utilText = document.getElementById(`util-text-${gpuId}`);
-    if (utilRing) {
-        const offset = 314 - (314 * utilization / 100);
-        utilRing.style.strokeDashoffset = offset;
-    }
-    if (utilText) utilText.textContent = `${utilization}%`;
+        // Update circular gauge
+        const utilRing = document.getElementById(`util-ring-${gpuId}`);
+        const utilText = document.getElementById(`util-text-${gpuId}`);
+        if (utilRing) {
+            const offset = 314 - (314 * utilization / 100);
+            utilRing.style.strokeDashoffset = offset;
+        }
+        if (utilText) utilText.textContent = `${utilization}%`;
 
-    // Update progress bars
-    const utilBar = document.getElementById(`util-bar-${gpuId}`);
-    const memBar = document.getElementById(`mem-bar-${gpuId}`);
-    const powerBar = document.getElementById(`power-bar-${gpuId}`);
+        // Update progress bars
+        const utilBar = document.getElementById(`util-bar-${gpuId}`);
+        const memBar = document.getElementById(`mem-bar-${gpuId}`);
+        const powerBar = document.getElementById(`power-bar-${gpuId}`);
 
+        const memPercent = (memory_used / memory_total) * 100;
+        const powerPercent = (power_draw / power_limit) * 100;
+
+        if (utilBar) utilBar.style.width = `${utilization}%`;
+        if (memBar) memBar.style.width = `${memPercent}%`;
+        if (powerBar) powerBar.style.width = `${powerPercent}%`;
+
+        // Update new metrics (only if they exist)
+        const clockGrEl = document.getElementById(`clock-gr-${gpuId}`);
+        const clockMemEl = document.getElementById(`clock-mem-${gpuId}`);
+        const clockSmEl = document.getElementById(`clock-sm-${gpuId}`);
+        const memUtilEl = document.getElementById(`mem-util-${gpuId}`);
+        const memUtilBar = document.getElementById(`mem-util-bar-${gpuId}`);
+        const pcieEl = document.getElementById(`pcie-${gpuId}`);
+        const pstateEl = document.getElementById(`pstate-${gpuId}`);
+        const encoderEl = document.getElementById(`encoder-${gpuId}`);
+
+        if (clockGrEl) clockGrEl.textContent = `${getMetricValue(gpuInfo, 'clock_graphics', 0)}`;
+        if (clockMemEl) clockMemEl.textContent = `${getMetricValue(gpuInfo, 'clock_memory', 0)}`;
+        if (clockSmEl) clockSmEl.textContent = `${getMetricValue(gpuInfo, 'clock_sm', 0)}`;
+        if (memUtilEl) memUtilEl.textContent = `${getMetricValue(gpuInfo, 'memory_utilization', 0)}%`;
+        if (memUtilBar) memUtilBar.style.width = `${getMetricValue(gpuInfo, 'memory_utilization', 0)}%`;
+        if (pcieEl) pcieEl.textContent = `Gen ${getMetricValue(gpuInfo, 'pcie_gen', 'N/A')}`;
+        if (pstateEl) pstateEl.textContent = `${getMetricValue(gpuInfo, 'performance_state', 'N/A')}`;
+        if (encoderEl) encoderEl.textContent = `${getMetricValue(gpuInfo, 'encoder_sessions', 0)}`;
+
+        // Update header badges
+        const pstateHeaderEl = document.getElementById(`pstate-header-${gpuId}`);
+        const pcieHeaderEl = document.getElementById(`pcie-header-${gpuId}`);
+        if (pstateHeaderEl) pstateHeaderEl.textContent = `${getMetricValue(gpuInfo, 'performance_state', 'N/A')}`;
+        if (pcieHeaderEl) pcieHeaderEl.textContent = `${getMetricValue(gpuInfo, 'pcie_gen', 'N/A')}`;
+
+        // Update memory total sublabel
+        const memTotalEl = document.getElementById(`mem-total-${gpuId}`);
+        if (memTotalEl) memTotalEl.textContent = `of ${formatMemory(memory_total)}`;
+
+        // Update new advanced metrics (only if present)
+        const tempMemEl = document.getElementById(`temp-mem-${gpuId}`);
+        const memFreeEl = document.getElementById(`mem-free-${gpuId}`);
+        const decoderEl = document.getElementById(`decoder-${gpuId}`);
+        const clockVideoEl = document.getElementById(`clock-video-${gpuId}`);
+        const computeModeEl = document.getElementById(`compute-mode-${gpuId}`);
+        const pcieMaxEl = document.getElementById(`pcie-max-${gpuId}`);
+        const throttleEl = document.getElementById(`throttle-${gpuId}`);
+
+        if (tempMemEl) {
+            const tempMem = getMetricValue(gpuInfo, 'temperature_memory', null);
+            if (tempMem !== null) {
+                tempMemEl.textContent = `${tempMem}°C`;
+            } else {
+                tempMemEl.textContent = 'N/A';
+            }
+        }
+        if (memFreeEl) memFreeEl.textContent = formatMemory(getMetricValue(gpuInfo, 'memory_free', 0));
+        if (decoderEl) {
+            const decoderSessions = getMetricValue(gpuInfo, 'decoder_sessions', null);
+            if (decoderSessions !== null) {
+                decoderEl.textContent = `${decoderSessions}`;
+            } else {
+                decoderEl.textContent = 'N/A';
+            }
+        }
+        if (clockVideoEl) {
+            const clockVideo = getMetricValue(gpuInfo, 'clock_video', null);
+            if (clockVideo !== null) {
+                clockVideoEl.textContent = `${clockVideo}`;
+            } else {
+                clockVideoEl.textContent = 'N/A';
+            }
+        }
+        if (computeModeEl) computeModeEl.textContent = `${getMetricValue(gpuInfo, 'compute_mode', 'N/A')}`;
+        if (pcieMaxEl) pcieMaxEl.textContent = `Gen ${getMetricValue(gpuInfo, 'pcie_gen_max', 'N/A')}`;
+        if (throttleEl) {
+            const throttle_reasons = getMetricValue(gpuInfo, 'throttle_reasons', 'None');
+            const isThrottling = throttle_reasons && throttle_reasons !== 'None' && throttle_reasons !== 'N/A';
+            throttleEl.textContent = isThrottling ? throttle_reasons : 'None';
+        }
+
+        // Update all new metrics (only if elements exist - dynamic dashboard)
+        if (hasMetric(gpuInfo, 'energy_consumption_wh')) {
+            const energyEl = document.getElementById(`energy-${gpuId}`);
+            if (energyEl) energyEl.textContent = gpuInfo.energy_consumption_wh.toFixed(2);
+        }
+        
+        if (hasMetric(gpuInfo, 'brand')) {
+            const brandEl = document.getElementById(`brand-${gpuId}`);
+            if (brandEl) brandEl.textContent = gpuInfo.brand;
+        }
+        
+        if (hasMetric(gpuInfo, 'power_limit_min') && hasMetric(gpuInfo, 'power_limit_max')) {
+            const powerRangeEl = document.getElementById(`power-range-${gpuId}`);
+            if (powerRangeEl) powerRangeEl.textContent = `${gpuInfo.power_limit_min.toFixed(0)}W - ${gpuInfo.power_limit_max.toFixed(0)}W`;
+        }
+        
+        if (hasMetric(gpuInfo, 'clock_graphics_app')) {
+            const clockGrAppEl = document.getElementById(`clock-gr-app-${gpuId}`);
+            if (clockGrAppEl) clockGrAppEl.textContent = gpuInfo.clock_graphics_app;
+        }
+        
+        if (hasMetric(gpuInfo, 'clock_memory_app')) {
+            const clockMemAppEl = document.getElementById(`clock-mem-app-${gpuId}`);
+            if (clockMemAppEl) clockMemAppEl.textContent = gpuInfo.clock_memory_app;
+        }
+        
+        if (hasMetric(gpuInfo, 'pcie_rx_throughput') || hasMetric(gpuInfo, 'pcie_tx_throughput')) {
+            const pcieThroughputEl = document.getElementById(`pcie-throughput-${gpuId}`);
+            if (pcieThroughputEl) {
+                const rx = (gpuInfo.pcie_rx_throughput || 0).toFixed(0);
+                const tx = (gpuInfo.pcie_tx_throughput || 0).toFixed(0);
+                pcieThroughputEl.innerHTML = `↓${rx} KB/s`;
+            }
+        }
+        
+        if (hasMetric(gpuInfo, 'bar1_memory_used')) {
+            const bar1MemEl = document.getElementById(`bar1-mem-${gpuId}`);
+            if (bar1MemEl) bar1MemEl.textContent = formatMemory(gpuInfo.bar1_memory_used);
+        }
+        
+        if (hasMetric(gpuInfo, 'persistence_mode')) {
+            const persistenceEl = document.getElementById(`persistence-${gpuId}`);
+            if (persistenceEl) persistenceEl.textContent = gpuInfo.persistence_mode;
+        }
+        
+        if (hasMetric(gpuInfo, 'reset_required')) {
+            const resetRequiredEl = document.getElementById(`reset-required-${gpuId}`);
+            if (resetRequiredEl) {
+                resetRequiredEl.textContent = gpuInfo.reset_required ? 'Reset Required!' : 'Healthy';
+                resetRequiredEl.style.color = gpuInfo.reset_required ? '#ff4444' : '#00ff88';
+            }
+        }
+        
+        if (hasMetric(gpuInfo, 'nvlink_active_count') && gpuInfo.nvlink_active_count > 0) {
+            const nvlinkEl = document.getElementById(`nvlink-${gpuId}`);
+            if (nvlinkEl) nvlinkEl.textContent = gpuInfo.nvlink_active_count;
+        }
+        
+        if (hasMetric(gpuInfo, 'compute_processes_count') || hasMetric(gpuInfo, 'graphics_processes_count')) {
+            const processCountsEl = document.getElementById(`process-counts-${gpuId}`);
+            if (processCountsEl) {
+                const compute = gpuInfo.compute_processes_count || 0;
+                const graphics = gpuInfo.graphics_processes_count || 0;
+                processCountsEl.textContent = `C:${compute} G:${graphics}`;
+            }
+        }
+    } // End of shouldUpdateDOM block
+
+    // ALWAYS update charts (they're efficient and need high-frequency data)
     const memPercent = (memory_used / memory_total) * 100;
-    const powerPercent = (power_draw / power_limit) * 100;
-
-    if (utilBar) utilBar.style.width = `${utilization}%`;
-    if (memBar) memBar.style.width = `${memPercent}%`;
-    if (powerBar) powerBar.style.width = `${powerPercent}%`;
-
-    // Update new metrics (only if they exist)
-    const clockGrEl = document.getElementById(`clock-gr-${gpuId}`);
-    const clockMemEl = document.getElementById(`clock-mem-${gpuId}`);
-    const clockSmEl = document.getElementById(`clock-sm-${gpuId}`);
-    const memUtilEl = document.getElementById(`mem-util-${gpuId}`);
-    const memUtilBar = document.getElementById(`mem-util-bar-${gpuId}`);
-    const pcieEl = document.getElementById(`pcie-${gpuId}`);
-    const pstateEl = document.getElementById(`pstate-${gpuId}`);
-    const encoderEl = document.getElementById(`encoder-${gpuId}`);
-
-    if (clockGrEl) clockGrEl.textContent = `${getMetricValue(gpuInfo, 'clock_graphics', 0)}`;
-    if (clockMemEl) clockMemEl.textContent = `${getMetricValue(gpuInfo, 'clock_memory', 0)}`;
-    if (clockSmEl) clockSmEl.textContent = `${getMetricValue(gpuInfo, 'clock_sm', 0)}`;
-    if (memUtilEl) memUtilEl.textContent = `${getMetricValue(gpuInfo, 'memory_utilization', 0)}%`;
-    if (memUtilBar) memUtilBar.style.width = `${getMetricValue(gpuInfo, 'memory_utilization', 0)}%`;
-    if (pcieEl) pcieEl.textContent = `Gen ${getMetricValue(gpuInfo, 'pcie_gen', 'N/A')}`;
-    if (pstateEl) pstateEl.textContent = `${getMetricValue(gpuInfo, 'performance_state', 'N/A')}`;
-    if (encoderEl) encoderEl.textContent = `${getMetricValue(gpuInfo, 'encoder_sessions', 0)}`;
-
-    // Update header badges
-    const pstateHeaderEl = document.getElementById(`pstate-header-${gpuId}`);
-    const pcieHeaderEl = document.getElementById(`pcie-header-${gpuId}`);
-    if (pstateHeaderEl) pstateHeaderEl.textContent = `${getMetricValue(gpuInfo, 'performance_state', 'N/A')}`;
-    if (pcieHeaderEl) pcieHeaderEl.textContent = `${getMetricValue(gpuInfo, 'pcie_gen', 'N/A')}`;
-
-    // Update memory total sublabel
-    const memTotalEl = document.getElementById(`mem-total-${gpuId}`);
-    if (memTotalEl) memTotalEl.textContent = `of ${formatMemory(memory_total)}`;
-
-    // Update new advanced metrics (only if present)
-    const tempMemEl = document.getElementById(`temp-mem-${gpuId}`);
-    const memFreeEl = document.getElementById(`mem-free-${gpuId}`);
-    const decoderEl = document.getElementById(`decoder-${gpuId}`);
-    const clockVideoEl = document.getElementById(`clock-video-${gpuId}`);
-    const computeModeEl = document.getElementById(`compute-mode-${gpuId}`);
-    const pcieMaxEl = document.getElementById(`pcie-max-${gpuId}`);
-    const throttleEl = document.getElementById(`throttle-${gpuId}`);
-
-    if (tempMemEl) {
-        const tempMem = getMetricValue(gpuInfo, 'temperature_memory', null);
-        if (tempMem !== null) {
-            tempMemEl.textContent = `${tempMem}°C`;
-        } else {
-            tempMemEl.textContent = 'N/A';
-        }
-    }
-    if (memFreeEl) memFreeEl.textContent = formatMemory(getMetricValue(gpuInfo, 'memory_free', 0));
-    if (decoderEl) {
-        const decoderSessions = getMetricValue(gpuInfo, 'decoder_sessions', null);
-        if (decoderSessions !== null) {
-            decoderEl.textContent = `${decoderSessions}`;
-        } else {
-            decoderEl.textContent = 'N/A';
-        }
-    }
-    if (clockVideoEl) {
-        const clockVideo = getMetricValue(gpuInfo, 'clock_video', null);
-        if (clockVideo !== null) {
-            clockVideoEl.textContent = `${clockVideo}`;
-        } else {
-            clockVideoEl.textContent = 'N/A';
-        }
-    }
-    if (computeModeEl) computeModeEl.textContent = `${getMetricValue(gpuInfo, 'compute_mode', 'N/A')}`;
-    if (pcieMaxEl) pcieMaxEl.textContent = `Gen ${getMetricValue(gpuInfo, 'pcie_gen_max', 'N/A')}`;
-    if (throttleEl) {
-        const throttle_reasons = getMetricValue(gpuInfo, 'throttle_reasons', 'None');
-        const isThrottling = throttle_reasons && throttle_reasons !== 'None' && throttle_reasons !== 'N/A';
-        throttleEl.textContent = isThrottling ? throttle_reasons : 'None';
-    }
-
-    // Update all new metrics (only if elements exist - dynamic dashboard)
-    if (hasMetric(gpuInfo, 'energy_consumption_wh')) {
-        const energyEl = document.getElementById(`energy-${gpuId}`);
-        if (energyEl) energyEl.textContent = gpuInfo.energy_consumption_wh.toFixed(2);
-    }
-    
-    if (hasMetric(gpuInfo, 'brand')) {
-        const brandEl = document.getElementById(`brand-${gpuId}`);
-        if (brandEl) brandEl.textContent = gpuInfo.brand;
-    }
-    
-    if (hasMetric(gpuInfo, 'power_limit_min') && hasMetric(gpuInfo, 'power_limit_max')) {
-        const powerRangeEl = document.getElementById(`power-range-${gpuId}`);
-        if (powerRangeEl) powerRangeEl.textContent = `${gpuInfo.power_limit_min.toFixed(0)}W - ${gpuInfo.power_limit_max.toFixed(0)}W`;
-    }
-    
-    if (hasMetric(gpuInfo, 'clock_graphics_app')) {
-        const clockGrAppEl = document.getElementById(`clock-gr-app-${gpuId}`);
-        if (clockGrAppEl) clockGrAppEl.textContent = gpuInfo.clock_graphics_app;
-    }
-    
-    if (hasMetric(gpuInfo, 'clock_memory_app')) {
-        const clockMemAppEl = document.getElementById(`clock-mem-app-${gpuId}`);
-        if (clockMemAppEl) clockMemAppEl.textContent = gpuInfo.clock_memory_app;
-    }
-    
-    if (hasMetric(gpuInfo, 'pcie_rx_throughput') || hasMetric(gpuInfo, 'pcie_tx_throughput')) {
-        const pcieThroughputEl = document.getElementById(`pcie-throughput-${gpuId}`);
-        if (pcieThroughputEl) {
-            const rx = (gpuInfo.pcie_rx_throughput || 0).toFixed(0);
-            const tx = (gpuInfo.pcie_tx_throughput || 0).toFixed(0);
-            pcieThroughputEl.innerHTML = `↓${rx} KB/s`;
-        }
-    }
-    
-    if (hasMetric(gpuInfo, 'bar1_memory_used')) {
-        const bar1MemEl = document.getElementById(`bar1-mem-${gpuId}`);
-        if (bar1MemEl) bar1MemEl.textContent = formatMemory(gpuInfo.bar1_memory_used);
-    }
-    
-    if (hasMetric(gpuInfo, 'persistence_mode')) {
-        const persistenceEl = document.getElementById(`persistence-${gpuId}`);
-        if (persistenceEl) persistenceEl.textContent = gpuInfo.persistence_mode;
-    }
-    
-    if (hasMetric(gpuInfo, 'reset_required')) {
-        const resetRequiredEl = document.getElementById(`reset-required-${gpuId}`);
-        if (resetRequiredEl) {
-            resetRequiredEl.textContent = gpuInfo.reset_required ? 'Reset Required!' : 'Healthy';
-            resetRequiredEl.style.color = gpuInfo.reset_required ? '#ff4444' : '#00ff88';
-        }
-    }
-    
-    if (hasMetric(gpuInfo, 'nvlink_active_count') && gpuInfo.nvlink_active_count > 0) {
-        const nvlinkEl = document.getElementById(`nvlink-${gpuId}`);
-        if (nvlinkEl) nvlinkEl.textContent = gpuInfo.nvlink_active_count;
-    }
-    
-    if (hasMetric(gpuInfo, 'compute_processes_count') || hasMetric(gpuInfo, 'graphics_processes_count')) {
-        const processCountsEl = document.getElementById(`process-counts-${gpuId}`);
-        if (processCountsEl) {
-            const compute = gpuInfo.compute_processes_count || 0;
-            const graphics = gpuInfo.graphics_processes_count || 0;
-            processCountsEl.textContent = `C:${compute} G:${graphics}`;
-        }
-    }
 
     // Update charts with available data
     updateChart(gpuId, 'utilization', utilization);

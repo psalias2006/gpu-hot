@@ -54,7 +54,7 @@ function switchToView(viewName) {
 }
 
 // Create or update GPU tab
-function ensureGPUTab(gpuId, gpuInfo) {
+function ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM = true) {
     if (!registeredGPUs.has(gpuId)) {
         // Add view option
         const viewSelector = document.getElementById('view-selector');
@@ -85,7 +85,7 @@ function ensureGPUTab(gpuId, gpuInfo) {
         if (!chartData[gpuId]) initGPUData(gpuId);
         initGPUCharts(gpuId);
     } else if (existingCard) {
-        updateGPUDisplay(gpuId, gpuInfo);
+        updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM);
     }
 }
 
