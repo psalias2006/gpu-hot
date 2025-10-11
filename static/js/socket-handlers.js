@@ -5,9 +5,43 @@
 // Initialize Socket.IO connection
 const socket = io();
 
+// Scroll detection to pause updates during scroll
+let isScrolling = false;
+let scrollTimeout;
+const SCROLL_PAUSE_DURATION = 100; // ms to wait after scroll stops
+
+// Detect scrolling and pause updates (on window, where actual scroll happens)
+function setupScrollDetection() {
+    // Wait for DOM ready
+    setTimeout(() => {
+        window.addEventListener('scroll', function() {
+            isScrolling = true;
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                isScrolling = false;
+            }, SCROLL_PAUSE_DURATION);
+        }, { passive: true });
+        
+        // Also catch container scroll as fallback
+        const container = document.querySelector('.container');
+        if (container) {
+            container.addEventListener('scroll', function() {
+                isScrolling = true;
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    isScrolling = false;
+                }, SCROLL_PAUSE_DURATION);
+            }, { passive: true });
+        }
+    }, 500);
+}
+
+// Initialize scroll detection
+setupScrollDetection();
+
 // Throttling for DOM updates (text/cards) - tracks last update time per GPU
 const lastDOMUpdate = {};
-const DOM_UPDATE_INTERVAL = 1000; // Update text/cards every 1 second (while charts update at full speed)
+const DOM_UPDATE_INTERVAL = 1000; // Update text/cards every 1 second
 
 // Handle incoming GPU data
 socket.on('gpu_data', function(data) {
@@ -21,6 +55,20 @@ socket.on('gpu_data', function(data) {
     const gpuCount = Object.keys(data.gpus).length;
 
     const now = Date.now();
+    
+    // Skip ALL DOM updates if user is actively scrolling
+    if (isScrolling) {
+        // Still update ALL chart data arrays (lightweight) but skip rendering
+        Object.keys(data.gpus).forEach(gpuId => {
+            const gpuInfo = data.gpus[gpuId];
+            if (!chartData[gpuId]) {
+                initGPUData(gpuId);
+            }
+            // Add ALL metrics data points silently (no rendering)
+            updateAllChartDataOnly(gpuId, gpuInfo);
+        });
+        return; // Skip all DOM updates during scroll
+    }
     
     // Process each GPU
     Object.keys(data.gpus).forEach(gpuId => {
@@ -48,20 +96,87 @@ socket.on('gpu_data', function(data) {
             }
         }
 
-        // Ensure GPU has its own detail tab
-        ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM);
+        // Only update detail tab if it's currently visible (huge performance win)
+        const isDetailTabVisible = currentTab === `gpu-${gpuId}`;
+        if (isDetailTabVisible || !registeredGPUs.has(gpuId)) {
+            ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM && isDetailTabVisible);
+        }
     });
 
     // Auto-switch to single GPU view if only 1 GPU detected (first time only)
     autoSwitchSingleGPU(gpuCount, Object.keys(data.gpus));
 
-    // Update processes and system info (throttled)
-    if (!lastDOMUpdate.system || (now - lastDOMUpdate.system) >= DOM_UPDATE_INTERVAL) {
+    // Update processes and system info (throttled, not during scroll)
+    if (!isScrolling && (!lastDOMUpdate.system || (now - lastDOMUpdate.system) >= DOM_UPDATE_INTERVAL)) {
         updateProcesses(data.processes);
         updateSystemInfo(data.system);
         lastDOMUpdate.system = now;
     }
 });
+
+// Helper function to update ALL chart data arrays without rendering (during scroll)
+function updateAllChartDataOnly(gpuId, gpuInfo) {
+    if (!chartData[gpuId]) return;
+    
+    const now = new Date().toLocaleTimeString();
+    const memory_used = gpuInfo.memory_used || 0;
+    const memory_total = gpuInfo.memory_total || 1;
+    const memPercent = (memory_used / memory_total) * 100;
+    
+    // Update all chart types with current data
+    const updates = {
+        utilization: gpuInfo.utilization || 0,
+        temperature: gpuInfo.temperature || 0,
+        memory: memPercent,
+        power: gpuInfo.power_draw || 0,
+        fanSpeed: gpuInfo.fan_speed || 0,
+        efficiency: (gpuInfo.power_draw > 0 ? (gpuInfo.utilization || 0) / gpuInfo.power_draw : 0)
+    };
+    
+    // Update each chart's data array
+    Object.keys(updates).forEach(chartType => {
+        const data = chartData[gpuId][chartType];
+        if (data && data.labels && data.data) {
+            data.labels.push(now);
+            data.data.push(Number(updates[chartType]) || 0);
+            
+            // Add threshold data where needed
+            if (chartType === 'utilization') {
+                if (data.thresholdData) data.thresholdData.push(80);
+            } else if (chartType === 'temperature') {
+                if (data.warningData) data.warningData.push(75);
+                if (data.dangerData) data.dangerData.push(85);
+            } else if (chartType === 'memory') {
+                if (data.thresholdData) data.thresholdData.push(90);
+            }
+            
+            // Keep same limit as normal updates (120 points)
+            if (data.labels.length > 120) {
+                data.labels.shift();
+                data.data.shift();
+                if (data.thresholdData) data.thresholdData.shift();
+                if (data.warningData) data.warningData.shift();
+                if (data.dangerData) data.dangerData.shift();
+            }
+        }
+    });
+    
+    // Update multi-line charts (clocks, pcie, etc.)
+    const clocksData = chartData[gpuId].clocks;
+    if (clocksData) {
+        clocksData.labels.push(now);
+        clocksData.graphicsData.push(gpuInfo.clock_graphics || 0);
+        clocksData.smData.push(gpuInfo.clock_sm || 0);
+        clocksData.memoryData.push(gpuInfo.clock_memory || 0);
+        
+        if (clocksData.labels.length > 120) {
+            clocksData.labels.shift();
+            clocksData.graphicsData.shift();
+            clocksData.smData.shift();
+            clocksData.memoryData.shift();
+        }
+    }
+}
 
 // Handle connection status
 socket.on('connect', function() {
