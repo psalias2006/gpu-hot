@@ -9,5 +9,5 @@ PORT = 1312
 DEBUG = True
 
 # Monitoring Configuration
-UPDATE_INTERVAL = 0.5  # Update interval in seconds (sub-second for responsive monitoring)
+UPDATE_INTERVAL = 0.5  # Update interval in seconds (sub-second monitoring)
 
