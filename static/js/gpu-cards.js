@@ -304,8 +304,8 @@ function createGPUCard(gpuId, gpuInfo) {
                     <div class="metric-header">
                         <span class="metric-label">Total Energy</span>
                     </div>
-                    <div class="metric-value-large" id="energy-${gpuId}">${gpuInfo.energy_consumption_wh.toFixed(2)}</div>
-                    <div class="metric-sublabel">Wh since driver load</div>
+                    <div class="metric-value-large" id="energy-${gpuId}">${formatEnergy(gpuInfo.energy_consumption_wh)}</div>
+                    <div class="metric-sublabel">Since driver load</div>
                 </div>` : ''}
 
                 ${hasMetric(gpuInfo, 'brand') ? `
@@ -640,6 +640,14 @@ function formatMemory(mb) {
     return `${Math.round(mb)}MB`;
 }
 
+// Helper function to format energy values (Wh to kWh when appropriate)
+function formatEnergy(wh) {
+    if (wh >= 1000) {
+        return `${(wh / 1000).toFixed(2)}kWh`;
+    }
+    return `${wh.toFixed(2)}Wh`;
+}
+
 // Helper function to safely get metric value with default
 function getMetricValue(gpuInfo, key, defaultValue = 0) {
     return (key in gpuInfo && gpuInfo[key] !== null && gpuInfo[key] !== undefined) ? gpuInfo[key] : defaultValue;
@@ -809,7 +817,7 @@ function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
         // Update all new metrics (only if elements exist - dynamic dashboard)
         if (hasMetric(gpuInfo, 'energy_consumption_wh')) {
             const energyEl = document.getElementById(`energy-${gpuId}`);
-            if (energyEl) energyEl.textContent = gpuInfo.energy_consumption_wh.toFixed(2);
+            if (energyEl) energyEl.textContent = formatEnergy(gpuInfo.energy_consumption_wh);
         }
         
         if (hasMetric(gpuInfo, 'brand')) {
