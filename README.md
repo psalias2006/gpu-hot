@@ -3,7 +3,7 @@
 # GPU Hot
 ### **Sub-Second NVIDIA GPU Monitoring Dashboard**
 
-**Real-time dashboard with sub-second refresh rates.** Monitor your GPUs with unprecedented speed.
+**Real-time dashboard with sub-second refresh rates.** Monitor your NVIDIA GPUs from any browser.
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
