@@ -23,6 +23,11 @@ Monitor NVIDIA GPUs from any browser. No SSH, no configuration – just start an
 docker run -d --name gpu-hot --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
 ```
 
+**Force nvidia-smi mode (for older GPUs):**
+```bash
+docker run -d --name gpu-hot --gpus all -p 1312:1312 -e NVIDIA_SMI=true ghcr.io/psalias2006/gpu-hot:latest
+```
+
 Open `http://localhost:1312`
 
 ### From source
@@ -90,13 +95,17 @@ DEBUG = False
 Environment variables:
 ```bash
 NVIDIA_VISIBLE_DEVICES=0,1    # Specific GPUs (default: all)
+NVIDIA_SMI=true                # Force nvidia-smi mode for all GPUs
 ```
 
 **nvidia-smi Fallback:**
 - Automatically detects GPUs that don't support NVML utilization metrics
 - Falls back to nvidia-smi for those GPUs
 - Compatible with older GPUs (Quadro P1000, Tesla, etc.)
-- Set `NVIDIA_SMI = True` to force nvidia-smi for all GPUs (testing)
+
+**Force nvidia-smi for all GPUs:**
+- Docker: `docker run -e NVIDIA_SMI=true ...`
+- Config: Set `NVIDIA_SMI = True` in `core/config.py`
 
 Frontend tuning in `static/js/socket-handlers.js`:
 ```javascript

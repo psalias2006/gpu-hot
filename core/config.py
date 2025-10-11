@@ -2,6 +2,8 @@
 Configuration settings for GPU Hot
 """
 
+import os
+
 # Flask Configuration
 SECRET_KEY = 'gpu_hot_secret'
 HOST = '0.0.0.0'
@@ -13,5 +15,6 @@ UPDATE_INTERVAL = 0.5  # Update interval for NVML (sub-second monitoring)
 NVIDIA_SMI_INTERVAL = 2.0  # Update interval for nvidia-smi fallback (slower to reduce overhead)
 
 # GPU Monitoring Mode
-NVIDIA_SMI = False  # Set True to force nvidia-smi mode for all GPUs (for testing)
+# Can be set via environment variable: NVIDIA_SMI=true
+NVIDIA_SMI = os.getenv('NVIDIA_SMI', 'false').lower() == 'true'
 
