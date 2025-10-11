@@ -13,5 +13,5 @@ UPDATE_INTERVAL = 0.5  # Update interval for NVML (sub-second monitoring)
 NVIDIA_SMI_INTERVAL = 2.0  # Update interval for nvidia-smi fallback (slower to reduce overhead)
 
 # GPU Monitoring Mode
-NVIDIA_SMI = True  # Set True to force nvidia-smi mode for all GPUs (for testing)
+NVIDIA_SMI = False  # Set True to force nvidia-smi mode for all GPUs (for testing)
 
