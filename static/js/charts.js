@@ -1079,6 +1079,34 @@ function updateChartStats(gpuId, chartType, stats, unit) {
     if (avgEl) avgEl.textContent = `${formatter(stats.avg)}${unit}`;
 }
 
+// Update statistics display for PCIe chart (RX and TX separately)
+function updatePCIeChartStats(gpuId, statsRX, statsTX) {
+    const unit = ' KB/s';
+    const formatter = (value) => Math.round(value);
+
+    // Update RX stats
+    const rxCurrentEl = document.getElementById(`stat-pcie-rx-current-${gpuId}`);
+    const rxMinEl = document.getElementById(`stat-pcie-rx-min-${gpuId}`);
+    const rxMaxEl = document.getElementById(`stat-pcie-rx-max-${gpuId}`);
+    const rxAvgEl = document.getElementById(`stat-pcie-rx-avg-${gpuId}`);
+
+    if (rxCurrentEl) rxCurrentEl.textContent = `${formatter(statsRX.current)}${unit}`;
+    if (rxMinEl) rxMinEl.textContent = `${formatter(statsRX.min)}${unit}`;
+    if (rxMaxEl) rxMaxEl.textContent = `${formatter(statsRX.max)}${unit}`;
+    if (rxAvgEl) rxAvgEl.textContent = `${formatter(statsRX.avg)}${unit}`;
+
+    // Update TX stats
+    const txCurrentEl = document.getElementById(`stat-pcie-tx-current-${gpuId}`);
+    const txMinEl = document.getElementById(`stat-pcie-tx-min-${gpuId}`);
+    const txMaxEl = document.getElementById(`stat-pcie-tx-max-${gpuId}`);
+    const txAvgEl = document.getElementById(`stat-pcie-tx-avg-${gpuId}`);
+
+    if (txCurrentEl) txCurrentEl.textContent = `${formatter(statsTX.current)}${unit}`;
+    if (txMinEl) txMinEl.textContent = `${formatter(statsTX.min)}${unit}`;
+    if (txMaxEl) txMaxEl.textContent = `${formatter(statsTX.max)}${unit}`;
+    if (txAvgEl) txAvgEl.textContent = `${formatter(statsTX.avg)}${unit}`;
+}
+
 // Update chart data
 function updateChart(gpuId, chartType, value, value2, value3, value4) {
     if (!chartData[gpuId]) initGPUData(gpuId);
@@ -1134,27 +1162,32 @@ function updateChart(gpuId, chartType, value, value2, value3, value4) {
     }
 
     // Calculate and update statistics
-    let statsData = data.data;
-    if (chartType === 'clocks') statsData = data.graphicsData;
-    else if (chartType === 'pcie') statsData = data.dataRX;
-    else if (chartType === 'appclocks') statsData = data.dataGr;
-    
-    const stats = calculateStats(statsData);
-    const unitMap = {
-        'utilization': '%',
-        'util': '%',
-        'temperature': '°C',
-        'temp': '°C',
-        'memory': '%',
-        'power': 'W',
-        'fanSpeed': '%',
-        'clocks': ' MHz',
-        'efficiency': ' %/W',
-        'pcie': ' KB/s',
-        'appclocks': ' MHz'
-    };
-    const unit = unitMap[chartType] || '';
-    updateChartStats(gpuId, chartType, stats, unit);
+    if (chartType === 'pcie') {
+        // Handle PCIe separately - need stats for both RX and TX
+        const statsRX = calculateStats(data.dataRX);
+        const statsTX = calculateStats(data.dataTX);
+        updatePCIeChartStats(gpuId, statsRX, statsTX);
+    } else {
+        let statsData = data.data;
+        if (chartType === 'clocks') statsData = data.graphicsData;
+        else if (chartType === 'appclocks') statsData = data.dataGr;
+        
+        const stats = calculateStats(statsData);
+        const unitMap = {
+            'utilization': '%',
+            'util': '%',
+            'temperature': '°C',
+            'temp': '°C',
+            'memory': '%',
+            'power': 'W',
+            'fanSpeed': '%',
+            'clocks': ' MHz',
+            'efficiency': ' %/W',
+            'appclocks': ' MHz'
+        };
+        const unit = unitMap[chartType] || '';
+        updateChartStats(gpuId, chartType, stats, unit);
+    }
 
     // Update chart if it exists
     if (charts[gpuId] && charts[gpuId][chartType]) {
