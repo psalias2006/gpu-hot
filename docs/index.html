@@ -23,6 +23,8 @@
             --text-secondary: rgba(255, 255, 255, 0.7);
             --text-muted: rgba(255, 255, 255, 0.4);
             --accent: #4facfe;
+            --accent-dark: #1e3a8a;
+            --accent-light: #00f2fe;
         }
 
         body {
@@ -34,6 +36,29 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated pulsing background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(79, 172, 254, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(0, 242, 254, 0.06) 0%, transparent 50%);
+            z-index: 0;
+            animation: bgPulse 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
         }
 
         .container {
@@ -43,29 +68,34 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            position: relative;
+            z-index: 1;
         }
 
         /* Nav */
         nav {
             border-bottom: 1px solid var(--border);
-            padding: 2rem 0;
+            padding: 1.5rem 0;
         }
 
         .nav-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            max-width: 750px;
+            margin: 0 auto;
         }
 
         .logo {
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
+            letter-spacing: -0.3px;
         }
 
         .github-link {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
             transition: color 0.2s;
         }
@@ -80,63 +110,73 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            max-width: 800px;
+            max-width: 750px;
             margin: 0 auto;
-            padding: 4rem 0;
+            padding: 3rem 0;
         }
 
         h1 {
-            font-size: 5rem;
+            font-size: 4.5rem;
             font-weight: 900;
             line-height: 1.1;
             letter-spacing: -3px;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .hero p {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             color: var(--text-secondary);
             line-height: 1.6;
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
         }
 
         .cta {
             display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 2rem;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
             background: var(--text);
             color: var(--bg);
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 6px;
             font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.2s;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
             align-self: flex-start;
         }
 
         .cta:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 40px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
         }
 
         /* Terminal */
         .terminal-section {
-            margin: 4rem 0 6rem;
+            margin: 2rem 0 6rem;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .section-title {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 2rem;
-            letter-spacing: -1px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.5px;
+            color: var(--text);
         }
 
         .terminal {
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(79, 172, 254, 0.2);
             border-radius: 12px;
             overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .terminal:hover {
+            border-color: rgba(79, 172, 254, 0.4);
+            box-shadow: 0 10px 40px rgba(79, 172, 254, 0.2);
         }
 
         .terminal-header {
@@ -150,15 +190,15 @@
         }
 
         .terminal-body {
-            padding: 2rem;
+            padding: 1.75rem;
             font-family: 'SF Mono', Monaco, monospace;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             position: relative;
         }
 
         .terminal-body code {
             color: var(--text-secondary);
-            line-height: 2;
+            line-height: 1.8;
             display: block;
         }
 
@@ -167,37 +207,40 @@
         }
 
         .copy-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            color: var(--accent);
             padding: 0.5rem 1rem;
             border-radius: 6px;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
+            transition: all 0.3s ease;
+            font-weight: 600;
         }
 
         .copy-btn:hover {
+            background: rgba(79, 172, 254, 0.2);
             border-color: var(--accent);
-            color: var(--text);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
         }
 
         .terminal-note {
             text-align: center;
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             color: var(--text-secondary);
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
 
         .terminal-note strong {
             color: var(--text);
+            font-weight: 600;
         }
 
         /* Footer */
         footer {
             border-top: 1px solid var(--border);
-            padding: 3rem 0;
+            padding: 2.5rem 0 2rem;
         }
 
         .footer-content {
@@ -205,7 +248,7 @@
             justify-content: space-between;
             align-items: center;
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
         }
 
         .footer-links {
@@ -223,19 +266,70 @@
             color: var(--text);
         }
 
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scroll-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 0 1.5rem;
             }
 
+            nav {
+                padding: 1.25rem 0;
+            }
+
+            .hero {
+                padding: 2rem 0;
+            }
+
             h1 {
-                font-size: 3rem;
+                font-size: 2.75rem;
                 letter-spacing: -2px;
+                margin-bottom: 1.25rem;
             }
 
             .hero p {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
+                margin-bottom: 2rem;
+            }
+
+            .cta {
+                padding: 0.7rem 1.4rem;
+                font-size: 0.9rem;
+            }
+
+            .terminal-section {
+                margin: 1.5rem 0 4rem;
+            }
+
+            .section-title {
+                font-size: 1.3rem;
+                margin-bottom: 1.25rem;
             }
 
             .terminal-body {
@@ -243,12 +337,23 @@
             }
 
             .terminal-body code {
-                font-size: 0.85rem;
+                font-size: 0.8rem;
+                line-height: 1.6;
+            }
+
+            .terminal-note {
+                font-size: 0.9rem;
+                margin-top: 1.25rem;
             }
 
             .footer-content {
                 flex-direction: column;
-                gap: 1.5rem;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            footer {
+                padding: 2rem 0 1.5rem;
             }
         }
     </style>
@@ -276,7 +381,7 @@
         </section>
 
         <!-- Terminal -->
-        <section class="terminal-section">
+        <section class="terminal-section scroll-reveal">
             <h2 class="section-title">Get Started</h2>
             <div class="terminal">
                 <div class="terminal-header">
@@ -318,6 +423,22 @@
                 setTimeout(() => btn.textContent = original, 2000);
             });
         }
+
+        // Scroll reveal animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        document.querySelectorAll('.scroll-reveal').forEach(el => {
+            observer.observe(el);
+        });
     </script>
 </body>
 </html>
