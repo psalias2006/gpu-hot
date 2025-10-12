@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Hot - Real-time NVIDIA GPU Monitoring</title>
+    <meta name="description" content="Sub-second GPU monitoring in your browser. No monitoring infrastructure, no complex dashboards.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #13131a;
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --accent: #4facfe;
+            --accent-dark: #1e3a8a;
+            --accent-light: #00f2fe;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated pulsing background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(79, 172, 254, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(0, 242, 254, 0.06) 0%, transparent 50%);
+            z-index: 0;
+            animation: bgPulse 25s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% {
+                opacity: 0.4;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.1);
+            }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Nav */
+        nav {
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 0;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: -0.3px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .logo:hover {
+            color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .logo:hover::after {
+            width: 100%;
+        }
+
+        .github-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            padding: 0.25rem 0;
+        }
+
+        .github-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .github-link:hover {
+            color: var(--text);
+            transform: translateX(2px);
+        }
+
+        .github-link:hover::after {
+            width: 100%;
+        }
+
+        /* Hero */
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 3rem 0;
+        }
+
+        h1 {
+            font-size: 4.8rem;
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -3.5px;
+            margin-bottom: 1.75rem;
+            position: relative;
+            background: linear-gradient(180deg, var(--text) 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -0.75rem;
+            left: 0;
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+            opacity: 0.6;
+            animation: slideIn 0.8s ease-out 0.3s both;
+        }
+
+        @keyframes slideIn {
+            from {
+                width: 0;
+                opacity: 0;
+            }
+            to {
+                width: 80px;
+                opacity: 0.6;
+            }
+        }
+
+        .hero p {
+            font-size: 1.35rem;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            margin-bottom: 2.75rem;
+            font-weight: 400;
+            max-width: 680px;
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--text);
+            color: var(--bg);
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            align-self: flex-start;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.3), transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cta:hover::before {
+            left: 100%;
+        }
+
+        .cta:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(255, 255, 255, 0.2);
+        }
+
+        .cta:active {
+            transform: translateY(-1px);
+        }
+
+        .cta svg {
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .cta:hover svg {
+            transform: translateX(2px);
+        }
+
+        /* Terminal */
+        .terminal-section {
+            margin: 2rem 0 6rem;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.5px;
+            color: var(--text);
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: -0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: var(--accent);
+            opacity: 0.5;
+        }
+
+        .terminal {
+            background: var(--surface);
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .terminal:hover {
+            border-color: rgba(79, 172, 254, 0.5);
+            box-shadow: 0 12px 48px rgba(79, 172, 254, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .terminal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(79, 172, 254, 0.1);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(79, 172, 254, 0.03) 0%, transparent 100%);
+            position: relative;
+        }
+
+        .terminal-header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .terminal:hover .terminal-header::after {
+            opacity: 0.3;
+        }
+
+        .terminal-body {
+            padding: 1.75rem;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .terminal-body code {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            display: block;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .terminal:hover code {
+            color: var(--text);
+            transform: translateX(2px);
+        }
+
+        .prompt {
+            color: var(--accent);
+        }
+
+        .copy-btn {
+            background: rgba(79, 172, 254, 0.08);
+            border: 1px solid rgba(79, 172, 254, 0.25);
+            color: var(--accent);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copy-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(79, 172, 254, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .copy-btn:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+
+        .copy-btn:hover {
+            background: rgba(79, 172, 254, 0.15);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 172, 254, 0.3);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .terminal-note {
+            text-align: center;
+            margin-top: 1.75rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .terminal-note strong {
+            color: var(--text);
+            font-weight: 600;
+            position: relative;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            background: rgba(79, 172, 254, 0.08);
+            border: 1px solid rgba(79, 172, 254, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9rem;
+        }
+
+        .terminal-note:hover strong {
+            background: rgba(79, 172, 254, 0.15);
+            border-color: rgba(79, 172, 254, 0.3);
+            color: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.2);
+        }
+
+        .ps-note {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-style: italic;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .ps-note:hover {
+            opacity: 1;
+        }
+
+        .ps-note code {
+            color: var(--accent);
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.85rem;
+            font-style: normal;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2.5rem 0 2rem;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            padding: 0.25rem 0;
+        }
+
+        .footer-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0.15rem;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .footer-links a:hover {
+            color: var(--text);
+            transform: translateX(2px);
+        }
+
+        .footer-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero {
+            animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hero p {
+            animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+        }
+
+        .cta {
+            animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+        }
+
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scroll-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1.5rem;
+            }
+
+            nav {
+                padding: 1.25rem 0;
+            }
+
+            .hero {
+                padding: 2rem 0;
+            }
+
+            h1 {
+                font-size: 2.75rem;
+                letter-spacing: -2px;
+                margin-bottom: 1.25rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+                margin-bottom: 2rem;
+            }
+
+            .cta {
+                padding: 0.7rem 1.4rem;
+                font-size: 0.9rem;
+            }
+
+            .terminal-section {
+                margin: 1.5rem 0 4rem;
+            }
+
+            .section-title {
+                font-size: 1.3rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .terminal-body {
+                padding: 1.5rem;
+            }
+
+            .terminal-body code {
+                font-size: 0.8rem;
+                line-height: 1.6;
+            }
+
+            .terminal-note {
+                font-size: 0.9rem;
+                margin-top: 1.25rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            footer {
+                padding: 2rem 0 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Nav -->
+        <nav>
+            <div class="nav-content">
+                <div class="logo">GPU Hot</div>
+                <a href="https://github.com/psalias2006/gpu-hot" class="github-link">GitHub</a>
+            </div>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero">
+            <h1>GPU Hot<br>Metrics in Seconds</h1>
+            <p>Real-time GPU monitoring in your browser. No infrastructure, no setup, no SSH. Just one command.</p>
+            <a href="https://github.com/psalias2006/gpu-hot" class="cta">
+                View on GitHub
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 17L17 7M17 7v10M17 7H7"/>
+                </svg>
+            </a>
+        </section>
+
+        <!-- Terminal -->
+        <section class="terminal-section scroll-reveal">
+            <h2 class="section-title">Get Started</h2>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span>terminal</span>
+                    <button class="copy-btn" onclick="copy(this)" data-text="docker run -d --name gpu-hot --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest">
+                        Copy
+                    </button>
+                </div>
+                <div class="terminal-body">
+                    <code><span class="prompt">$</span> docker run -d --name gpu-hot --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest</code>
+                </div>
+            </div>
+            <p class="terminal-note">
+                → <strong>http://localhost:1312</strong>
+            </p>
+            <p class="ps-note"> </p>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div>Open source. Built for developers.</div>
+                <div class="footer-links">
+                    <a href="https://github.com/psalias2006/gpu-hot">GitHub</a>
+                    <a href="https://github.com/psalias2006/gpu-hot/issues">Issues</a>
+                    <a href="https://github.com/psalias2006/gpu-hot/blob/main/LICENSE">License</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function copy(btn) {
+            const text = btn.getAttribute('data-text');
+            navigator.clipboard.writeText(text).then(() => {
+                const original = btn.textContent;
+                btn.textContent = 'Copied';
+                setTimeout(() => btn.textContent = original, 2000);
+            });
+        }
+
+        // Scroll reveal animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        document.querySelectorAll('.scroll-reveal').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Parallax effect on hero
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrolled = window.pageYOffset;
+                    const hero = document.querySelector('.hero');
+                    if (hero && scrolled < window.innerHeight) {
+                        hero.style.transform = `translateY(${scrolled * 0.3}px)`;
+                        hero.style.opacity = 1 - (scrolled / 800);
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+    </script>
+</body>
+</html>
