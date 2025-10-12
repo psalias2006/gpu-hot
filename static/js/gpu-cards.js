@@ -585,36 +585,20 @@ function createGPUCard(gpuId, gpuInfo) {
                         <div class="chart-title">PCIe Throughput History</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
-                                <span class="chart-stat-label">RX Current</span>
+                                <span class="chart-stat-label">Current RX</span>
                                 <span class="chart-stat-value current" id="stat-pcie-rx-current-${gpuId}">0 KB/s</span>
                             </div>
                             <div class="chart-stat">
-                                <span class="chart-stat-label">RX Min</span>
-                                <span class="chart-stat-value min" id="stat-pcie-rx-min-${gpuId}">0 KB/s</span>
-                            </div>
-                            <div class="chart-stat">
-                                <span class="chart-stat-label">RX Max</span>
-                                <span class="chart-stat-value max" id="stat-pcie-rx-max-${gpuId}">0 KB/s</span>
-                            </div>
-                            <div class="chart-stat">
-                                <span class="chart-stat-label">RX Avg</span>
-                                <span class="chart-stat-value avg" id="stat-pcie-rx-avg-${gpuId}">0 KB/s</span>
-                            </div>
-                            <div class="chart-stat">
-                                <span class="chart-stat-label">TX Current</span>
+                                <span class="chart-stat-label">Current TX</span>
                                 <span class="chart-stat-value current" id="stat-pcie-tx-current-${gpuId}">0 KB/s</span>
                             </div>
                             <div class="chart-stat">
-                                <span class="chart-stat-label">TX Min</span>
-                                <span class="chart-stat-value min" id="stat-pcie-tx-min-${gpuId}">0 KB/s</span>
+                                <span class="chart-stat-label">Max RX</span>
+                                <span class="chart-stat-value max" id="stat-pcie-rx-max-${gpuId}">0 KB/s</span>
                             </div>
                             <div class="chart-stat">
-                                <span class="chart-stat-label">TX Max</span>
+                                <span class="chart-stat-label">Max TX</span>
                                 <span class="chart-stat-value max" id="stat-pcie-tx-max-${gpuId}">0 KB/s</span>
-                            </div>
-                            <div class="chart-stat">
-                                <span class="chart-stat-label">TX Avg</span>
-                                <span class="chart-stat-value avg" id="stat-pcie-tx-avg-${gpuId}">0 KB/s</span>
                             </div>
                         </div>
                     </div>
