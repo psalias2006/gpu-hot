@@ -25,32 +25,49 @@ def register_handlers(socketio, monitor):
 
 
 def monitor_loop(socketio, monitor):
-    """Background loop that collects and emits GPU data"""
+    """Background loop that collects and emits GPU data
+    
+    Always emits data in node format for unified frontend rendering.
+    Standalone mode = 1 node (localhost), Hub mode = N nodes.
+    """
     # Determine update interval based on whether any GPU uses nvidia-smi
     uses_nvidia_smi = any(monitor.use_smi.values()) if hasattr(monitor, 'use_smi') else False
     update_interval = config.NVIDIA_SMI_INTERVAL if uses_nvidia_smi else config.UPDATE_INTERVAL
     
-    if uses_nvidia_smi:
+    # For hub mode, use agent poll interval
+    if config.MODE == 'hub':
+        update_interval = config.AGENT_POLL_INTERVAL
+        logger.info(f"Using hub polling interval: {update_interval}s")
+    elif uses_nvidia_smi:
         logger.info(f"Using nvidia-smi polling interval: {update_interval}s")
     else:
         logger.info(f"Using NVML polling interval: {update_interval}s")
     
     while monitor.running:
         try:
-            gpu_data = monitor.get_gpu_data()
-            processes = monitor.get_processes()
+            # Always emit in node format (unified data structure)
+            if hasattr(monitor, 'aggregate_data'):
+                # Hub mode: already returns node format
+                data = monitor.aggregate_data()
+            elif hasattr(monitor, 'get_node_wrapped_data'):
+                # Standalone mode: wrap in node format
+                data = monitor.get_node_wrapped_data()
+            else:
+                # Fallback to old format (shouldn't happen)
+                gpu_data = monitor.get_gpu_data()
+                processes = monitor.get_processes()
+                system_info = {
+                    'cpu_percent': psutil.cpu_percent(percpu=False),
+                    'memory_percent': psutil.virtual_memory().percent,
+                    'timestamp': datetime.now().isoformat()
+                }
+                data = {
+                    'gpus': gpu_data,
+                    'processes': processes,
+                    'system': system_info
+                }
             
-            system_info = {
-                'cpu_percent': psutil.cpu_percent(percpu=False),
-                'memory_percent': psutil.virtual_memory().percent,
-                'timestamp': datetime.now().isoformat()
-            }
-            
-            socketio.emit('gpu_data', {
-                'gpus': gpu_data,
-                'processes': processes,
-                'system': system_info
-            }, namespace='/')
+            socketio.emit('gpu_data', data, namespace='/')
             
         except Exception as e:
             logger.error(f"Error in monitor loop: {e}")

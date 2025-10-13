@@ -1,9 +1,14 @@
 /**
  * Socket.IO event handlers
+ * Unified node-based rendering for both standalone and cluster modes
  */
 
 // Initialize Socket.IO connection
 const socket = io();
+
+// View mode state
+let viewMode = 'by-node'; // 'by-node' or 'all-gpus'
+let collapsedNodes = new Set();
 
 // Performance: Scroll detection to pause DOM updates during scroll
 let isScrolling = false;
@@ -48,7 +53,253 @@ let rafScheduled = false; // Flag to prevent duplicate RAF scheduling
 const lastDOMUpdate = {}; // Track last update time per GPU
 const DOM_UPDATE_INTERVAL = 1000; // Text/card updates every 1s, charts update every frame
 
-// Handle incoming GPU data
+/**
+ * Create node section with collapsible GPU cards
+ */
+function createNodeSection(nodeUrl, nodeData) {
+    const metadata = nodeData.metadata || {};
+    const nodeConfig = nodeData.node_config || {};
+    const nodeName = nodeConfig.name || metadata.hostname || nodeUrl;
+    const gpus = nodeData.gpus || {};
+    const status = nodeData.status || 'unknown';
+    const gpuCount = Object.keys(gpus).length;
+    
+    // Determine status badge
+    let statusClass = 'status-unknown';
+    let statusText = 'ONLINE';
+    let statusIcon = '✓';
+    
+    if (status === 'offline') {
+        statusClass = 'status-offline';
+        statusText = 'OFFLINE';
+        statusIcon = '×';
+    } else if (status === 'error') {
+        statusClass = 'status-error';
+        statusText = 'ERROR';
+        statusIcon = '!';
+    }
+    
+    // Format last seen
+    let lastSeenText = '';
+    if (nodeData.cache_age) {
+        lastSeenText = `Cached (${Math.round(nodeData.cache_age)}s ago)`;
+    } else if (status === 'online') {
+        lastSeenText = 'Live';
+    }
+    
+    // For single node (standalone), hide node header if name is "Local"
+    const isSingleLocalNode = nodeName === 'Local' && nodeUrl === 'localhost';
+    const isCollapsed = collapsedNodes.has(nodeUrl);
+    
+    if (isSingleLocalNode) {
+        // Standalone mode: skip node wrapper, show GPUs directly
+        return `<div class="node-gpus-grid" id="node-gpus-${nodeUrl}"></div>`;
+    }
+    
+    // Multi-node or named node: show full node section
+    return `
+        <div class="node-section ${isCollapsed ? 'collapsed' : ''}" data-node-url="${nodeUrl}">
+            <div class="node-header" onclick="toggleNodeSection('${nodeUrl}')">
+                <div class="node-info">
+                    <div class="node-title">
+                        <span class="node-collapse-icon">${isCollapsed ? '▶' : '▼'}</span>
+                        <h2>${nodeName}</h2>
+                        <span class="node-status-badge ${statusClass}">
+                            <span class="status-icon">${statusIcon}</span>
+                            ${statusText}
+                        </span>
+                    </div>
+                    <div class="node-metadata">
+                        ${metadata.hostname && metadata.hostname !== nodeName ? `
+                        <span class="node-meta-item">
+                            <span class="meta-label">Hostname:</span> ${metadata.hostname}
+                        </span>
+                        ` : ''}
+                        ${metadata.ip_address && metadata.ip_address !== '127.0.0.1' ? `
+                        <span class="node-meta-item">
+                            <span class="meta-label">IP:</span> ${metadata.ip_address}
+                        </span>
+                        ` : ''}
+                        <span class="node-meta-item">
+                            <span class="meta-label">GPUs:</span> ${gpuCount}
+                        </span>
+                        ${lastSeenText ? `
+                        <span class="node-meta-item">
+                            <span class="meta-label">Status:</span> ${lastSeenText}
+                        </span>
+                        ` : ''}
+                        ${nodeConfig.tags && nodeConfig.tags.length > 0 ? `
+                        <span class="node-meta-item">
+                            <span class="meta-label">Tags:</span> ${nodeConfig.tags.map(tag => `<span class="node-tag">${tag}</span>`).join(' ')}
+                        </span>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="node-content ${isCollapsed ? 'hidden' : ''}">
+                <div class="node-gpus-grid" id="node-gpus-${nodeUrl}">
+                    ${gpuCount === 0 ? '<div class="no-gpus">No GPUs detected</div>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Toggle node section collapse state
+ */
+function toggleNodeSection(nodeUrl) {
+    const section = document.querySelector(`[data-node-url="${nodeUrl}"]`);
+    if (!section) return;
+    
+    const isCurrentlyCollapsed = collapsedNodes.has(nodeUrl);
+    
+    if (isCurrentlyCollapsed) {
+        collapsedNodes.delete(nodeUrl);
+        section.classList.remove('collapsed');
+        section.querySelector('.node-content').classList.remove('hidden');
+        section.querySelector('.node-collapse-icon').textContent = '▼';
+    } else {
+        collapsedNodes.add(nodeUrl);
+        section.classList.add('collapsed');
+        section.querySelector('.node-content').classList.add('hidden');
+        section.querySelector('.node-collapse-icon').textContent = '▶';
+    }
+}
+
+/**
+ * Render node view with GPUs
+ */
+function renderNodeView(nodes) {
+    const container = document.getElementById('overview-container');
+    if (!container) return;
+    
+    const nodeUrls = Object.keys(nodes);
+    
+    if (nodeUrls.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-text">No Nodes Configured</div>
+                <div class="empty-state-subtext">Configure nodes via GPU_HOT_NODES environment variable or nodes.yaml file</div>
+            </div>
+        `;
+        return;
+    }
+    
+    if (viewMode === 'by-node') {
+        // Group by node view
+        container.innerHTML = nodeUrls.map(nodeUrl => {
+            return createNodeSection(nodeUrl, nodes[nodeUrl]);
+        }).join('');
+        
+        // Populate GPU cards for each node
+        nodeUrls.forEach(nodeUrl => {
+            const nodeData = nodes[nodeUrl];
+            const gpus = nodeData.gpus || {};
+            const nodeContainer = document.getElementById(`node-gpus-${nodeUrl}`);
+            
+            if (nodeContainer && Object.keys(gpus).length > 0) {
+                Object.keys(gpus).forEach(gpuId => {
+                    const gpuInfo = gpus[gpuId];
+                    const compoundId = `${nodeUrl}:${gpuId}`;
+                    
+                    // Add node context to GPU info
+                    gpuInfo._node_url = nodeUrl;
+                    gpuInfo._node_name = nodeData.node_config?.name || nodeUrl;
+                    gpuInfo._node_status = nodeData.status;
+                    
+                    // Create overview card
+                    const existingCard = nodeContainer.querySelector(`[data-gpu-id="${compoundId}"]`);
+                    if (!existingCard) {
+                        nodeContainer.insertAdjacentHTML('beforeend', createOverviewCard(compoundId, gpuInfo));
+                        if (!chartData[compoundId]) {
+                            initGPUData(compoundId);
+                        }
+                        initOverviewMiniChart(compoundId, gpuInfo.utilization);
+                    }
+                });
+            }
+        });
+    } else {
+        // All GPUs flat view
+        container.innerHTML = '<div class="overview-grid" id="flat-gpu-grid"></div>';
+        const flatGrid = document.getElementById('flat-gpu-grid');
+        
+        nodeUrls.forEach(nodeUrl => {
+            const nodeData = nodes[nodeUrl];
+            const gpus = nodeData.gpus || {};
+            
+            Object.keys(gpus).forEach(gpuId => {
+                const gpuInfo = gpus[gpuId];
+                const compoundId = `${nodeUrl}:${gpuId}`;
+                
+                gpuInfo._node_url = nodeUrl;
+                gpuInfo._node_name = nodeData.node_config?.name || nodeUrl;
+                gpuInfo._node_status = nodeData.status;
+                
+                const existingCard = flatGrid.querySelector(`[data-gpu-id="${compoundId}"]`);
+                if (!existingCard) {
+                    flatGrid.insertAdjacentHTML('beforeend', createOverviewCard(compoundId, gpuInfo));
+                    if (!chartData[compoundId]) {
+                        initGPUData(compoundId);
+                    }
+                    initOverviewMiniChart(compoundId, gpuInfo.utilization);
+                }
+            });
+        });
+    }
+}
+
+/**
+ * Switch view mode
+ */
+function switchViewMode(mode) {
+    viewMode = mode;
+    
+    // Update button states
+    document.querySelectorAll('.view-mode-option').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.viewMode === mode) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Re-render will happen on next data update
+}
+
+/**
+ * Create view mode controls
+ */
+function createViewModeControls(nodeCount) {
+    const viewSelector = document.getElementById('view-selector');
+    if (!viewSelector) return;
+    
+    // Only show view toggle for multi-node setups
+    if (nodeCount <= 1) return;
+    
+    // Check if already exists
+    if (document.querySelector('.view-mode-controls')) return;
+    
+    // Add view toggle buttons
+    const controls = document.createElement('div');
+    controls.className = 'view-mode-controls';
+    controls.innerHTML = `
+        <button class="view-mode-option active" data-view-mode="by-node" onclick="switchViewMode('by-node')">
+            By Node
+        </button>
+        <button class="view-mode-option" data-view-mode="all-gpus" onclick="switchViewMode('all-gpus')">
+            All GPUs
+        </button>
+    `;
+    
+    viewSelector.insertBefore(controls, viewSelector.firstChild);
+}
+
+// Make functions globally available
+window.toggleNodeSection = toggleNodeSection;
+window.switchViewMode = switchViewMode;
+
+// Handle incoming GPU data - always in node format
 socket.on('gpu_data', function(data) {
     const overviewContainer = document.getElementById('overview-container');
 
@@ -57,25 +308,65 @@ socket.on('gpu_data', function(data) {
         overviewContainer.innerHTML = '';
     }
 
-    const gpuCount = Object.keys(data.gpus).length;
+    // Always process as nodes (standalone = 1 node, cluster = N nodes)
+    const nodes = data.nodes || {};
+    const nodeUrls = Object.keys(nodes);
+    const nodeCount = nodeUrls.length;
+    
+    // Render node view
+    renderNodeView(nodes);
+    
+    // Create view mode controls if multiple nodes
+    createViewModeControls(nodeCount);
+    
+    // Flatten data for chart updates and backward compatibility
+    const flatGpus = {};
+    for (const nodeUrl in nodes) {
+        const nodeData = nodes[nodeUrl];
+        const nodeName = nodeData.node_config?.name || nodeUrl;
+        for (const gpuId in nodeData.gpus) {
+            const compoundId = `${nodeUrl}:${gpuId}`;
+            flatGpus[compoundId] = {
+                ...nodeData.gpus[gpuId],
+                _node_url: nodeUrl,
+                _node_name: nodeName,
+                _node_status: nodeData.status
+            };
+        }
+    }
+    
+    // Process aggregated processes
+    const allProcesses = [];
+    for (const nodeUrl in nodes) {
+        const nodeData = nodes[nodeUrl];
+        const nodeName = nodeData.node_config?.name || nodeUrl;
+        for (const process of (nodeData.processes || [])) {
+            allProcesses.push({
+                ...process,
+                _node_name: nodeName
+            });
+        }
+    }
+    
+    const gpuCount = Object.keys(flatGpus).length;
     const now = Date.now();
     
     // Performance: Skip ALL DOM updates during active scrolling
     if (isScrolling) {
         // Still update chart data arrays (lightweight) to maintain continuity
         // This ensures no data gaps when scroll ends
-        Object.keys(data.gpus).forEach(gpuId => {
+        Object.keys(flatGpus).forEach(gpuId => {
             if (!chartData[gpuId]) {
                 initGPUData(gpuId);
             }
-            updateAllChartDataOnly(gpuId, data.gpus[gpuId]);
+            updateAllChartDataOnly(gpuId, flatGpus[gpuId]);
         });
         return; // Exit early - zero DOM work during scroll = smooth 60 FPS
     }
     
     // Process each GPU - queue updates for batched rendering
-    Object.keys(data.gpus).forEach(gpuId => {
-        const gpuInfo = data.gpus[gpuId];
+    Object.keys(flatGpus).forEach(gpuId => {
+        const gpuInfo = flatGpus[gpuId];
 
         // Initialize chart data structures if first time seeing this GPU
         if (!chartData[gpuId]) {
@@ -102,10 +393,12 @@ socket.on('gpu_data', function(data) {
     });
     
     // Queue system updates (processes/CPU/RAM) for batching
+    // Use aggregated system data from first node (for standalone) or combined (for cluster)
+    const firstNode = nodes[nodeUrls[0]];
     if (!lastDOMUpdate.system || (now - lastDOMUpdate.system) >= DOM_UPDATE_INTERVAL) {
         pendingUpdates.set('_system', {
-            processes: data.processes,
-            system: data.system,
+            processes: allProcesses,
+            system: firstNode?.system || {},
             now
         });
     }

@@ -7,19 +7,36 @@ function createOverviewCard(gpuId, gpuInfo) {
     const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
     const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
     const memPercent = (memory_used / memory_total) * 100;
+    
+    // Extract node information if present (hub mode)
+    const nodeName = gpuInfo._node_name || '';
+    const nodeStatus = gpuInfo._node_status || 'online';
+    const displayGpuId = gpuId.includes(':') ? gpuId.split(':')[1] : gpuId;
+    
+    // Status badge based on node status
+    let statusText = 'ONLINE';
+    let statusClass = '';
+    if (nodeStatus === 'offline') {
+        statusText = 'OFFLINE';
+        statusClass = 'status-offline';
+    } else if (nodeStatus === 'error') {
+        statusText = 'ERROR';
+        statusClass = 'status-error';
+    }
 
     return `
-        <div class="overview-gpu-card" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')" style="pointer-events: auto;">
+        <div class="overview-gpu-card ${nodeStatus !== 'online' ? 'node-' + nodeStatus : ''}" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')" style="pointer-events: auto;">
             <div class="overview-header">
                 <div>
+                    ${nodeName ? `<p style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">${nodeName}</p>` : ''}
                     <h2 style="font-size: 1.5rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">
-                        GPU ${gpuId}
+                        GPU ${displayGpuId}
                     </h2>
                     <p style="color: var(--text-secondary); font-size: 0.9rem;">${getMetricValue(gpuInfo, 'name', 'Unknown GPU')}</p>
                 </div>
-                <div class="gpu-status-badge">
+                <div class="gpu-status-badge ${statusClass}">
                     <span class="status-dot"></span>
-                    <span class="status-text">ONLINE</span>
+                    <span class="status-text">${statusText}</span>
                 </div>
             </div>
 
@@ -87,12 +104,18 @@ function createGPUCard(gpuId, gpuInfo) {
     const power_limit = getMetricValue(gpuInfo, 'power_limit', 1);
     const memPercent = (memory_used / memory_total) * 100;
     const powerPercent = (power_draw / power_limit) * 100;
+    
+    // Extract node information if present (hub mode)
+    const nodeName = gpuInfo._node_name || '';
+    const nodeStatus = gpuInfo._node_status || 'online';
+    const displayGpuId = gpuId.includes(':') ? gpuId.split(':')[1] : gpuId;
 
     return `
         <div class="gpu-card" id="gpu-${gpuId}">
             <div class="gpu-header-enhanced">
                 <div class="gpu-info-section">
-                    <div class="gpu-title-large">GPU ${gpuId}</div>
+                    ${nodeName ? `<div class="gpu-node-badge">${nodeName}</div>` : ''}
+                    <div class="gpu-title-large">GPU ${displayGpuId}</div>
                     <div class="gpu-name">${gpuInfo.name}</div>
                     <div class="gpu-specs">
                         <span class="spec-item">
@@ -954,6 +977,9 @@ function updateProcesses(processes) {
             <div class="process-name">
                 <strong>${proc.name}</strong>
                 <span style="color: var(--text-secondary); font-size: 0.85rem; margin-left: 0.5rem;">PID: ${proc.pid}</span>
+                ${proc._node_name && proc._node_name !== 'Local' ? `
+                <span style="color: var(--text-secondary); font-size: 0.75rem; margin-left: 0.5rem;">@ ${proc._node_name}</span>
+                ` : ''}
             </div>
             <div class="process-memory">
                 <span style="font-size: 1.1rem; font-weight: 700;">${formatMemory(proc.memory)}</span>

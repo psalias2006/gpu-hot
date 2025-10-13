@@ -1,12 +1,17 @@
+# GPU Hot - Unified Docker Compose
+# Supports both standalone and cluster modes via profiles
 
 services:
+  # Standalone mode (default) - single GPU node
   gpu-hot:
     build: .
     ports:
       - "1312:1312"
     environment:
+      - GPU_HOT_MODE=${GPU_HOT_MODE:-standalone}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
+      - NVIDIA_SMI=${NVIDIA_SMI:-false}
     deploy:
       resources:
         reservations:
@@ -21,4 +26,123 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    profiles: ["", "standalone"]
+  
+  # Cluster mode: Hub (central dashboard)
+  hub:
+    build: .
+    ports:
+      - "1312:1312"
+    environment:
+      - GPU_HOT_MODE=hub
+      - GPU_HOT_NODES=${GPU_HOT_NODES:-http://agent1:1312,http://agent2:1312,http://agent3:1312}
+      - AGENT_POLL_INTERVAL=${AGENT_POLL_INTERVAL:-1.0}
+      - AGENT_TIMEOUT=${AGENT_TIMEOUT:-5.0}
+    networks:
+      - gpu-cluster
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1312/api/hub/summary"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    profiles: ["cluster"]
+  
+  # Cluster mode: Agent 1
+  agent1:
+    build: .
+    ports:
+      - "1313:1312"
+    environment:
+      - GPU_HOT_MODE=agent
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - gpu-cluster
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1312/api/agent/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles: ["cluster"]
+  
+  # Cluster mode: Agent 2
+  agent2:
+    build: .
+    ports:
+      - "1314:1312"
+    environment:
+      - GPU_HOT_MODE=agent
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - gpu-cluster
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1312/api/agent/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles: ["cluster"]
+  
+  # Cluster mode: Agent 3
+  agent3:
+    build: .
+    ports:
+      - "1315:1312"
+    environment:
+      - GPU_HOT_MODE=agent
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - gpu-cluster
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1312/api/agent/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles: ["cluster"]
+
+networks:
+  gpu-cluster:
+    driver: bridge
+
+# Usage:
+# Standalone mode (default):
+#   docker-compose up
+#   or
+#   docker-compose --profile standalone up
+#
+# Cluster mode (1 hub + 3 agents):
+#   docker-compose --profile cluster up
+#
+# Custom cluster nodes via environment:
+#   GPU_HOT_NODES=http://node1:1312,http://node2:1312 docker-compose --profile cluster up
 
