@@ -172,22 +172,22 @@ chartConfigs.yourMetric = { type: 'line', ... };
 
 ```
 gpu-hot/
-├── app.py                    # Flask + WebSocket server
+├── app.py                      # Flask + WebSocket server
 ├── core/
-│   ├── config.py             # Configuration
-│   ├── monitor.py            # NVML GPU monitoring
-│   ├── handlers.py           # WebSocket handlers
-│   ├── routes.py             # HTTP routes
+│   ├── config.py               # Configuration
+│   ├── monitor.py              # NVML GPU monitoring
+│   ├── handlers.py             # WebSocket handlers
+│   ├── routes.py               # HTTP routes
 │   └── metrics/
-│       ├── collector.py      # Metrics collection
-│       └── utils.py          # Metric utilities
+│       ├── collector.py        # Metrics collection
+│       └── utils.py            # Metric utilities
 ├── static/
 │   ├── js/
-│   │   ├── charts.js         # Chart configs
-│   │   ├── gpu-cards.js      # UI components
-│   │   ├── socket-handlers.js # WebSocket + rendering
-│   │   ├── ui.js             # View management
-│   │   └── app.js            # Init
+│   │   ├── charts.js           # Chart configs
+│   │   ├── gpu-cards.js        # UI components
+│   │   ├── socket-handlers.js  # WebSocket + rendering
+│   │   ├── ui.js               # View management
+│   │   └── app.js              # Init
 │   └── css/styles.css
 ├── templates/index.html
 ├── Dockerfile
