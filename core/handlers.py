@@ -13,7 +13,7 @@ def register_handlers(socketio, monitor):
     """Register SocketIO event handlers"""
     
     @socketio.on('connect')
-    def on_connect():
+    def on_connect(auth=None):
         logger.info('Client connected')
         if not monitor.running:
             monitor.running = True

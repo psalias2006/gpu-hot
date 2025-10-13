@@ -25,6 +25,8 @@ class HubMonitor:
         self.node_cache = {}  # Cache for node data
         self.node_status = {}  # Track node status
         self.executor = ThreadPoolExecutor(max_workers=50)  # Parallel polling
+        self.running = False  # Track if monitoring loop is running
+        self.gpu_data = {}  # Cached GPU data for compatibility
         
         # Initialize node status
         for node in self.nodes:
@@ -69,11 +71,16 @@ class HubMonitor:
                 'tags': node.get('tags', [])
             }
             
-            # Update status
+            # Update status and detect recovery
+            was_offline = self.node_status[node_url]['status'] != 'online'
             self.node_status[node_url]['status'] = 'online'
             self.node_status[node_url]['last_seen'] = time.time()
             self.node_status[node_url]['error_count'] = 0
             self.node_status[node_url]['last_error'] = None
+            
+            # Log recovery
+            if was_offline:
+                logger.info(f"✅ Node recovered: {node_name} ({node_url})")
             
             # Cache the data
             self.node_cache[node_url] = {
@@ -85,21 +92,30 @@ class HubMonitor:
             return (node_url, data)
             
         except requests.exceptions.Timeout:
-            logger.warning(f"Timeout polling {node_name} ({node_url})")
+            # Only log warning if this is a new failure (was previously online)
+            if self.node_status[node_url]['status'] == 'online':
+                logger.warning(f"Timeout polling {node_name} ({node_url})")
             self.node_status[node_url]['status'] = 'timeout'
             self.node_status[node_url]['error_count'] += 1
             self.node_status[node_url]['last_error'] = 'Timeout'
             return (node_url, None)
             
         except requests.exceptions.ConnectionError:
-            logger.warning(f"Connection error polling {node_name} ({node_url})")
+            # Only log warning if this is a new failure (was previously online)
+            if self.node_status[node_url]['status'] == 'online':
+                logger.warning(f"Node offline: {node_name} ({node_url})")
+            elif self.node_status[node_url]['status'] in ['offline', 'timeout', 'error']:
+                # Node recovering - log as debug
+                logger.debug(f"Still offline: {node_name} ({node_url})")
             self.node_status[node_url]['status'] = 'offline'
             self.node_status[node_url]['error_count'] += 1
             self.node_status[node_url]['last_error'] = 'Connection refused'
             return (node_url, None)
             
         except Exception as e:
-            logger.error(f"Error polling {node_name} ({node_url}): {e}")
+            # Only log error if this is a new failure
+            if self.node_status[node_url]['status'] == 'online':
+                logger.error(f"Error polling {node_name} ({node_url}): {e}")
             self.node_status[node_url]['status'] = 'error'
             self.node_status[node_url]['error_count'] += 1
             self.node_status[node_url]['last_error'] = str(e)
@@ -232,6 +248,8 @@ class HubMonitor:
                 gpu_info['_node_status'] = node_data.get('status', 'unknown')
                 flat_gpus[compound_key] = gpu_info
         
+        # Cache for routes.py compatibility
+        self.gpu_data = flat_gpus
         return flat_gpus
     
     def get_processes(self):
