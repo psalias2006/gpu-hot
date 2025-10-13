@@ -37,7 +37,7 @@ Open `http://localhost:1312`
 ```bash
 git clone https://github.com/psalias2006/gpu-hot
 cd gpu-hot
-docker-compose up --build
+docker-compose -f docker-compose.hub.yml up --build
 ```
 
 **Local dev:**
@@ -53,7 +53,7 @@ python app.py
 
 ### Cluster Mode (Multi-Node Monitoring)
 
-Monitor GPUs across multiple servers. No SSH required - just start agents on each node and hub on your laptop.
+Monitor GPUs across multiple servers. No SSH required - just start agents on each node and hub on your monitor machine.
 
 **Simple 2-step setup:**
 
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 GPU_HOT_MODE=agent python app.py
 ```
 
-**Step 2: On your laptop/monitoring machine:**
+**Step 2: On your monitor machine:**
 ```bash
 # Run hub pointing to your nodes
 GPU_HOT_MODE=hub GPU_HOT_NODES=http://node1:1312,http://node2:1312 python app.py
@@ -78,47 +78,59 @@ GPU_HOT_MODE=hub GPU_HOT_NODES=http://node1:1312,http://node2:1312 python app.py
 
 ---
 
-**Using Docker (even simpler):**
+**Using Docker:**
 
-**On each GPU node:**
+**On your monitor machine** (`docker-compose.hub.yml`):
 ```bash
+# Monitor your monitor machine only
+docker-compose -f docker-compose.hub.yml up -d
+
+# Monitor your monitor machine + remote node(s)
+REMOTE_NODES=http://192.168.0.212:1312 docker-compose -f docker-compose.hub.yml up -d
+
+# Monitor multiple remote_machines
+REMOTE_NODES=http://192.168.0.212:1312,http://node2:1312 docker-compose -f docker-compose.hub.yml up -d
+```
+
+**On remote GPU nodes** (`docker-compose.agent.yml`):
+```bash
+# Simple agent setup
+docker-compose -f docker-compose.agent.yml up -d
+
+# Or single Docker command:
 docker run -d --gpus all -p 1312:1312 -e GPU_HOT_MODE=agent ghcr.io/psalias2006/gpu-hot:latest
 ```
 
-**On your laptop:**
-```bash
-docker run -d -p 1312:1312 \
-  -e GPU_HOT_MODE=hub \
-  -e GPU_HOT_NODES=http://node1:1312,http://node2:1312 \
-  ghcr.io/psalias2006/gpu-hot:latest
-```
-
 ---
 
-**Optional: YAML configuration for many nodes**
+**Configuration Options:**
 
-Create `nodes.yaml`:
+**Option 1: Environment Variable** (quick, for few nodes)
+```bash
+REMOTE_NODES=http://192.168.0.212:1312,http://node2:1312 docker-compose -f docker-compose.hub.yml up -d
+```
+
+**Option 2: Config File** (organized, for many nodes)
+```bash
+# Create nodes.yaml from template
+cp nodes.yaml.example nodes.yaml
+
+# Edit with your remote_machines
+nano nodes.yaml
+
+# Run (docker-compose.hub.yml automatically mounts nodes.yaml)
+docker-compose -f docker-compose.hub.yml up -d
+```
+
+Example `nodes.yaml`:
 ```yaml
 nodes:
-  - url: http://node1:1312
-    name: "Training Node 1"
-    tags: ["training"]
+  - url: http://192.168.0.212:1312
+    name: "Victus Gaming PC"
+    tags: ["gaming", "rtx"]
   - url: http://node2:1312
-    name: "Inference Node"
-    tags: ["inference"]
-```
-
-Run hub:
-```bash
-GPU_HOT_MODE=hub python app.py  # Auto-loads nodes.yaml
-```
-
----
-
-**Test cluster locally:**
-```bash
-# Start 1 hub + 3 agents on same machine
-docker-compose --profile cluster up
+    name: "Training Server"
+    tags: ["training", "a100"]
 ```
 
 ### Cluster Architecture
@@ -497,6 +509,49 @@ sudo systemctl restart docker
 ```python
 # core/config.py
 DEBUG = True
+```
+
+---
+
+## Quick Reference
+
+### **Your Exact Scenario (Monitor Machine + Remote GPU Node)**
+
+**On remote GPU node (192.168.0.212):**
+```bash
+# Python
+GPU_HOT_MODE=agent python app.py
+
+# Docker
+docker run -d --gpus all -p 1312:1312 -e GPU_HOT_MODE=agent ghcr.io/psalias2006/gpu-hot:latest
+```
+
+**On your monitor machine (192.168.0.128):**
+```bash
+# Python
+GPU_HOT_MODE=hub GPU_HOT_NODES=http://192.168.0.212:1312 python app.py
+
+# Docker
+docker run -d -p 1312:1312 \
+  -e GPU_HOT_MODE=hub \
+  -e GPU_HOT_NODES=http://192.168.0.212:1312 \
+  ghcr.io/psalias2006/gpu-hot:latest
+```
+
+**Open:** `http://localhost:1312`
+
+---
+
+### **Common Commands**
+
+```bash
+# On your monitor machine (hub + local agent)
+docker-compose -f docker-compose.hub.yml up -d                              # Monitor machine only
+REMOTE_NODES=http://192.168.0.212:1312 docker-compose -f docker-compose.hub.yml up -d      # Monitor machine + 1 remote
+REMOTE_NODES=http://node1:1312,http://node2:1312 docker-compose -f docker-compose.hub.yml up -d  # Monitor machine + N remote_machines
+
+# On remote GPU nodes (agent only)
+docker-compose -f docker-compose.agent.yml up -d
 ```
 
 ---

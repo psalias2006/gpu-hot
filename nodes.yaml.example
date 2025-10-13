@@ -1,0 +1,26 @@
+# GPU Hot - Remote Nodes Configuration
+# Copy this file to nodes.yaml and customize for your cluster
+#
+# Note: If using docker-compose.hub.yml, this file is automatically mounted.
+# If using REMOTE_NODES environment variable, that takes precedence.
+
+nodes:
+  # Example remote GPU nodes
+  - url: http://192.168.0.212:1312
+    name: "Victus Gaming PC"
+    tags: ["gaming", "rtx"]
+  
+  - url: http://192.168.0.220:1312
+    name: "Training Server"
+    tags: ["training", "a100", "datacenter-a"]
+  
+  - url: http://gpu-node-03:1312
+    name: "Inference Node"
+    tags: ["inference", "datacenter-b"]
+
+# Usage:
+# 1. Copy this file: cp nodes.yaml.example nodes.yaml
+# 2. Edit nodes.yaml with your actual node IPs/hostnames
+# 3. Run: docker-compose -f docker-compose.hub.yml up -d
+# 4. Open: http://localhost:1312
+
