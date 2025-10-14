@@ -69,9 +69,54 @@ class MetricsCollector:
             4: 'NVS', 5: 'GRID', 6: 'Titan',
             7: 'GeForce GTX', 8: 'GeForce RTX', 9: 'Titan RTX'
         }
-        
+
         if brand := safe_get(pynvml.nvmlDeviceGetBrand, handle):
-            data['brand'] = BRAND_MAP.get(brand, f'Brand {brand}')
+            brand_name = BRAND_MAP.get(brand, f'Brand {brand}')
+
+            # Enhanced brand detection with comprehensive name-based override
+            if 'name' in data:
+                name = data['name'].upper()
+
+                # Override NVML brand detection if name suggests different brand
+                # RTX Series detection (highest priority)
+                if any(x in name for x in ['RTX 50', 'RTX 5090', 'RTX 5080', 'RTX 5070', 'RTX 5060', 'RTX 5050']):
+                    brand_name = 'GeForce RTX'  # RTX 50 series should be GeForce RTX
+                elif any(x in name for x in ['RTX 40', 'RTX 4090', 'RTX 4080', 'RTX 4070', 'RTX 4060', 'RTX 4050']):
+                    brand_name = 'GeForce RTX'  # RTX 40 series should be GeForce RTX
+                elif any(x in name for x in ['RTX 30', 'RTX 3090', 'RTX 3080', 'RTX 3070', 'RTX 3060', 'RTX 3050']):
+                    brand_name = 'GeForce RTX'  # RTX 30 series should be GeForce RTX
+                elif any(x in name for x in ['RTX 20', 'RTX 2080', 'RTX 2070', 'RTX 2060']):
+                    brand_name = 'GeForce RTX'  # RTX 20 series should be GeForce RTX
+                # GTX Series detection
+                elif any(x in name for x in ['GTX 16', 'GTX 1660', 'GTX 1650', 'GTX 1630']):
+                    brand_name = 'GeForce'  # GTX 16 series should be GeForce
+                elif any(x in name for x in ['GTX 10', 'GTX 1080', 'GTX 1070', 'GTX 1060']):
+                    brand_name = 'GeForce'  # GTX 10 series should be GeForce
+                # Tesla/Data Center GPUs
+                elif any(x in name for x in ['TESLA', 'T4', 'T10', 'T40']):
+                    brand_name = 'Tesla'  # Tesla GPUs should be Tesla
+                elif any(x in name for x in ['A100', 'A40', 'A30', 'A10', 'A16', 'A2']):
+                    brand_name = 'Tesla'  # Ampere-based Tesla
+                elif any(x in name for x in ['H100', 'H200']):
+                    brand_name = 'Tesla'  # Hopper-based Tesla
+                elif any(x in name for x in ['L4', 'L40', 'L40S']):
+                    brand_name = 'Tesla'  # Ada-based Tesla
+                elif any(x in name for x in ['V100']):
+                    brand_name = 'Tesla'  # Volta-based Tesla
+                # GRID GPUs that are actually Tesla-based should show as Tesla
+                elif brand == 5:
+                    if any(x in name for x in ['TESLA', 'T4', 'T10', 'T40']):
+                        brand_name = 'Tesla'
+                    elif any(x in name for x in ['A100', 'A40', 'A30', 'A10', 'A16', 'A2']):
+                        brand_name = 'Tesla'  # Ampere-based Tesla
+                    elif any(x in name for x in ['H100']):
+                        brand_name = 'Tesla'  # Hopper-based Tesla
+                    elif any(x in name for x in ['L4', 'L40']):
+                        brand_name = 'Tesla'  # Ada-based Tesla
+                    elif any(x in name for x in ['V100']):
+                        brand_name = 'Tesla'  # Volta-based Tesla
+
+            data['brand'] = brand_name
     
     def _detect_architecture(self, handle, data):
         """Detect GPU architecture with fallback to name-based detection"""
@@ -91,8 +136,30 @@ class MetricsCollector:
     def _detect_arch_from_name(self, gpu_name):
         """Detect architecture from GPU model name"""
         name = gpu_name.upper()
-        
+
+        # GRID GPU patterns - these are often Tesla/Ampere based
+        grid_patterns = [
+            (['V100', 'TESLA V100'], 'Volta'),
+            (['T4', 'TESLA T4'], 'Turing'),
+            (['A100', 'TESLA A100'], 'Ampere'),
+            (['A40', 'TESLA A40'], 'Ampere'),
+            (['A30', 'TESLA A30'], 'Ampere'),
+            (['A10', 'TESLA A10'], 'Ampere'),
+            (['A16', 'TESLA A16'], 'Ampere'),
+            (['A2', 'TESLA A2'], 'Ampere'),
+            (['H100', 'TESLA H100'], 'Hopper'),
+            (['L40', 'L40S', 'L4'], 'Ada Lovelace'),
+            (['RTX', 'GRTX'], 'Ada Lovelace'),  # GRID RTX variants
+        ]
+
+        # Check for GRID patterns first
+        for patterns, arch in grid_patterns:
+            if any(pattern in name for pattern in patterns):
+                return arch
+
+        # Standard consumer/professional patterns
         arch_patterns = [
+            (['RTX 50', 'RTX 5090', 'RTX 5080', 'RTX 5070', 'RTX 5060'], 'Ada Lovelace'),  # RTX 50 series
             (['RTX 40', 'RTX 4', 'L40', 'L4'], 'Ada Lovelace'),
             (['H100', 'H200'], 'Hopper'),
             (['RTX 30', 'RTX 3', 'A100', 'A40', 'A30', 'A10', 'A6000', 'A5000', 'A4000', 'A2000'], 'Ampere'),
@@ -102,11 +169,29 @@ class MetricsCollector:
             (['GTX 7', 'GTX 6', 'K80', 'K40'], 'Kepler'),
             (['V100'], 'Volta'),
         ]
-        
+
         for patterns, arch in arch_patterns:
             if any(pattern in name for pattern in patterns):
                 return arch
-        
+
+        # Additional fallback patterns for GRID GPUs
+        if 'GRID' in name or 'VGRID' in name:
+            # GRID GPUs are often based on Tesla/Quadro architectures
+            if any(x in name for x in ['K1', 'K2', 'K520', 'K600']):
+                return 'Kepler'
+            elif any(x in name for x in ['M3', 'M4', 'M6', 'M10', 'M40', 'M60']):
+                return 'Maxwell'
+            elif any(x in name for x in ['P4', 'P6', 'P40', 'P100']):
+                return 'Pascal'
+            elif any(x in name for x in ['T4', 'T10']):
+                return 'Turing'
+            elif any(x in name for x in ['A2', 'A10', 'A16', 'A30', 'A40', 'A100']):
+                return 'Ampere'
+            elif any(x in name for x in ['H100']):
+                return 'Hopper'
+            elif any(x in name for x in ['L4', 'L40']):
+                return 'Ada Lovelace'
+
         return 'Unknown'
     
     def _add_performance(self, handle, data):
@@ -363,4 +448,3 @@ class MetricsCollector:
             if nvlinks:
                 data['nvlink_links'] = nvlinks
                 data['nvlink_active_count'] = active_count
-
