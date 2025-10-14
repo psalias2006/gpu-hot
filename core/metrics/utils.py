@@ -14,15 +14,14 @@ def safe_get(func, *args, default=None):
 
 def decode_bytes(value):
     """Decode bytes to string if necessary"""
-    return value.decode('utf-8') if isinstance(value, bytes) else value
+    return value.decode("utf-8") if isinstance(value, bytes) else value
 
 
 def to_mib(bytes_value):
     """Convert bytes to MiB"""
-    return float(bytes_value / (1024 ** 2))
+    return float(bytes_value / (1024**2))
 
 
 def to_watts(milliwatts):
     """Convert milliwatts to watts"""
     return float(milliwatts / 1000.0)
-
