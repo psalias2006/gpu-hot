@@ -1,16 +1,45 @@
 :root {
-    --primary-gradient: linear-gradient(135deg, #4facfe 0%, #1e3a8a 100%);
-    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-    --dark-bg: #0f0f23;
-    --card-bg: rgba(255, 255, 255, 0.05);
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.7);
-    --border-color: rgba(255, 255, 255, 0.1);
-    --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+    /* Catppuccin Mocha Color Palette */
+    --rosewater: #f5e0dc;
+    --flamingo: #f2cdcd;
+    --pink: #f5c2e7;
+    --mauve: #cba6f7;
+    --red: #f38ba8;
+    --maroon: #eba0ac;
+    --peach: #fab387;
+    --yellow: #f9e2af;
+    --green: #a6e3a1;
+    --teal: #94e2d5;
+    --sky: #89dceb;
+    --sapphire: #74c7ec;
+    --blue: #89b4fa;
+    --lavender: #b4befe;
+    --text: #cdd6f4;
+    --subtext1: #bac2de;
+    --subtext0: #a6adc8;
+    --overlay2: #9399b2;
+    --overlay1: #7f849c;
+    --overlay0: #6c7086;
+    --surface2: #585b70;
+    --surface1: #45475a;
+    --surface0: #313244;
+    --base: #1e1e2e;
+    --mantle: #181825;
+    --crust: #11111b;
+
+    /* Theme Variables using Catppuccin Mocha */
+    --primary-gradient: linear-gradient(135deg, #cba6f7 0%, #89b4fa 100%);
+    --secondary-gradient: linear-gradient(135deg, #f5c2e7 0%, #f38ba8 100%);
+    --success-gradient: linear-gradient(135deg, #a6e3a1 0%, #94e2d5 100%);
+    --warning-gradient: linear-gradient(135deg, #fab387 0%, #f9e2af 100%);
+    --danger-gradient: linear-gradient(135deg, #f38ba8 0%, #eba0ac 100%);
+    --dark-bg: #1e1e2e;
+    --card-bg: rgba(49, 50, 68, 0.8);
+    --text-primary: #cdd6f4;
+    --text-secondary: rgba(186, 194, 222, 0.7);
+    --border-color: rgba(69, 71, 90, 0.5);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -37,9 +66,9 @@ body::before {
     right: 0;
     bottom: 0;
     background:
-        radial-gradient(circle at 20% 80%, rgba(79, 172, 254, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(30, 58, 138, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(56, 189, 248, 0.2) 0%, transparent 50%);
+        radial-gradient(circle at 20% 80%, rgba(203, 166, 247, 0.25) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(137, 180, 250, 0.25) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(180, 190, 254, 0.15) 0%, transparent 50%);
     animation: bgShift 20s ease-in-out infinite;
     z-index: 0;
 }
@@ -90,13 +119,13 @@ body::before {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 1rem;
-    text-shadow: 0 0 30px rgba(79, 172, 254, 0.5);
+    text-shadow: 0 0 30px rgba(203, 166, 247, 0.5);
     animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
-    from { filter: drop-shadow(0 0 20px rgba(79, 172, 254, 0.5)); }
-    to { filter: drop-shadow(0 0 30px rgba(79, 172, 254, 0.8)); }
+    from { filter: drop-shadow(0 0 20px rgba(203, 166, 247, 0.5)); }
+    to { filter: drop-shadow(0 0 30px rgba(203, 166, 247, 0.8)); }
 }
 
 .header p {
@@ -145,9 +174,9 @@ body::before {
 }
 
 .gpu-card {
-    background: linear-gradient(135deg, rgba(15, 15, 35, 0.85) 0%, rgba(20, 20, 50, 0.7) 100%);
+    background: linear-gradient(135deg, rgba(49, 50, 68, 0.9) 0%, rgba(69, 71, 90, 0.8) 100%);
     backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(186, 194, 222, 0.2);
     border-radius: 32px;
     padding: 0;
     /* Performance: isolate rendering context & GPU acceleration */
@@ -155,7 +184,7 @@ body::before {
     will-change: transform;
     transform: translateZ(0);
     backface-visibility: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(186, 194, 222, 0.1) inset;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -168,7 +197,7 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 30% 20%, rgba(79, 172, 254, 0.08) 0%, transparent 60%);
+    background: radial-gradient(circle at 30% 20%, rgba(203, 166, 247, 0.12) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
 }
@@ -179,8 +208,7 @@ body::before {
 }
 
 .gpu-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 48px rgba(79, 172, 254, 0.25), 0 0 0 1px rgba(79, 172, 254, 0.2) inset;
+    /* Hover effects removed */
 }
 
 .gpu-header {
@@ -222,8 +250,8 @@ body::before {
     align-items: center;
     margin: 0;
     padding: 2.5rem;
-    background: linear-gradient(135deg, rgba(79, 172, 254, 0.12) 0%, rgba(30, 58, 138, 0.08) 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: linear-gradient(135deg, rgba(203, 166, 247, 0.15) 0%, rgba(137, 180, 250, 0.12) 100%);
+    border-bottom: 1px solid rgba(186, 194, 222, 0.1);
     position: relative;
     overflow: hidden;
 }
@@ -235,7 +263,7 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.03) 50%, transparent 70%);
+    background: linear-gradient(45deg, transparent 30%, rgba(203, 166, 247, 0.08) 50%, transparent 70%);
     animation: shine 3s ease-in-out infinite;
 }
 
@@ -279,9 +307,9 @@ body::before {
 }
 
 .spec-mode {
-    background: rgba(79, 172, 254, 0.15);
-    border: 1px solid rgba(79, 172, 254, 0.3);
-    color: #4facfe;
+    background: rgba(203, 166, 247, 0.2);
+    border: 1px solid rgba(203, 166, 247, 0.4);
+    color: #cba6f7;
     font-weight: 600;
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -290,22 +318,22 @@ body::before {
 
 .gpu-status-badge {
     padding: 0.75rem 1.5rem;
-    background: rgba(67, 234, 123, 0.15);
-    border: 2px solid rgba(67, 234, 123, 0.4);
+    background: rgba(166, 227, 161, 0.2);
+    border: 2px solid rgba(166, 227, 161, 0.4);
     border-radius: 30px;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #43e97b;
+    color: #a6e3a1;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     letter-spacing: 1px;
-    box-shadow: 0 0 20px rgba(67, 234, 123, 0.3);
+    box-shadow: 0 0 20px rgba(166, 227, 161, 0.3);
     z-index: 2;
 }
 
 .status-text {
-    text-shadow: 0 0 10px rgba(67, 234, 123, 0.5);
+    text-shadow: 0 0 10px rgba(166, 227, 161, 0.5);
 }
 
 /* Circular Progress Gauge */
@@ -421,7 +449,7 @@ body::before {
     inset: 0;
     border-radius: 24px;
     padding: 1px;
-    background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(30, 58, 138, 0.2));
+    background: linear-gradient(135deg, rgba(203, 166, 247, 0.25), rgba(137, 180, 250, 0.2));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -431,13 +459,12 @@ body::before {
 }
 
 .metric-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 60px rgba(79, 172, 254, 0.3);
+    /* Hover effects removed */
 }
 
 .metric-card:hover::before,
 .metric-card:hover::after {
-    opacity: 1;
+    /* Hover effects removed */
 }
 
 .metric-header {
@@ -537,7 +564,7 @@ body::before {
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+    box-shadow: 0 0 10px rgba(166, 227, 161, 0.5);
 }
 
 .progress-fill::after {
@@ -557,13 +584,13 @@ body::before {
 }
 
 .mem-bar {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+    background: linear-gradient(135deg, #89b4fa 0%, #74c7ec 100%);
+    box-shadow: 0 0 10px rgba(137, 180, 250, 0.5);
 }
 
 .power-bar {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    box-shadow: 0 0 10px rgba(67, 234, 123, 0.5);
+    background: linear-gradient(135deg, #a6e3a1 0%, #94e2d5 100%);
+    box-shadow: 0 0 10px rgba(166, 227, 161, 0.5);
 }
 
 .status-dot {
@@ -571,14 +598,14 @@ body::before {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #43e97b;
+    background: #a6e3a1;
     margin-right: 0.5rem;
     animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 10px #43e97b; }
-    50% { opacity: 0.5; box-shadow: 0 0 20px #43e97b; }
+    0%, 100% { opacity: 1; box-shadow: 0 0 10px #a6e3a1; }
+    50% { opacity: 0.5; box-shadow: 0 0 20px #a6e3a1; }
 }
 
 .metric {
@@ -605,12 +632,11 @@ body::before {
 }
 
 .metric:hover::before {
-    transform: scaleX(1);
+    /* Hover effects removed */
 }
 
 .metric:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.05);
+    /* Hover effects removed */
 }
 
 .metric-value {
@@ -695,19 +721,19 @@ body::before {
 }
 
 .chart-stat-value.current {
-    color: #4facfe;
+    color: #89b4fa;
 }
 
 .chart-stat-value.min {
-    color: #43e97b;
+    color: #a6e3a1;
 }
 
 .chart-stat-value.max {
-    color: #fa709a;
+    color: #f38ba8;
 }
 
 .chart-stat-value.avg {
-    color: #f093fb;
+    color: #cba6f7;
 }
 
 .processes-section {
@@ -733,11 +759,11 @@ body::before {
 }
 
 .processes-header:hover {
-    background: rgba(255, 255, 255, 0.02);
+    /* Hover effects removed */
 }
 
-.processes-header.expanded {
-    border-bottom-color: var(--border-color);
+.processes-header:hover .processes-toggle {
+    /* Hover effects removed */
 }
 
 .processes-toggle {
@@ -816,8 +842,7 @@ body::before {
 }
 
 .process-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateX(8px);
+    /* Hover effects removed */
 }
 
 .process-name {
@@ -862,7 +887,7 @@ body::before {
     left: 0;
     right: 0;
     height: 60px;
-    background: linear-gradient(180deg, transparent 0%, rgba(79, 172, 254, 0.1) 100%);
+    background: linear-gradient(180deg, transparent 0%, rgba(203, 166, 247, 0.15) 100%);
     z-index: 0;
 }
 
@@ -872,8 +897,7 @@ body::before {
 }
 
 .system-metric:hover {
-    transform: translateY(-4px);
-    background: rgba(255, 255, 255, 0.05);
+    /* Hover effects removed */
 }
 
 .system-metric-chart {
@@ -954,14 +978,13 @@ body::before {
 }
 
 .view-option:hover:not(.active) {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.03);
+    /* Hover effects removed */
 }
 
 .view-option.active {
-    background: rgba(79, 172, 254, 0.15);
+    background: rgba(203, 166, 247, 0.2);
     color: white;
-    box-shadow: 0 0 0 1px rgba(79, 172, 254, 0.3);
+    box-shadow: 0 0 0 1px rgba(203, 166, 247, 0.4);
 }
 
 /* Tab Content with smooth transitions */
@@ -1026,13 +1049,11 @@ body::before {
 }
 
 .overview-gpu-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 48px rgba(79, 172, 254, 0.35);
-    border-color: rgba(79, 172, 254, 0.4);
+    /* Hover effects removed */
 }
 
 .overview-gpu-card:hover::after {
-    opacity: 1;
+    /* Hover effects removed */
 }
 
 .overview-header {
@@ -1062,7 +1083,7 @@ body::before {
 }
 
 .overview-metric:hover {
-    background: rgba(255, 255, 255, 0.03);
+    /* Hover effects removed */
 }
 
 .overview-metric-value {
@@ -1091,10 +1112,10 @@ body::before {
 .overview-mini-chart {
     height: 160px;
     position: relative;
-    background: linear-gradient(135deg, rgba(79, 172, 254, 0.03) 0%, rgba(30, 58, 138, 0.03) 100%);
+    background: linear-gradient(135deg, rgba(203, 166, 247, 0.08) 0%, rgba(137, 180, 250, 0.08) 100%);
     border-radius: 16px;
     padding: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(186, 194, 222, 0.1);
 }
 
 /* Detailed View - Full GPU card */
@@ -1179,5 +1200,5 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--secondary-gradient);
+    /* Hover effects removed */
 }

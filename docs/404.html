@@ -15,15 +15,44 @@
         }
 
         :root {
-            --bg: #0a0a0f;
-            --surface: #13131a;
-            --border: rgba(255, 255, 255, 0.08);
-            --text: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --text-muted: rgba(255, 255, 255, 0.4);
-            --accent: #4facfe;
-            --accent-dark: #1e3a8a;
-            --accent-light: #00f2fe;
+            /* Catppuccin Mocha Color Palette */
+            --rosewater: #f5e0dc;
+            --flamingo: #f2cdcd;
+            --pink: #f5c2e7;
+            --mauve: #cba6f7;
+            --red: #f38ba8;
+            --maroon: #eba0ac;
+            --peach: #fab387;
+            --yellow: #f9e2af;
+            --green: #a6e3a1;
+            --teal: #94e2d5;
+            --sky: #89dceb;
+            --sapphire: #74c7ec;
+            --blue: #89b4fa;
+            --lavender: #b4befe;
+            --text: #cdd6f4;
+            --subtext1: #bac2de;
+            --subtext0: #a6adc8;
+            --overlay2: #9399b2;
+            --overlay1: #7f849c;
+            --overlay0: #6c7086;
+            --surface2: #585b70;
+            --surface1: #45475a;
+            --surface0: #313244;
+            --base: #1e1e2e;
+            --mantle: #181825;
+            --crust: #11111b;
+
+            /* Theme Variables using Catppuccin Mocha */
+            --bg: #1e1e2e;
+            --surface: #313244;
+            --border: rgba(186, 194, 222, 0.2);
+            --text: #cdd6f4;
+            --text-secondary: rgba(186, 194, 222, 0.7);
+            --text-muted: rgba(166, 173, 200, 0.5);
+            --accent: #cba6f7;
+            --accent-dark: #89b4fa;
+            --accent-light: #b4befe;
         }
 
         body {
@@ -48,8 +77,8 @@
             right: 0;
             bottom: 0;
             background:
-                radial-gradient(circle at 20% 50%, rgba(79, 172, 254, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(0, 242, 254, 0.06) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(203, 166, 247, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(137, 180, 250, 0.1) 0%, transparent 50%);
             z-index: 0;
             animation: bgPulse 25s ease-in-out infinite;
             pointer-events: none;
@@ -113,12 +142,11 @@
         }
 
         .logo:hover {
-            color: var(--accent);
-            transform: translateY(-1px);
+            /* Hover effects removed */
         }
 
         .logo:hover::after {
-            width: 100%;
+            /* Hover effects removed */
         }
 
         /* Error Content */
@@ -197,21 +225,20 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(203, 166, 247, 0.3), transparent);
             transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .btn:hover::before {
-            left: 100%;
+            /* Hover effects removed */
         }
 
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 28px rgba(255, 255, 255, 0.2);
+            /* Hover effects removed */
         }
 
         .btn:active {
-            transform: translateY(-1px);
+            /* Hover effects removed */
         }
 
         .links {
@@ -241,12 +268,11 @@
         }
 
         .links a:hover {
-            color: var(--text);
-            transform: translateX(2px);
+            /* Hover effects removed */
         }
 
         .links a:hover::after {
-            width: 100%;
+            /* Hover effects removed */
         }
 
         /* Footer */
@@ -378,4 +404,3 @@
     </footer>
 </body>
 </html>
-
