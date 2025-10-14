@@ -152,11 +152,13 @@ class GPUMonitor:
                         gpu_process_counts[gpu_id]['compute'] = len(procs)
                         
                         for proc in procs:
+                            # Handle None values for usedGpuMemory
+                            memory_used = proc.usedGpuMemory / (1024 ** 2) if proc.usedGpuMemory is not None else 0.0
                             all_processes.append({
                                 'pid': str(proc.pid),
                                 'name': self._get_process_name(proc.pid),
                                 'gpu_uuid': uuid,
-                                'memory': float(proc.usedGpuMemory / (1024 ** 2))
+                                'memory': float(memory_used)
                             })
                     except pynvml.NVMLError:
                         pass
@@ -206,4 +208,3 @@ class GPUMonitor:
                 logger.info("NVML shutdown")
             except Exception as e:
                 logger.error(f"Error shutting down NVML: {e}")
-
