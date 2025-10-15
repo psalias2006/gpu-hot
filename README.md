@@ -17,18 +17,18 @@ Real-time NVIDIA GPU monitoring dashboard. Web-based, no SSH required.
 
 ## Usage
 
-**Single machine:**
+**Start with one machine:**
 ```bash
 docker run -d --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
 ```
 
-**Multi-node cluster:**
+**Scale to multiple servers by adding two flags:**
 ```bash
-# On each GPU server
+# On each GPU server (same command everywhere)
 docker run -d --gpus all -p 1312:1312 -e GPU_HOT_MODE=agent -e NODE_NAME=$(hostname) ghcr.io/psalias2006/gpu-hot:latest
 
-# On hub machine
-docker run -d -p 1312:1312 -e GPU_HOT_MODE=hub -e AGENT_URLS=http://server1:1312,http://server2:1312 ghcr.io/psalias2006/gpu-hot:latest
+# On a hub machine (no GPU required)
+docker run -d -p 1312:1312 -e GPU_HOT_MODE=hub -e AGENT_URLS=http://server1:1312,http://server2:1312,http://server3:1312 ghcr.io/psalias2006/gpu-hot:latest
 ```
 
 Open `http://localhost:1312`
@@ -53,7 +53,7 @@ docker-compose up --build
 - Process monitoring (PID, memory usage)
 - Historical charts (utilization, temperature, power, clocks)
 - System metrics (CPU, RAM)
-- Cluster mode (monitor multiple servers from one dashboard)
+- **Scale from 1 to 100+ GPUs** with the same Docker image
 
 **Metrics:** Utilization, temperature, memory, power draw, fan speed, clock speeds, PCIe info, P-State, throttle status, encoder/decoder sessions
 
@@ -65,9 +65,9 @@ docker-compose up --build
 ```bash
 NVIDIA_VISIBLE_DEVICES=0,1    # Specific GPUs (default: all)
 NVIDIA_SMI=true                # Force nvidia-smi mode
-GPU_HOT_MODE=standalone        # standalone, agent, hub
-NODE_NAME=gpu-server-1         # Agent node name
-AGENT_URLS=http://host:1312... # Hub agent URLs
+GPU_HOT_MODE=standalone        # standalone (default), agent, hub
+NODE_NAME=gpu-server-1         # Node display name in cluster view
+AGENT_URLS=http://host:1312... # Comma-separated agent URLs for hub
 ```
 
 **Backend (`core/config.py`):**
