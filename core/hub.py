@@ -58,7 +58,16 @@ class Hub:
     
     def _connect_node(self, url):
         """Connect to a node"""
-        client = Client(reconnection=True, reconnection_attempts=0, reconnection_delay=1)
+        # Configure client for real-time data streaming (500ms updates)
+        client = Client(
+            reconnection=True,
+            reconnection_attempts=0,  # Infinite reconnection
+            reconnection_delay=2,
+            reconnection_delay_max=10,
+            request_timeout=30,
+            # Optimized for high-frequency real-time data
+            engineio_logger=False
+        )
         
         # Store temporary reference for the closure
         node_url = url
@@ -84,7 +93,7 @@ class Hub:
             # Update URL to node mapping
             self.url_to_node[node_url] = node_name
             
-            # Update or create node entry
+            # Update or create node entry with minimal overhead
             self.nodes[node_name] = {
                 'url': node_url,
                 'client': client,
@@ -93,8 +102,11 @@ class Hub:
                 'last_update': datetime.now().isoformat()
             }
         
-        # Connect to node (blocking call)
-        client.connect(url, wait_timeout=10)
+        # Connect to node
+        client.connect(url, 
+                      wait_timeout=30, 
+                      socketio_path='/socket.io',
+                      transports=['websocket'])  # Force WebSocket for lowest latency
     
     def get_cluster_data(self):
         """Get aggregated data from all nodes"""

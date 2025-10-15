@@ -32,6 +32,6 @@ def hub_loop(socketio, hub):
         except Exception as e:
             logger.error(f"Error in hub loop: {e}")
         
-        # Hub mode uses slightly slower updates (1s) since it's aggregating
-        eventlet.sleep(1.0)
+        # Match node update rate for real-time responsiveness
+        eventlet.sleep(0.5)
 

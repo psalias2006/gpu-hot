@@ -19,7 +19,16 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config.SECRET_KEY
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='eventlet',
+    ping_timeout=120,          # Long timeout for stability
+    ping_interval=30,           # Ping every 30s (don't interfere with 500ms data flow)
+    max_http_buffer_size=10000000,  # 10MB buffer for high-frequency updates
+    logger=False,
+    engineio_logger=False
+)
 
 # Mode selection
 if config.MODE == 'hub':
