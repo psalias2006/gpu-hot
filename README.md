@@ -133,6 +133,7 @@ nodes:
     tags: ["training", "a100"]
 ```
 
+
 ### Cluster Architecture
 
 GPU Hot uses a **hub-spoke architecture** for cluster monitoring:
