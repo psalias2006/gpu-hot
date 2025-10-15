@@ -11,14 +11,14 @@ def register_hub_handlers(socketio, hub):
     
     @socketio.on('connect')
     def on_connect():
-        logger.info('Client connected to hub')
+        logger.debug('Dashboard client connected')
         if not hub.running:
             hub.running = True
             socketio.start_background_task(hub_loop, socketio, hub)
     
     @socketio.on('disconnect')
     def on_disconnect():
-        logger.info('Client disconnected from hub')
+        logger.debug('Dashboard client disconnected')
 
 
 def hub_loop(socketio, hub):

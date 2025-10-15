@@ -14,14 +14,14 @@ def register_handlers(socketio, monitor):
     
     @socketio.on('connect')
     def on_connect():
-        logger.info('Client connected')
+        logger.debug('Dashboard client connected')
         if not monitor.running:
             monitor.running = True
             socketio.start_background_task(monitor_loop, socketio, monitor)
     
     @socketio.on('disconnect')
     def on_disconnect():
-        logger.info('Client disconnected')
+        logger.debug('Dashboard client disconnected')
 
 
 def monitor_loop(socketio, monitor):
