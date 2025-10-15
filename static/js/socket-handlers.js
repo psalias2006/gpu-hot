@@ -50,6 +50,12 @@ const DOM_UPDATE_INTERVAL = 1000; // Text/card updates every 1s, charts update e
 
 // Handle incoming GPU data
 socket.on('gpu_data', function(data) {
+    // Hub mode: different data structure with nodes
+    if (data.mode === 'hub') {
+        handleClusterData(data);
+        return;
+    }
+    
     const overviewContainer = document.getElementById('overview-container');
 
     // Clear loading state
@@ -252,3 +258,168 @@ socket.on('connect_error', function() {
     document.getElementById('connection-status').textContent = 'Connection Error';
     document.getElementById('connection-status').style.color = '#f5576c';
 });
+
+/**
+ * Handle cluster/hub mode data
+ * Data structure: { mode: 'hub', nodes: {...}, cluster_stats: {...} }
+ */
+function handleClusterData(data) {
+    const overviewContainer = document.getElementById('overview-container');
+    const now = Date.now();
+    
+    // Clear loading state
+    if (overviewContainer.innerHTML.includes('Loading GPU data')) {
+        overviewContainer.innerHTML = '';
+    }
+    
+    // Skip DOM updates during scrolling
+    if (isScrolling) {
+        // Still update chart data for continuity
+        Object.entries(data.nodes).forEach(([nodeName, nodeData]) => {
+            if (nodeData.status === 'online') {
+                Object.keys(nodeData.gpus).forEach(gpuId => {
+                    const fullGpuId = `${nodeName}-${gpuId}`;
+                    if (!chartData[fullGpuId]) {
+                        initGPUData(fullGpuId);
+                    }
+                    updateAllChartDataOnly(fullGpuId, nodeData.gpus[gpuId]);
+                });
+            }
+        });
+        return;
+    }
+    
+    // Render GPUs grouped by node (minimal grouping)
+    Object.entries(data.nodes).forEach(([nodeName, nodeData]) => {
+        // Get or create node group container
+        let nodeGroup = overviewContainer.querySelector(`[data-node="${nodeName}"]`);
+        if (!nodeGroup) {
+            overviewContainer.insertAdjacentHTML('beforeend', `
+                <div class="node-group" data-node="${nodeName}">
+                    <div class="node-label">${nodeName}</div>
+                    <div class="node-grid"></div>
+                </div>
+            `);
+            nodeGroup = overviewContainer.querySelector(`[data-node="${nodeName}"]`);
+        }
+        
+        const nodeGrid = nodeGroup.querySelector('.node-grid');
+        
+        if (nodeData.status === 'online') {
+            // Node is online - process its GPUs normally
+            Object.entries(nodeData.gpus).forEach(([gpuId, gpuInfo]) => {
+                const fullGpuId = `${nodeName}-${gpuId}`;
+                
+                // Initialize chart data
+                if (!chartData[fullGpuId]) {
+                    initGPUData(fullGpuId);
+                }
+                
+                // Queue update
+                const shouldUpdateDOM = !lastDOMUpdate[fullGpuId] || (now - lastDOMUpdate[fullGpuId]) >= DOM_UPDATE_INTERVAL;
+                pendingUpdates.set(fullGpuId, {
+                    gpuInfo,
+                    shouldUpdateDOM,
+                    now,
+                    nodeName
+                });
+                
+                // Create card if doesn't exist
+                const existingCard = nodeGrid.querySelector(`[data-gpu-id="${fullGpuId}"]`);
+                if (!existingCard) {
+                    nodeGrid.insertAdjacentHTML('beforeend', createClusterGPUCard(nodeName, gpuId, gpuInfo));
+                    initOverviewMiniChart(fullGpuId, gpuInfo.utilization);
+                    lastDOMUpdate[fullGpuId] = now;
+                }
+            });
+        } else {
+            // Node is offline - remove entire node group
+            const existingCards = nodeGrid.querySelectorAll('[data-gpu-id]');
+            existingCards.forEach(card => {
+                const gpuId = card.getAttribute('data-gpu-id');
+                // Clean up chart data
+                if (chartData[gpuId]) {
+                    delete chartData[gpuId];
+                }
+                if (lastDOMUpdate[gpuId]) {
+                    delete lastDOMUpdate[gpuId];
+                }
+                // Remove the GPU tab
+                removeGPUTab(gpuId);
+            });
+            
+            // Remove the entire node group from the UI
+            nodeGroup.remove();
+        }
+    });
+    
+    // Update processes and system info (use first online node)
+    const firstOnlineNode = Object.values(data.nodes).find(n => n.status === 'online');
+    if (firstOnlineNode) {
+        if (!lastDOMUpdate.system || (now - lastDOMUpdate.system) >= DOM_UPDATE_INTERVAL) {
+            pendingUpdates.set('_system', {
+                processes: firstOnlineNode.processes || [],
+                system: firstOnlineNode.system || {},
+                now
+            });
+        }
+    }
+    
+    // Schedule batched render
+    if (!rafScheduled && pendingUpdates.size > 0) {
+        rafScheduled = true;
+        requestAnimationFrame(processBatchedUpdates);
+    }
+}
+
+/**
+ * Create GPU card for cluster view (includes node name)
+ */
+function createClusterGPUCard(nodeName, gpuId, gpuInfo) {
+    const fullGpuId = `${nodeName}-${gpuId}`;
+    const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
+    const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
+    const memPercent = (memory_used / memory_total) * 100;
+
+    return `
+        <div class="overview-gpu-card" data-gpu-id="${fullGpuId}" onclick="switchToView('gpu-${fullGpuId}')" style="pointer-events: auto;">
+            <div class="overview-header">
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">
+                        GPU ${gpuId}
+                    </h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">${getMetricValue(gpuInfo, 'name', 'Unknown GPU')}</p>
+                </div>
+                <div class="gpu-status-badge">
+                    <span class="status-dot"></span>
+                    <span class="status-text">ONLINE</span>
+                </div>
+            </div>
+
+            <div class="overview-metrics">
+                <div class="overview-metric">
+                    <div class="overview-metric-value" id="overview-util-${fullGpuId}">${getMetricValue(gpuInfo, 'utilization', 0)}%</div>
+                    <div class="overview-metric-label">GPU Usage</div>
+                </div>
+                <div class="overview-metric">
+                    <div class="overview-metric-value" id="overview-temp-${fullGpuId}">${getMetricValue(gpuInfo, 'temperature', 0)}°C</div>
+                    <div class="overview-metric-label">Temperature</div>
+                </div>
+                <div class="overview-metric">
+                    <div class="overview-metric-value" id="overview-mem-${fullGpuId}">${Math.round(memPercent)}%</div>
+                    <div class="overview-metric-label">Memory</div>
+                </div>
+                <div class="overview-metric">
+                    <div class="overview-metric-value" id="overview-power-${fullGpuId}">${getMetricValue(gpuInfo, 'power_draw', 0).toFixed(0)}W</div>
+                    <div class="overview-metric-label">Power Draw</div>
+                </div>
+            </div>
+
+            <div class="overview-chart-section">
+                <div class="overview-mini-chart">
+                    <canvas id="overview-chart-${fullGpuId}"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+}

@@ -89,6 +89,43 @@ function ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM = true) {
     }
 }
 
+// Remove GPU tab
+function removeGPUTab(gpuId) {
+    if (!registeredGPUs.has(gpuId)) {
+        return; // Tab doesn't exist
+    }
+
+    // If currently viewing this GPU's tab, switch to overview
+    if (currentTab === `gpu-${gpuId}`) {
+        switchToView('overview');
+    }
+
+    // Remove view option button
+    const viewOption = document.querySelector(`.view-option[data-view="gpu-${gpuId}"]`);
+    if (viewOption) {
+        viewOption.remove();
+    }
+
+    // Remove tab content
+    const tabContent = document.getElementById(`tab-gpu-${gpuId}`);
+    if (tabContent) {
+        tabContent.remove();
+    }
+
+    // Destroy charts
+    if (charts[gpuId]) {
+        Object.values(charts[gpuId]).forEach(chart => {
+            if (chart && chart.destroy) {
+                chart.destroy();
+            }
+        });
+        delete charts[gpuId];
+    }
+
+    // Remove from registered GPUs
+    registeredGPUs.delete(gpuId);
+}
+
 // Auto-switch to single GPU view if only 1 GPU detected
 function autoSwitchSingleGPU(gpuCount, gpuIds) {
     if (gpuCount === 1 && !hasAutoSwitched) {

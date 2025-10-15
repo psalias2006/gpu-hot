@@ -13,6 +13,13 @@ def register_routes(app, monitor):
     
     @app.route('/api/gpu-data')
     def api_gpu_data():
+        # Hub mode: monitor is None, return empty (data comes via WebSocket)
+        if monitor is None:
+            return jsonify({
+                'gpus': {},
+                'timestamp': datetime.now().isoformat()
+            })
+        
         return jsonify({
             'gpus': monitor.gpu_data,
             'timestamp': datetime.now().isoformat()
