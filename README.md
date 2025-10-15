@@ -17,17 +17,17 @@ Real-time NVIDIA GPU monitoring dashboard. Web-based, no SSH required.
 
 ## Usage
 
-**Single machine:**
+**Start with one machine:**
 ```bash
 docker run -d --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
 ```
 
-**Multiple servers (multi-node cluster):**
+**Scale to multiple servers:**
 ```bash
 # On each GPU server (same command everywhere)
 docker run -d --gpus all -p 1312:1312 -e NODE_NAME=$(hostname) ghcr.io/psalias2006/gpu-hot:latest
 
-# On a hub machine (no GPU required, aggregates all nodes)
+# On a hub machine (no GPU required)
 docker run -d -p 1312:1312 -e GPU_HOT_MODE=hub -e NODE_URLS=http://server1:1312,http://server2:1312,http://server3:1312 ghcr.io/psalias2006/gpu-hot:latest
 ```
 
