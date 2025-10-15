@@ -1,277 +1,144 @@
-"""
-Hub mode for GPU Hot - polls multiple agents and aggregates data
-"""
+"""Hub mode - aggregates data from multiple agent nodes"""
 
 import logging
-import time
-import requests
+import eventlet
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from socketio import Client
 from . import config
 
 logger = logging.getLogger(__name__)
 
 
-class HubMonitor:
-    """Hub monitor that polls multiple agent nodes and aggregates GPU data"""
+class Hub:
+    """Aggregates GPU data from multiple agent nodes"""
     
-    def __init__(self, nodes=None):
-        """Initialize hub monitor with list of agent nodes
+    def __init__(self, agent_urls):
+        self.agent_urls = agent_urls
+        self.agents = {}  # node_name -> {client, data, status, last_update}
+        self.url_to_node = {}  # url -> node_name mapping for disconnect handling
+        self.running = False
         
-        Args:
-            nodes: List of node dictionaries with 'url', 'name', 'tags'
-        """
-        self.nodes = nodes or config.get_nodes()
-        self.node_cache = {}  # Cache for node data
-        self.node_status = {}  # Track node status
-        self.executor = ThreadPoolExecutor(max_workers=50)  # Parallel polling
-        self.running = False  # Track if monitoring loop is running
-        self.gpu_data = {}  # Cached GPU data for compatibility
-        
-        # Initialize node status
-        for node in self.nodes:
-            node_url = node['url']
-            self.node_status[node_url] = {
-                'status': 'unknown',
-                'last_seen': None,
-                'error_count': 0,
-                'last_error': None
+        # Initialize agents as offline, will connect in background
+        for url in agent_urls:
+            self.agents[url] = {
+                'url': url,
+                'client': None,
+                'data': None,
+                'status': 'offline',
+                'last_update': None
             }
+            self.url_to_node[url] = url  # Initially map URL to itself
         
-        logger.info(f"Hub initialized with {len(self.nodes)} nodes")
-        for node in self.nodes:
-            logger.info(f"  - {node.get('name', 'Unknown')}: {node['url']}")
+        # Start background connection task
+        eventlet.spawn(self._connect_all_agents)
     
-    def poll_agent(self, node):
-        """Poll a single agent and return its data
+    def _connect_all_agents(self):
+        """Connect to all agents in background with retries"""
+        # Wait a bit for Docker network to be ready
+        eventlet.sleep(2)
         
-        Args:
-            node: Node dictionary with 'url', 'name', 'tags'
-        
-        Returns:
-            tuple: (node_url, data_dict or None)
-        """
-        node_url = node['url']
-        node_name = node.get('name', node_url)
-        
-        try:
-            # Make request to agent
-            response = requests.get(
-                f"{node_url}/api/agent/gpu-data",
-                timeout=config.AGENT_TIMEOUT
-            )
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            # Add node configuration metadata
-            data['node_config'] = {
-                'url': node_url,
-                'name': node_name,
-                'tags': node.get('tags', [])
-            }
-            
-            # Update status and detect recovery
-            was_offline = self.node_status[node_url]['status'] != 'online'
-            self.node_status[node_url]['status'] = 'online'
-            self.node_status[node_url]['last_seen'] = time.time()
-            self.node_status[node_url]['error_count'] = 0
-            self.node_status[node_url]['last_error'] = None
-            
-            # Log recovery
-            if was_offline:
-                logger.info(f"✅ Node recovered: {node_name} ({node_url})")
-            
-            # Cache the data
-            self.node_cache[node_url] = {
-                'data': data,
-                'cached_at': time.time()
-            }
-            
-            logger.debug(f"Successfully polled {node_name} ({node_url})")
-            return (node_url, data)
-            
-        except requests.exceptions.Timeout:
-            # Only log warning if this is a new failure (was previously online)
-            if self.node_status[node_url]['status'] == 'online':
-                logger.warning(f"Timeout polling {node_name} ({node_url})")
-            self.node_status[node_url]['status'] = 'timeout'
-            self.node_status[node_url]['error_count'] += 1
-            self.node_status[node_url]['last_error'] = 'Timeout'
-            return (node_url, None)
-            
-        except requests.exceptions.ConnectionError:
-            # Only log warning if this is a new failure (was previously online)
-            if self.node_status[node_url]['status'] == 'online':
-                logger.warning(f"Node offline: {node_name} ({node_url})")
-            elif self.node_status[node_url]['status'] in ['offline', 'timeout', 'error']:
-                # Node recovering - log as debug
-                logger.debug(f"Still offline: {node_name} ({node_url})")
-            self.node_status[node_url]['status'] = 'offline'
-            self.node_status[node_url]['error_count'] += 1
-            self.node_status[node_url]['last_error'] = 'Connection refused'
-            return (node_url, None)
-            
-        except Exception as e:
-            # Only log error if this is a new failure
-            if self.node_status[node_url]['status'] == 'online':
-                logger.error(f"Error polling {node_name} ({node_url}): {e}")
-            self.node_status[node_url]['status'] = 'error'
-            self.node_status[node_url]['error_count'] += 1
-            self.node_status[node_url]['last_error'] = str(e)
-            return (node_url, None)
+        for url in self.agent_urls:
+            eventlet.spawn(self._connect_agent_with_retry, url)
     
-    def get_cached_data(self, node_url):
-        """Get cached data for an offline node
+    def _connect_agent_with_retry(self, url):
+        """Connect to an agent with retry logic"""
+        max_retries = 5
+        retry_delay = 2
         
-        Args:
-            node_url: URL of the node
-        
-        Returns:
-            dict or None: Cached data if available and not too old
-        """
-        if node_url not in self.node_cache:
-            return None
-        
-        cached = self.node_cache[node_url]
-        age = time.time() - cached['cached_at']
-        
-        # Only return cache if not too old
-        if age < config.CACHE_OFFLINE_DURATION:
-            data = cached['data'].copy()
-            data['status'] = 'offline'
-            data['cache_age'] = age
-            return data
-        
-        return None
-    
-    def aggregate_data(self):
-        """Poll all agents and aggregate their data
-        
-        Returns:
-            dict: Aggregated data from all nodes
-        """
-        aggregated = {
-            'nodes': {},
-            'summary': {
-                'total_nodes': len(self.nodes),
-                'online_nodes': 0,
-                'offline_nodes': 0,
-                'total_gpus': 0,
-                'timestamp': datetime.now().isoformat()
-            }
-        }
-        
-        # Poll all agents in parallel
-        futures = {
-            self.executor.submit(self.poll_agent, node): node 
-            for node in self.nodes
-        }
-        
-        for future in as_completed(futures):
-            node = futures[future]
-            node_url = node['url']
-            node_name = node.get('name', node_url)
-            
+        for attempt in range(max_retries):
             try:
-                node_url_result, data = future.result()
-                
-                if data:
-                    # Node is online
-                    aggregated['nodes'][node_url] = data
-                    aggregated['summary']['online_nodes'] += 1
-                    aggregated['summary']['total_gpus'] += len(data.get('gpus', {}))
-                else:
-                    # Node is offline, try to use cached data
-                    cached_data = self.get_cached_data(node_url)
-                    if cached_data:
-                        aggregated['nodes'][node_url] = cached_data
-                        aggregated['summary']['offline_nodes'] += 1
-                        aggregated['summary']['total_gpus'] += len(cached_data.get('gpus', {}))
-                        logger.debug(f"Using cached data for {node_name} (age: {cached_data.get('cache_age', 0):.1f}s)")
-                    else:
-                        # No cached data available
-                        aggregated['nodes'][node_url] = {
-                            'metadata': {
-                                'node_id': node_url,
-                                'hostname': node_name,
-                            },
-                            'node_config': {
-                                'url': node_url,
-                                'name': node_name,
-                                'tags': node.get('tags', [])
-                            },
-                            'gpus': {},
-                            'processes': [],
-                            'system': {},
-                            'status': self.node_status[node_url]['status'],
-                            'error': self.node_status[node_url].get('last_error', 'Unknown error')
-                        }
-                        aggregated['summary']['offline_nodes'] += 1
-                        
+                self._connect_agent(url)
+                return  # Success
             except Exception as e:
-                logger.error(f"Error processing result for {node_name}: {e}")
-                aggregated['summary']['offline_nodes'] += 1
+                if attempt < max_retries - 1:
+                    logger.warning(f'Connection attempt {attempt + 1}/{max_retries} failed for {url}, retrying in {retry_delay}s...')
+                    eventlet.sleep(retry_delay)
+                else:
+                    logger.error(f'Failed to connect to agent {url} after {max_retries} attempts')
+    
+    def _connect_agent(self, url):
+        """Connect to an agent node"""
+        client = Client(reconnection=True, reconnection_attempts=0, reconnection_delay=1)
         
-        # Add status information to summary
-        aggregated['summary']['node_status'] = {}
-        for node_url, status in self.node_status.items():
-            node_name = next((n.get('name', node_url) for n in self.nodes if n['url'] == node_url), node_url)
-            aggregated['summary']['node_status'][node_name] = {
-                'url': node_url,
-                'status': status['status'],
-                'last_seen': status['last_seen'],
-                'error_count': status['error_count']
+        # Store temporary reference for the closure
+        agent_url = url
+        
+        @client.on('connect')
+        def on_connect():
+            logger.info(f'Connected to agent: {agent_url}')
+        
+        @client.on('disconnect')
+        def on_disconnect():
+            logger.warning(f'Disconnected from agent: {agent_url}')
+            # Mark agent as offline using URL to node name mapping
+            node_name = self.url_to_node.get(agent_url, agent_url)
+            if node_name in self.agents:
+                self.agents[node_name]['status'] = 'offline'
+                logger.info(f'Marked node {node_name} as offline')
+        
+        @client.on('gpu_data')
+        def on_gpu_data(data):
+            # Extract node name from data or use URL as fallback
+            node_name = data.get('node_name', agent_url)
+            
+            # Update URL to node mapping
+            self.url_to_node[agent_url] = node_name
+            
+            # Update or create agent entry
+            self.agents[node_name] = {
+                'url': agent_url,
+                'client': client,
+                'data': data,
+                'status': 'online',
+                'last_update': datetime.now().isoformat()
             }
         
-        return aggregated
+        # Connect to agent (blocking call)
+        client.connect(url, wait_timeout=10)
     
-    def get_gpu_data(self):
-        """Get aggregated GPU data from all nodes (hub interface)
+    def get_cluster_data(self):
+        """Get aggregated data from all agents"""
+        nodes = {}
+        total_gpus = 0
+        online_nodes = 0
         
-        This method matches the GPUMonitor interface for compatibility
+        for node_name, agent_info in self.agents.items():
+            if agent_info['status'] == 'online' and agent_info['data']:
+                nodes[node_name] = {
+                    'status': 'online',
+                    'gpus': agent_info['data'].get('gpus', {}),
+                    'processes': agent_info['data'].get('processes', []),
+                    'system': agent_info['data'].get('system', {}),
+                    'last_update': agent_info['last_update']
+                }
+                total_gpus += len(agent_info['data'].get('gpus', {}))
+                online_nodes += 1
+            else:
+                nodes[node_name] = {
+                    'status': 'offline',
+                    'gpus': {},
+                    'processes': [],
+                    'system': {},
+                    'last_update': agent_info.get('last_update')
+                }
         
-        Returns:
-            dict: Aggregated GPU data indexed by "node_url:gpu_id"
-        """
-        aggregated = self.aggregate_data()
-        
-        # Flatten structure to match GPUMonitor interface
-        flat_gpus = {}
-        for node_url, node_data in aggregated['nodes'].items():
-            node_name = node_data.get('node_config', {}).get('name', node_url)
-            for gpu_id, gpu_info in node_data.get('gpus', {}).items():
-                # Create compound key: node_url:gpu_id
-                compound_key = f"{node_url}:{gpu_id}"
-                gpu_info['_node_url'] = node_url
-                gpu_info['_node_name'] = node_name
-                gpu_info['_node_status'] = node_data.get('status', 'unknown')
-                flat_gpus[compound_key] = gpu_info
-        
-        # Cache for routes.py compatibility
-        self.gpu_data = flat_gpus
-        return flat_gpus
-    
-    def get_processes(self):
-        """Get aggregated process data from all nodes (hub interface)
-        
-        Returns:
-            list: Combined process list from all nodes
-        """
-        aggregated = self.aggregate_data()
-        
-        all_processes = []
-        for node_url, node_data in aggregated['nodes'].items():
-            node_name = node_data.get('node_config', {}).get('name', node_url)
-            for process in node_data.get('processes', []):
-                process['_node_url'] = node_url
-                process['_node_name'] = node_name
-                all_processes.append(process)
-        
-        return all_processes
+        return {
+            'mode': 'hub',
+            'nodes': nodes,
+            'cluster_stats': {
+                'total_nodes': len(self.agents),
+                'online_nodes': online_nodes,
+                'total_gpus': total_gpus
+            }
+        }
     
     def shutdown(self):
-        """Shutdown hub monitor"""
-        logger.info("Shutting down hub monitor")
-        self.executor.shutdown(wait=False)
+        """Disconnect from all agents"""
+        self.running = False
+        for agent_info in self.agents.values():
+            if agent_info.get('client'):
+                try:
+                    agent_info['client'].disconnect()
+                except:
+                    pass
 

@@ -7,74 +7,69 @@ eventlet.monkey_patch()
 import logging
 from flask import Flask
 from flask_socketio import SocketIO
-from core import GPUMonitor, config
-from core.routes import register_routes
-from core.handlers import register_handlers
+from core import config
 
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config.SECRET_KEY
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-# Initialize based on mode
-mode = config.MODE
-logger.info(f"Starting GPU Hot in {mode.upper()} mode")
-
-if mode == 'agent':
-    # Agent mode: minimal HTTP API, no WebSocket
-    from core.agent import AgentServer
+# Mode selection
+if config.MODE == 'hub':
+    # Hub mode: aggregate data from multiple agents
+    if not config.AGENT_URLS:
+        raise ValueError("Hub mode requires AGENT_URLS environment variable")
     
-    base_monitor = GPUMonitor()
-    monitor = AgentServer(base_monitor)
-    socketio = None  # No WebSocket in agent mode
+    logger.info("Starting GPU Hot in HUB mode")
+    logger.info(f"Connecting to {len(config.AGENT_URLS)} agent(s): {config.AGENT_URLS}")
     
-    register_routes(app, monitor)
-    logger.info("Agent mode: WebSocket disabled, HTTP API only")
+    from core.hub import Hub
+    from core.hub_handlers import register_hub_handlers
+    from core.routes import register_routes
     
-elif mode == 'hub':
-    # Hub mode: poll agents and aggregate data
-    from core.hub import HubMonitor
+    hub = Hub(config.AGENT_URLS)
+    register_routes(app, None)  # No local monitor
+    register_hub_handlers(socketio, hub)
+    monitor_or_hub = hub
     
-    nodes = config.get_nodes()
-    if not nodes:
-        logger.warning("No nodes configured for hub mode. Set GPU_HOT_NODES or create nodes.yaml")
-        logger.warning("Hub will start but will not have any agents to poll")
+elif config.MODE == 'agent':
+    # Agent mode: monitor local GPUs, expose to hub
+    logger.info("Starting GPU Hot in AGENT mode")
+    logger.info(f"Node name: {config.NODE_NAME}")
     
-    monitor = HubMonitor(nodes)
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+    from core import GPUMonitor
+    from core.routes import register_routes
+    from core.handlers import register_handlers
     
+    monitor = GPUMonitor()
     register_routes(app, monitor)
     register_handlers(socketio, monitor)
-    logger.info(f"Hub mode: monitoring {len(nodes)} nodes")
+    monitor_or_hub = monitor
     
 else:
-    # Standalone mode: original behavior
-    monitor = GPUMonitor()
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+    # Standalone mode (default): monitor local GPUs, serve dashboard
+    logger.info("Starting GPU Hot in STANDALONE mode")
     
+    from core import GPUMonitor
+    from core.routes import register_routes
+    from core.handlers import register_handlers
+    
+    monitor = GPUMonitor()
     register_routes(app, monitor)
     register_handlers(socketio, monitor)
-    logger.info("Standalone mode: monitoring local GPUs")
+    monitor_or_hub = monitor
 
 
 if __name__ == '__main__':
     try:
-        print(f"🚀 Starting GPU Hot ({mode.upper()} mode) on {config.HOST}:{config.PORT}")
-        
-        if socketio:
-            # Run with WebSocket support
-            socketio.run(app, host=config.HOST, port=config.PORT, 
-                        debug=config.DEBUG, use_reloader=False)
-        else:
-            # Agent mode: run without WebSocket
-            app.run(host=config.HOST, port=config.PORT, 
-                   debug=config.DEBUG, use_reloader=False)
+        logger.info(f"Server running on {config.HOST}:{config.PORT}")
+        socketio.run(app, host=config.HOST, port=config.PORT, 
+                    debug=config.DEBUG, use_reloader=False)
     finally:
-        if hasattr(monitor, 'shutdown'):
-            monitor.shutdown()
+        monitor_or_hub.shutdown()

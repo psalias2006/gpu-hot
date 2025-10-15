@@ -987,10 +987,33 @@ body::before {
 
 /* Overview Grid - Compact comparison view */
 .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-    gap: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
     margin-bottom: 2rem;
+}
+
+/* Minimal Node Grouping */
+.node-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.node-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(79, 172, 254, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-left: 0.5rem;
+    border-left: 3px solid rgba(79, 172, 254, 0.5);
+}
+
+.node-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 2rem;
 }
 
 .overview-gpu-card {
@@ -1115,7 +1138,7 @@ body::before {
 }
 
 @media (max-width: 1200px) {
-    .overview-grid {
+    .node-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1180,4 +1203,70 @@ body::before {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--secondary-gradient);
+}
+
+/* Cluster/Hub Mode Styles */
+.node-section {
+    margin-bottom: 2rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.node-header {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.node-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+}
+
+.node-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.node-status .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.node-status.online {
+    color: #43e97b;
+}
+
+.node-status.online .status-dot {
+    background: #43e97b;
+    box-shadow: 0 0 8px rgba(67, 233, 123, 0.6);
+}
+
+.node-status.offline {
+    color: #f5576c;
+}
+
+.node-status.offline .status-dot {
+    background: #f5576c;
+    box-shadow: 0 0 8px rgba(245, 87, 108, 0.6);
+}
+
+.node-gpus {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
 }

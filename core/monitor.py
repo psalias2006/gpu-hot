@@ -2,10 +2,7 @@
 
 import pynvml
 import psutil
-import socket
-import time
 import logging
-from datetime import datetime
 from .metrics import MetricsCollector
 from .nvidia_smi_fallback import parse_nvidia_smi
 from .config import NVIDIA_SMI
@@ -21,7 +18,6 @@ class GPUMonitor:
         self.gpu_data = {}
         self.collector = MetricsCollector()
         self.use_smi = {}  # Track which GPUs use nvidia-smi (decided at boot)
-        self.start_time = time.time()  # Track uptime for node metadata
         
         try:
             pynvml.nvmlInit()
@@ -201,67 +197,6 @@ class GPUMonitor:
             return cmdline[0].split('/')[-1].split('\\')[-1]
         except Exception:
             return f'PID:{pid}'
-    
-    def get_node_wrapped_data(self):
-        """Return GPU data wrapped in node format for unified frontend
-        
-        This treats standalone mode as a cluster with 1 node (localhost).
-        Returns the same structure as hub mode for consistent frontend rendering.
-        
-        Returns:
-            dict: Node-structured data compatible with hub format
-        """
-        try:
-            hostname = socket.gethostname()
-        except Exception:
-            hostname = 'localhost'
-        
-        try:
-            ip_address = socket.gethostbyname(hostname)
-        except Exception:
-            ip_address = '127.0.0.1'
-        
-        # Get current GPU and process data
-        gpu_data = self.get_gpu_data()
-        processes = self.get_processes()
-        
-        # System info
-        system_info = {
-            'cpu_percent': psutil.cpu_percent(percpu=False),
-            'memory_percent': psutil.virtual_memory().percent,
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        return {
-            'nodes': {
-                'localhost': {
-                    'metadata': {
-                        'node_id': 'localhost',
-                        'hostname': hostname,
-                        'ip_address': ip_address,
-                        'uptime': time.time() - self.start_time,
-                        'agent_version': '1.0.0',
-                        'timestamp': datetime.now().isoformat()
-                    },
-                    'node_config': {
-                        'url': 'localhost',
-                        'name': 'Local',
-                        'tags': []
-                    },
-                    'gpus': gpu_data,
-                    'processes': processes,
-                    'system': system_info,
-                    'status': 'online'
-                }
-            },
-            'summary': {
-                'total_nodes': 1,
-                'online_nodes': 1,
-                'offline_nodes': 0,
-                'total_gpus': len(gpu_data),
-                'timestamp': datetime.now().isoformat()
-            }
-        }
     
     def shutdown(self):
         if self.initialized:
