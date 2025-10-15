@@ -17,14 +17,16 @@ Real-time NVIDIA GPU monitoring dashboard. Web-based, no SSH required.
 
 ## Usage
 
-**Start with one machine:**
+Monitor a single machine or an entire cluster with the same Docker image.
+
+**Single machine:**
 ```bash
 docker run -d --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
 ```
 
-**Scale to multiple servers:**
+**Multiple machines:**
 ```bash
-# On each GPU server (same command everywhere)
+# On each GPU server
 docker run -d --gpus all -p 1312:1312 -e NODE_NAME=$(hostname) ghcr.io/psalias2006/gpu-hot:latest
 
 # On a hub machine (no GPU required)
@@ -48,12 +50,12 @@ docker-compose up --build
 
 ## Features
 
-- Real-time updates via WebSocket (sub-second)
-- Multi-GPU support with automatic detection
+- Real-time metrics (sub-second)
+- Automatic multi-GPU detection
 - Process monitoring (PID, memory usage)
 - Historical charts (utilization, temperature, power, clocks)
 - System metrics (CPU, RAM)
-- **Scale from 1 to 100+ GPUs** with the same Docker image
+- Scale from 1 to 100+ GPUs
 
 **Metrics:** Utilization, temperature, memory, power draw, fan speed, clock speeds, PCIe info, P-State, throttle status, encoder/decoder sessions
 
