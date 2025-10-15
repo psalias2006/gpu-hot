@@ -1,0 +1,25 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir \
+    Flask==2.3.3 \
+    Flask-SocketIO==5.3.6 \
+    python-socketio==5.8.0 \
+    eventlet==0.33.3 \
+    websocket-client==1.6.3
+
+# Copy test script
+COPY tests/test_cluster.py .
+
+# Expose port range for mock nodes (default: 13120-13150)
+EXPOSE 13120-13150
+
+# Default: 3 nodes with 2,4,8 GPUs
+ENV NODES="2,4,8"
+ENV BASE_PORT="13120"
+ENV PREFIX="gpu-server"
+
+CMD python3 test_cluster.py --nodes ${NODES} --base-port ${BASE_PORT} --prefix ${PREFIX}
+

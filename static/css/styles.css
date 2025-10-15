@@ -929,14 +929,14 @@ body::before {
 
 /* Sleek Segmented Control Navigation */
 .view-selector {
-    display: inline-flex;
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
     margin-bottom: 2rem;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
     padding: 0.25rem;
-    overflow-x: auto;
 }
 
 .view-option {
@@ -951,6 +951,8 @@ body::before {
     transition: all 0.25s ease;
     white-space: nowrap;
     letter-spacing: 0.3px;
+    min-width: 140px;
+    text-align: center;
 }
 
 .view-option:hover:not(.active) {
@@ -1154,11 +1156,6 @@ body::before {
 
     .header h1 {
         font-size: 2.5rem;
-    }
-
-    .view-selector {
-        overflow-x: auto;
-        scrollbar-width: thin;
     }
 
     .view-option {

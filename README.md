@@ -17,18 +17,18 @@ Real-time NVIDIA GPU monitoring dashboard. Web-based, no SSH required.
 
 ## Usage
 
-**Start with one machine:**
+**Single machine:**
 ```bash
 docker run -d --gpus all -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
 ```
 
-**Scale to multiple servers by adding two flags:**
+**Multiple servers (multi-node cluster):**
 ```bash
 # On each GPU server (same command everywhere)
-docker run -d --gpus all -p 1312:1312 -e GPU_HOT_MODE=agent -e NODE_NAME=$(hostname) ghcr.io/psalias2006/gpu-hot:latest
+docker run -d --gpus all -p 1312:1312 -e NODE_NAME=$(hostname) ghcr.io/psalias2006/gpu-hot:latest
 
-# On a hub machine (no GPU required)
-docker run -d -p 1312:1312 -e GPU_HOT_MODE=hub -e AGENT_URLS=http://server1:1312,http://server2:1312,http://server3:1312 ghcr.io/psalias2006/gpu-hot:latest
+# On a hub machine (no GPU required, aggregates all nodes)
+docker run -d -p 1312:1312 -e GPU_HOT_MODE=hub -e NODE_URLS=http://server1:1312,http://server2:1312,http://server3:1312 ghcr.io/psalias2006/gpu-hot:latest
 ```
 
 Open `http://localhost:1312`
@@ -64,10 +64,10 @@ docker-compose up --build
 **Environment variables:**
 ```bash
 NVIDIA_VISIBLE_DEVICES=0,1    # Specific GPUs (default: all)
-NVIDIA_SMI=true                # Force nvidia-smi mode
-GPU_HOT_MODE=standalone        # standalone (default), agent, hub
-NODE_NAME=gpu-server-1         # Node display name in cluster view
-AGENT_URLS=http://host:1312... # Comma-separated agent URLs for hub
+NVIDIA_SMI=true                # Force nvidia-smi mode for older GPUs
+GPU_HOT_MODE=hub               # Set to 'hub' for multi-node aggregation (default: single node)
+NODE_NAME=gpu-server-1         # Node display name (default: hostname)
+NODE_URLS=http://host:1312...  # Comma-separated node URLs (required for hub mode)
 ```
 
 **Backend (`core/config.py`):**
@@ -131,10 +131,10 @@ nvidia-smi  # Verify drivers work
 docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi  # Test Docker GPU access
 ```
 
-**Cluster agents offline:**
+**Hub can't connect to nodes:**
 ```bash
-curl http://agent-ip:1312/api/gpu-data  # Test connectivity
-sudo ufw allow 1312/tcp  # Check firewall
+curl http://node-ip:1312/api/gpu-data  # Test connectivity
+sudo ufw allow 1312/tcp                 # Check firewall
 ```
 
 **Performance issues:** Increase `UPDATE_INTERVAL` in `core/config.py`

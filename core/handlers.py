@@ -48,7 +48,7 @@ def monitor_loop(socketio, monitor):
             
             socketio.emit('gpu_data', {
                 'mode': config.MODE,
-                'node_name': config.NODE_NAME if config.MODE == 'agent' else None,
+                'node_name': config.NODE_NAME,
                 'gpus': gpu_data,
                 'processes': processes,
                 'system': system_info
