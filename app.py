@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""GPU Hot - Real-time NVIDIA GPU Monitoring Dashboard"""
+"""GPU Hot - Real-time NVIDIA GPU Monitoring Dashboard (FastAPI + AsyncIO)"""
 
-import eventlet
-# Monkey patch but exclude socket to avoid DNS issues in containers
-eventlet.monkey_patch(socket=False)
-
+import asyncio
 import logging
-from flask import Flask
-from flask_socketio import SocketIO
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from core import config
 
 # Setup logging
@@ -17,18 +15,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = config.SECRET_KEY
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode='eventlet',
-    ping_timeout=120,          # Long timeout for stability
-    ping_interval=30,           # Ping every 30s (don't interfere with 500ms data flow)
-    max_http_buffer_size=10000000,  # 10MB buffer for high-frequency updates
-    logger=False,
-    engineio_logger=False
-)
+app = FastAPI(title="GPU Hot", version="2.0")
+
+# Serve static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Mode selection
 if config.MODE == 'hub':
@@ -36,37 +26,53 @@ if config.MODE == 'hub':
     if not config.NODE_URLS:
         raise ValueError("Hub mode requires NODE_URLS environment variable")
     
-    logger.info("Starting GPU Hot in HUB mode")
+    logger.info("Starting GPU Hot in HUB mode (FastAPI)")
     logger.info(f"Connecting to {len(config.NODE_URLS)} node(s): {config.NODE_URLS}")
     
     from core.hub import Hub
     from core.hub_handlers import register_hub_handlers
-    from core.routes import register_routes
     
-    hub = Hub(config.NODE_URLS, socketio)
-    register_routes(app, None)  # No local monitor
-    register_hub_handlers(socketio, hub)
+    hub = Hub(config.NODE_URLS)
+    register_hub_handlers(app, hub)
     monitor_or_hub = hub
     
 else:
     # Default mode: monitor local GPUs and serve dashboard
-    logger.info("Starting GPU Hot")
+    logger.info("Starting GPU Hot (FastAPI)")
     logger.info(f"Node name: {config.NODE_NAME}")
     
-    from core import GPUMonitor
-    from core.routes import register_routes
+    from core.monitor import GPUMonitor
     from core.handlers import register_handlers
     
     monitor = GPUMonitor()
-    register_routes(app, monitor)
-    register_handlers(socketio, monitor)
+    register_handlers(app, monitor)
     monitor_or_hub = monitor
 
 
+@app.get("/")
+async def index():
+    """Serve the main dashboard"""
+    with open("templates/index.html", "r") as f:
+        return HTMLResponse(content=f.read())
+
+
+@app.get("/api/gpu-data")
+async def api_gpu_data():
+    """REST API endpoint for GPU data"""
+    if config.MODE == 'hub':
+        return {"gpus": {}, "timestamp": "hub_mode"}
+    
+    if hasattr(monitor_or_hub, 'get_gpu_data'):
+        return {"gpus": await monitor_or_hub.get_gpu_data(), "timestamp": "async"}
+    
+    return {"gpus": {}, "timestamp": "no_data"}
+
+
 if __name__ == '__main__':
+    import uvicorn
     try:
         logger.info(f"Server running on {config.HOST}:{config.PORT}")
-        socketio.run(app, host=config.HOST, port=config.PORT, 
-                    debug=config.DEBUG, use_reloader=False)
+        uvicorn.run(app, host=config.HOST, port=config.PORT, log_level="info")
     finally:
-        monitor_or_hub.shutdown()
+        if hasattr(monitor_or_hub, 'shutdown'):
+            asyncio.run(monitor_or_hub.shutdown())
