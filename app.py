@@ -9,6 +9,7 @@ import logging
 from flask import Flask
 from flask_socketio import SocketIO
 from core import config
+from core.alerts import AlertManager
 
 # Setup logging
 logging.basicConfig(
@@ -30,6 +31,9 @@ socketio = SocketIO(
     engineio_logger=False
 )
 
+# Initialize optional alert manager (gracefully handles missing configuration)
+alert_manager = AlertManager()
+
 # Mode selection
 if config.MODE == 'hub':
     # Hub mode: aggregate data from multiple nodes
@@ -43,7 +47,7 @@ if config.MODE == 'hub':
     from core.hub_handlers import register_hub_handlers
     from core.routes import register_routes
     
-    hub = Hub(config.NODE_URLS, socketio)
+    hub = Hub(config.NODE_URLS, socketio, alert_manager=alert_manager)
     register_routes(app, None)  # No local monitor
     register_hub_handlers(socketio, hub)
     monitor_or_hub = hub
@@ -53,13 +57,13 @@ else:
     logger.info("Starting GPU Hot")
     logger.info(f"Node name: {config.NODE_NAME}")
     
-    from core import GPUMonitor
+    from core.monitor import GPUMonitor
     from core.routes import register_routes
     from core.handlers import register_handlers
     
     monitor = GPUMonitor()
     register_routes(app, monitor)
-    register_handlers(socketio, monitor)
+    register_handlers(socketio, monitor, alert_manager=alert_manager)
     monitor_or_hub = monitor
 
 

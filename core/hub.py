@@ -12,12 +12,13 @@ logger = logging.getLogger(__name__)
 class Hub:
     """Aggregates GPU data from multiple nodes"""
     
-    def __init__(self, node_urls, socketio=None):
+    def __init__(self, node_urls, socketio=None, alert_manager=None):
         self.node_urls = node_urls
         self.nodes = {}  # node_name -> {client, data, status, last_update}
         self.url_to_node = {}  # url -> node_name mapping for disconnect handling
         self.running = False
         self.socketio = socketio
+        self.alert_manager = alert_manager
         
         # Initialize nodes as offline, will connect in background
         for url in node_urls:
@@ -107,6 +108,16 @@ class Hub:
             if self.socketio:
                 cluster_data = self.get_cluster_data()
                 self.socketio.emit('gpu_data', cluster_data, namespace='/')
+
+            if self.alert_manager:
+                try:
+                    self.alert_manager.evaluate(
+                        node_name,
+                        data.get('gpus', {}),
+                        data.get('processes', []),
+                    )
+                except Exception as alert_exc:
+                    logger.error(f'Alert evaluation failed for node {node_name}: {alert_exc}')
         
         # Connect to node
         client.connect(url, 
@@ -159,4 +170,3 @@ class Hub:
                     node_info['client'].disconnect()
                 except:
                     pass
-

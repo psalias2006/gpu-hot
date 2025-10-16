@@ -9,7 +9,7 @@ from . import config
 logger = logging.getLogger(__name__)
 
 
-def register_handlers(socketio, monitor):
+def register_handlers(socketio, monitor, alert_manager=None):
     """Register SocketIO event handlers"""
     
     @socketio.on('connect')
@@ -17,14 +17,14 @@ def register_handlers(socketio, monitor):
         logger.debug('Dashboard client connected')
         if not monitor.running:
             monitor.running = True
-            socketio.start_background_task(monitor_loop, socketio, monitor)
+            socketio.start_background_task(monitor_loop, socketio, monitor, alert_manager)
     
     @socketio.on('disconnect')
     def on_disconnect():
         logger.debug('Dashboard client disconnected')
 
 
-def monitor_loop(socketio, monitor):
+def monitor_loop(socketio, monitor, alert_manager=None):
     """Background loop that collects and emits GPU data"""
     # Determine update interval based on whether any GPU uses nvidia-smi
     uses_nvidia_smi = any(monitor.use_smi.values()) if hasattr(monitor, 'use_smi') else False
@@ -53,9 +53,14 @@ def monitor_loop(socketio, monitor):
                 'processes': processes,
                 'system': system_info
             }, namespace='/')
+
+            if alert_manager:
+                try:
+                    alert_manager.evaluate(config.NODE_NAME, gpu_data, processes)
+                except Exception as alert_exc:
+                    logger.error(f"Alert evaluation failed: {alert_exc}")
             
         except Exception as e:
             logger.error(f"Error in monitor loop: {e}")
         
         eventlet.sleep(update_interval)
-

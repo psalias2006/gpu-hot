@@ -56,6 +56,7 @@ docker-compose up --build
 - Historical charts (utilization, temperature, power, clocks)
 - System metrics (CPU, RAM)
 - Scale from 1 to 100+ GPUs
+- Optional alerting via Discord webhooks or Telegram bots when thresholds are exceeded
 
 **Metrics:** Utilization, temperature, memory, power draw, fan speed, clock speeds, PCIe info, P-State, throttle status, encoder/decoder sessions
 
@@ -77,6 +78,24 @@ NODE_URLS=http://host:1312...  # Comma-separated node URLs (required for hub mod
 UPDATE_INTERVAL = 0.5    # Polling interval
 PORT = 1312              # Server port
 ```
+
+### Alerts & Notifications
+
+Enable chat notifications by providing either a Discord webhook URL or Telegram bot credentials. GPU Hot automatically enables notifications when credentials are present (you can force-enable or disable with `GPU_HOT_NOTIFICATIONS=true|false`).
+
+```bash
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...  # Discord alerts
+TELEGRAM_BOT_TOKEN=123456:ABCdef                         # Telegram alerts (bot token)
+TELEGRAM_CHAT_ID=-1001234567890                          # Telegram alerts (chat or user ID)
+GPU_HOT_ALERT_TEMP=85                                    # °C threshold (default 85)
+GPU_HOT_ALERT_MEMORY=90                                  # % threshold (default 90)
+GPU_HOT_ALERT_UTILIZATION=95                             # % threshold (default 95)
+GPU_HOT_ALERT_POWER=300                                  # W threshold (optional)
+GPU_HOT_ALERT_COOLDOWN=300                               # Seconds between repeated alerts (default 300)
+GPU_HOT_ALERT_RESET_DELTA=5                              # °C / % drop before clearing alert (default 5)
+```
+
+Alerts summarize the GPU, metrics that exceeded thresholds, and the top process using the device (when available).
 
 ---
 
