@@ -12,7 +12,7 @@ from core import config
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG if config.DEBUG else logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ if config.MODE == 'hub':
     from core.hub_handlers import register_hub_handlers
     from core.routes import register_routes
     
-    hub = Hub(config.NODE_URLS)
+    hub = Hub(config.NODE_URLS, socketio)
     register_routes(app, None)  # No local monitor
     register_hub_handlers(socketio, hub)
     monitor_or_hub = hub
