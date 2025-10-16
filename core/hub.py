@@ -12,11 +12,12 @@ logger = logging.getLogger(__name__)
 class Hub:
     """Aggregates GPU data from multiple nodes"""
     
-    def __init__(self, node_urls):
+    def __init__(self, node_urls, socketio=None):
         self.node_urls = node_urls
         self.nodes = {}  # node_name -> {client, data, status, last_update}
         self.url_to_node = {}  # url -> node_name mapping for disconnect handling
         self.running = False
+        self.socketio = socketio
         
         # Initialize nodes as offline, will connect in background
         for url in node_urls:
@@ -101,6 +102,11 @@ class Hub:
                 'status': 'online',
                 'last_update': datetime.now().isoformat()
             }
+            
+            # Immediate emit for real-time sync with standalone
+            if self.socketio:
+                cluster_data = self.get_cluster_data()
+                self.socketio.emit('gpu_data', cluster_data, namespace='/')
         
         # Connect to node
         client.connect(url, 
