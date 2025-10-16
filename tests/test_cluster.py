@@ -6,12 +6,13 @@ Simulates realistic GPU workloads across multiple servers
 
 import time
 import random
-import eventlet
+import asyncio
+import json
 from datetime import datetime
 import argparse
 import logging
-from flask import Flask
-from flask_socketio import SocketIO
+from fastapi import FastAPI, WebSocket
+import uvicorn
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -24,8 +25,9 @@ class MockGPUNode:
         self.node_name = node_name
         self.gpu_count = gpu_count
         self.port = port
-        self.app = Flask(__name__)
-        self.sio = SocketIO(self.app, cors_allowed_origins='*', async_mode='eventlet')
+        self.app = FastAPI(title=f"Mock GPU Node {node_name}")
+        self.websocket_connections = set()
+        self.broadcasting = False
         
         # Initialize per-GPU state for realistic patterns
         self.gpu_states = []
@@ -161,44 +163,76 @@ class MockGPUNode:
             'system': system
         }
     
-    def _broadcast_loop(self):
+    async def _broadcast_loop(self):
         """Background task to broadcast GPU data every 0.5s"""
-        while True:
+        while self.broadcasting:
             try:
                 data = self.generate_gpu_data()
-                self.sio.emit('gpu_data', data, namespace='/')
+                
+                # Send to all connected clients
+                if self.websocket_connections:
+                    disconnected = set()
+                    for websocket in self.websocket_connections:
+                        try:
+                            await websocket.send_text(json.dumps(data))
+                        except:
+                            disconnected.add(websocket)
+                    
+                    # Remove disconnected clients
+                    self.websocket_connections -= disconnected
+                    
             except Exception as e:
                 logger.error(f'[{self.node_name}] Error in broadcast loop: {e}')
-            eventlet.sleep(0.5)
+            await asyncio.sleep(0.5)
     
-    def run(self):
-        """Run the mock node server"""
+    def setup_routes(self):
+        """Setup WebSocket routes"""
         
-        @self.sio.on('connect')
-        def on_connect():
+        @self.app.websocket("/socket.io/")
+        async def websocket_endpoint(websocket: WebSocket):
+            await websocket.accept()
+            self.websocket_connections.add(websocket)
             logger.info(f'[{self.node_name}] Client connected')
+            
             # Start broadcasting when first client connects
-            if not hasattr(self, '_broadcasting'):
-                self._broadcasting = True
-                self.sio.start_background_task(self._broadcast_loop)
-        
-        @self.sio.on('disconnect')
-        def on_disconnect():
-            logger.info(f'[{self.node_name}] Client disconnected')
+            if not self.broadcasting:
+                self.broadcasting = True
+                asyncio.create_task(self._broadcast_loop())
+            
+            try:
+                # Keep connection alive
+                while True:
+                    await websocket.receive_text()
+            except Exception as e:
+                logger.debug(f'[{self.node_name}] Client disconnected: {e}')
+            finally:
+                self.websocket_connections.discard(websocket)
+    
+    async def run(self):
+        """Run the mock node server"""
+        self.setup_routes()
         
         logger.info(f'[{self.node_name}] Starting mock node with {self.gpu_count} GPUs on port {self.port}')
-        # Use eventlet's WSGI server to run Flask-SocketIO
-        import eventlet.wsgi
-        eventlet.wsgi.server(eventlet.listen(('0.0.0.0', self.port)), self.app)
+        
+        # Create server config
+        config = uvicorn.Config(
+            self.app, 
+            host='0.0.0.0', 
+            port=self.port, 
+            log_level='info',
+            access_log=False
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
 
 
-def start_mock_node(node_name, gpu_count, port):
-    """Start a mock node in a greenlet"""
+async def start_mock_node(node_name, gpu_count, port):
+    """Start a mock node as async task"""
     node = MockGPUNode(node_name, gpu_count, port)
-    node.run()
+    await node.run()
 
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(description='Mock GPU cluster for testing')
     parser.add_argument('--nodes', type=str, default='2,4,8',
                       help='Comma-separated GPU counts for each node (e.g., "2,4,8")')
@@ -212,7 +246,7 @@ def main():
     gpu_counts = [int(x.strip()) for x in args.nodes.split(',')]
     
     print("\n" + "="*60)
-    print("GPU Hot - Mock Cluster Test")
+    print("GPU Hot - Mock Cluster Test (FastAPI + AsyncIO)")
     print("="*60)
     print(f"\nStarting {len(gpu_counts)} mock GPU servers:\n")
     
@@ -222,9 +256,6 @@ def main():
         node_name = f"{args.prefix}-{i+1}"
         node_urls.append(f"http://localhost:{port}")
         print(f"  • {node_name}: {gpu_count} GPUs on port {port}")
-        
-        # Spawn each node in a greenlet
-        eventlet.spawn(start_mock_node, node_name, gpu_count, port)
     
     print("\n" + "-"*60)
     print("Mock nodes running! Now start the hub with:")
@@ -241,14 +272,21 @@ def main():
     print("\nThen open: http://localhost:1312")
     print("-"*60 + "\n")
     
-    # Keep main thread alive
+    # Start all nodes concurrently
+    tasks = []
+    for i, gpu_count in enumerate(gpu_counts):
+        port = args.base_port + i
+        node_name = f"{args.prefix}-{i+1}"
+        task = asyncio.create_task(start_mock_node(node_name, gpu_count, port))
+        tasks.append(task)
+    
+    # Keep all tasks running
     try:
-        while True:
-            eventlet.sleep(10)
+        await asyncio.gather(*tasks)
     except KeyboardInterrupt:
         print("\n\nStopping mock cluster...")
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
 
