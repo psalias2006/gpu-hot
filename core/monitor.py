@@ -1,5 +1,6 @@
-"""GPU monitoring using NVML"""
+"""Async GPU monitoring using NVML"""
 
+import asyncio
 import pynvml
 import psutil
 import logging
@@ -78,8 +79,8 @@ class GPUMonitor:
         except Exception as e:
             logger.error(f"Failed to detect GPUs: {e}")
     
-    def get_gpu_data(self):
-        """Collect metrics from all detected GPUs"""
+    async def get_gpu_data(self):
+        """Async collect metrics from all detected GPUs"""
         if not self.initialized:
             logger.error("Cannot get GPU data - NVML not initialized")
             return {}
@@ -92,30 +93,38 @@ class GPUMonitor:
             smi_data = None
             if any(self.use_smi.values()):
                 try:
-                    smi_data = parse_nvidia_smi()
+                    # Run nvidia-smi in thread pool to avoid blocking
+                    smi_data = await asyncio.get_event_loop().run_in_executor(
+                        None, parse_nvidia_smi
+                    )
                 except Exception as e:
                     logger.error(f"nvidia-smi failed: {e}")
             
+            # Collect GPU data concurrently
+            tasks = []
             for i in range(device_count):
                 gpu_id = str(i)
-                try:
-                    if self.use_smi.get(gpu_id, False):
-                        # Use nvidia-smi
-                        if smi_data and gpu_id in smi_data:
-                            gpu_data[gpu_id] = smi_data[gpu_id]
-                        else:
-                            logger.warning(f"GPU {i}: No data from nvidia-smi")
+                if self.use_smi.get(gpu_id, False):
+                    # Use nvidia-smi data
+                    if smi_data and gpu_id in smi_data:
+                        gpu_data[gpu_id] = smi_data[gpu_id]
                     else:
-                        # Use NVML
-                        handle = pynvml.nvmlDeviceGetHandleByIndex(i)
-                        gpu_data[gpu_id] = self.collector.collect_all(handle, gpu_id)
-                        
-                except pynvml.NVMLError as e:
-                    logger.error(f"GPU {i}: NVML error - {e}")
-                    continue
-                except Exception as e:
-                    logger.error(f"GPU {i}: Unexpected error - {e}")
-                    continue
+                        logger.warning(f"GPU {i}: No data from nvidia-smi")
+                else:
+                    # Use NVML - run in thread pool to avoid blocking
+                    task = asyncio.get_event_loop().run_in_executor(
+                        None, self._collect_single_gpu, i
+                    )
+                    tasks.append((gpu_id, task))
+            
+            # Wait for all NVML tasks to complete
+            if tasks:
+                results = await asyncio.gather(*[task for _, task in tasks], return_exceptions=True)
+                for (gpu_id, _), result in zip(tasks, results):
+                    if isinstance(result, Exception):
+                        logger.error(f"GPU {gpu_id}: Error - {result}")
+                    else:
+                        gpu_data[gpu_id] = result
             
             if not gpu_data:
                 logger.error("No GPU data collected from any source")
@@ -127,11 +136,31 @@ class GPUMonitor:
             logger.error(f"Failed to get GPU data: {e}")
             return {}
     
-    def get_processes(self):
-        """Get GPU process information"""
+    def _collect_single_gpu(self, gpu_index):
+        """Collect data for a single GPU (runs in thread pool)"""
+        try:
+            handle = pynvml.nvmlDeviceGetHandleByIndex(gpu_index)
+            return self.collector.collect_all(handle, str(gpu_index))
+        except Exception as e:
+            logger.error(f"GPU {gpu_index}: Error - {e}")
+            return {}
+    
+    async def get_processes(self):
+        """Async get GPU process information"""
         if not self.initialized:
             return []
         
+        try:
+            # Run process collection in thread pool
+            return await asyncio.get_event_loop().run_in_executor(
+                None, self._get_processes_sync
+            )
+        except Exception as e:
+            logger.error(f"Error getting processes: {e}")
+            return []
+    
+    def _get_processes_sync(self):
+        """Synchronous process collection (runs in thread pool)"""
         try:
             device_count = pynvml.nvmlDeviceGetCount()
             all_processes = []
@@ -198,7 +227,8 @@ class GPUMonitor:
         except Exception:
             return f'PID:{pid}'
     
-    def shutdown(self):
+    async def shutdown(self):
+        """Async shutdown"""
         if self.initialized:
             try:
                 pynvml.nvmlShutdown()

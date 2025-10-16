@@ -1,9 +1,10 @@
-"""Hub mode - aggregates data from multiple nodes"""
+"""Async Hub mode - aggregates data from multiple nodes"""
 
+import asyncio
 import logging
-import eventlet
+import json
+import websockets
 from datetime import datetime
-from socketio import Client
 from . import config
 
 logger = logging.getLogger(__name__)
@@ -12,109 +13,116 @@ logger = logging.getLogger(__name__)
 class Hub:
     """Aggregates GPU data from multiple nodes"""
     
-    def __init__(self, node_urls, socketio=None):
+    def __init__(self, node_urls):
         self.node_urls = node_urls
         self.nodes = {}  # node_name -> {client, data, status, last_update}
-        self.url_to_node = {}  # url -> node_name mapping for disconnect handling
+        self.url_to_node = {}  # url -> node_name mapping
         self.running = False
-        self.socketio = socketio
+        self._connection_started = False
         
-        # Initialize nodes as offline, will connect in background
+        # Initialize nodes as offline
         for url in node_urls:
             self.nodes[url] = {
                 'url': url,
-                'client': None,
+                'websocket': None,
                 'data': None,
                 'status': 'offline',
                 'last_update': None
             }
-            self.url_to_node[url] = url  # Initially map URL to itself
-        
-        # Start background connection task
-        eventlet.spawn(self._connect_all_nodes)
+            self.url_to_node[url] = url
     
-    def _connect_all_nodes(self):
+    async def _connect_all_nodes(self):
         """Connect to all nodes in background with retries"""
         # Wait a bit for Docker network to be ready
-        eventlet.sleep(2)
+        await asyncio.sleep(2)
         
-        for url in self.node_urls:
-            eventlet.spawn(self._connect_node_with_retry, url)
+        # Connect to all nodes concurrently
+        tasks = [self._connect_node_with_retry(url) for url in self.node_urls]
+        await asyncio.gather(*tasks, return_exceptions=True)
     
-    def _connect_node_with_retry(self, url):
+    async def _connect_node_with_retry(self, url):
         """Connect to a node with retry logic"""
         max_retries = 5
         retry_delay = 2
         
         for attempt in range(max_retries):
             try:
-                self._connect_node(url)
+                await self._connect_node(url)
                 return  # Success
             except Exception as e:
                 if attempt < max_retries - 1:
                     logger.warning(f'Connection attempt {attempt + 1}/{max_retries} failed for {url}: {str(e)}, retrying in {retry_delay}s...')
-                    eventlet.sleep(retry_delay)
+                    await asyncio.sleep(retry_delay)
                 else:
                     logger.error(f'Failed to connect to node {url} after {max_retries} attempts: {str(e)}')
     
-    def _connect_node(self, url):
-        """Connect to a node"""
-        # Configure client for real-time data streaming (500ms updates)
-        client = Client(
-            reconnection=True,
-            reconnection_attempts=0,  # Infinite reconnection
-            reconnection_delay=2,
-            reconnection_delay_max=10,
-            request_timeout=30,
-            # Optimized for high-frequency real-time data
-            engineio_logger=False
-        )
-        
-        # Store temporary reference for the closure
-        node_url = url
-        
-        @client.on('connect')
-        def on_connect():
-            logger.info(f'Connected to node: {node_url}')
-        
-        @client.on('disconnect')
-        def on_disconnect():
-            logger.warning(f'Disconnected from node: {node_url}')
-            # Mark node as offline using URL to node name mapping
-            node_name = self.url_to_node.get(node_url, node_url)
-            if node_name in self.nodes:
-                self.nodes[node_name]['status'] = 'offline'
-                logger.info(f'Marked node {node_name} as offline')
-        
-        @client.on('gpu_data')
-        def on_gpu_data(data):
-            # Extract node name from data or use URL as fallback
-            node_name = data.get('node_name', node_url)
+    async def _connect_node(self, url):
+        """Connect to a node using native WebSocket"""
+        while self.running:
+            try:
+                # Convert HTTP URL to WebSocket URL
+                ws_url = url.replace('http://', 'ws://').replace('https://', 'wss://') + '/socket.io/'
+                
+                logger.info(f'Connecting to node WebSocket: {ws_url}')
+                
+                async with websockets.connect(ws_url) as websocket:
+                    logger.info(f'Connected to node: {url}')
+                    
+                    # Mark node as online
+                    node_name = self.url_to_node.get(url, url)
+                    self.nodes[node_name] = {
+                        'url': url,
+                        'websocket': websocket,
+                        'data': None,
+                        'status': 'online',
+                        'last_update': datetime.now().isoformat()
+                    }
+                    
+                    # Listen for data from the node
+                    async for message in websocket:
+                        try:
+                            data = json.loads(message)
+                            
+                            # Extract node name from data or use URL as fallback
+                            node_name = data.get('node_name', url)
+                            
+                            # Update URL to node mapping
+                            self.url_to_node[url] = node_name
+                            
+                            # Update node entry with received data
+                            self.nodes[node_name] = {
+                                'url': url,
+                                'websocket': websocket,
+                                'data': data,
+                                'status': 'online',
+                                'last_update': datetime.now().isoformat()
+                            }
+                            
+                        except json.JSONDecodeError as e:
+                            logger.error(f'Failed to parse message from {url}: {e}')
+                        except Exception as e:
+                            logger.error(f'Error processing message from {url}: {e}')
+                            
+            except websockets.exceptions.ConnectionClosed:
+                logger.warning(f'WebSocket connection closed for node: {url}')
+                # Mark node as offline
+                node_name = self.url_to_node.get(url, url)
+                if node_name in self.nodes:
+                    self.nodes[node_name]['status'] = 'offline'
+                    logger.info(f'Marked node {node_name} as offline')
+            except Exception as e:
+                logger.error(f'Failed to connect to node {url}: {e}')
+                # Mark node as offline
+                node_name = self.url_to_node.get(url, url)
+                if node_name in self.nodes:
+                    self.nodes[node_name]['status'] = 'offline'
+                    logger.info(f'Marked node {node_name} as offline')
             
-            # Update URL to node mapping
-            self.url_to_node[node_url] = node_name
-            
-            # Update or create node entry with minimal overhead
-            self.nodes[node_name] = {
-                'url': node_url,
-                'client': client,
-                'data': data,
-                'status': 'online',
-                'last_update': datetime.now().isoformat()
-            }
-            
-            # Immediate emit for real-time sync with standalone
-            if self.socketio:
-                cluster_data = self.get_cluster_data()
-                self.socketio.emit('gpu_data', cluster_data, namespace='/')
-        
-        # Connect to node
-        client.connect(url, 
-                      wait_timeout=30, 
-                      socketio_path='/socket.io',
-                      transports=['websocket'])  # Force WebSocket for lowest latency
+            # Wait before retrying connection
+            if self.running:
+                await asyncio.sleep(5)
     
-    def get_cluster_data(self):
+    async def get_cluster_data(self):
         """Get aggregated data from all nodes"""
         nodes = {}
         total_gpus = 0
@@ -150,13 +158,13 @@ class Hub:
             }
         }
     
-    def shutdown(self):
+    async def shutdown(self):
         """Disconnect from all nodes"""
         self.running = False
         for node_info in self.nodes.values():
-            if node_info.get('client'):
+            if node_info.get('websocket'):
                 try:
-                    node_info['client'].disconnect()
+                    await node_info['websocket'].close()
                 except:
                     pass
 

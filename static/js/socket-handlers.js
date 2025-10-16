@@ -1,9 +1,9 @@
 /**
- * Socket.IO event handlers
+ * WebSocket event handlers
  */
 
-// Initialize Socket.IO connection
-const socket = io();
+// Initialize WebSocket connection
+const socket = new WebSocket('ws://' + window.location.host + '/socket.io/');
 
 // Performance: Scroll detection to pause DOM updates during scroll
 let isScrolling = false;
@@ -49,7 +49,8 @@ const lastDOMUpdate = {}; // Track last update time per GPU
 const DOM_UPDATE_INTERVAL = 1000; // Text/card updates every 1s, charts update every frame
 
 // Handle incoming GPU data
-socket.on('gpu_data', function(data) {
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
     // Hub mode: different data structure with nodes
     if (data.mode === 'hub') {
         handleClusterData(data);
@@ -125,7 +126,7 @@ socket.on('gpu_data', function(data) {
     
     // Auto-switch to single GPU view if only 1 GPU detected (first time only)
     autoSwitchSingleGPU(gpuCount, Object.keys(data.gpus));
-});
+};
 
 /**
  * Process all batched updates in a single animation frame
@@ -241,23 +242,22 @@ function updateAllChartDataOnly(gpuId, gpuInfo) {
 }
 
 // Handle connection status
-socket.on('connect', function() {
+socket.onopen = function() {
     console.log('Connected to server');
     document.getElementById('connection-status').textContent = 'Connected';
     document.getElementById('connection-status').style.color = '#43e97b';
-});
+};
 
-socket.on('disconnect', function() {
+socket.onclose = function() {
     console.log('Disconnected from server');
     document.getElementById('connection-status').textContent = 'Disconnected';
     document.getElementById('connection-status').style.color = '#f5576c';
-});
+};
 
-// Handle connection errors
-socket.on('connect_error', function() {
+socket.onerror = function(error) {
     document.getElementById('connection-status').textContent = 'Connection Error';
     document.getElementById('connection-status').style.color = '#f5576c';
-});
+};
 
 /**
  * Handle cluster/hub mode data

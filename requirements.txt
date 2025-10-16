@@ -1,8 +1,7 @@
-Flask==2.3.3
-Flask-SocketIO==5.3.6
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websockets==12.0
 psutil==5.9.6
-python-socketio==5.8.0
-eventlet==0.33.3
 nvidia-ml-py==13.580.82
 requests==2.31.0
 websocket-client==1.6.3
