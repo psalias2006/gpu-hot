@@ -2,8 +2,9 @@
  * WebSocket event handlers
  */
 
-// Initialize WebSocket connection
-const socket = new WebSocket('ws://' + window.location.host + '/socket.io/');
+// Initialize WebSocket connection with protocol detection
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const socket = new WebSocket(protocol + '//' + window.location.host + '/socket.io/');
 
 // Performance: Scroll detection to pause DOM updates during scroll
 let isScrolling = false;
