@@ -1037,7 +1037,7 @@ body::before {
 }
 
 .overview-gpu-card::after {
-    content: 'Click to view full details →';
+    content: 'Click to view full details ->';
     position: absolute;
     bottom: 1rem;
     right: 1.5rem;

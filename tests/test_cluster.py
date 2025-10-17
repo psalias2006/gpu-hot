@@ -221,7 +221,7 @@ def main():
         port = args.base_port + i
         node_name = f"{args.prefix}-{i+1}"
         node_urls.append(f"http://localhost:{port}")
-        print(f"  • {node_name}: {gpu_count} GPUs on port {port}")
+        print(f"  - {node_name}: {gpu_count} GPUs on port {port}")
         
         # Spawn each node in a greenlet
         eventlet.spawn(start_mock_node, node_name, gpu_count, port)
@@ -251,4 +251,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

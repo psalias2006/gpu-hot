@@ -164,10 +164,10 @@ const chartConfigs = {
                         afterLabel: function(context) {
                             if (!context.dataset.label.includes('High Load')) {
                                 const value = context.parsed.y;
-                                if (value > 90) return '🔥 Very High';
-                                if (value > 80) return '⚡ High';
-                                if (value > 50) return '✓ Active';
-                                return '💤 Low';
+                                if (value > 90) return 'Very High';
+                                if (value > 80) return 'High';
+                                if (value > 50) return 'Active';
+                                return 'Low';
                             }
                         }
                     }
@@ -296,10 +296,10 @@ const chartConfigs = {
                         afterLabel: function(context) {
                             if (!context.dataset.label.includes('Warning') && !context.dataset.label.includes('Danger')) {
                                 const value = context.parsed.y;
-                                if (value > 85) return '🚨 DANGER';
-                                if (value > 75) return '⚠️ Warning';
-                                if (value > 60) return '🌡️ Normal';
-                                return '❄️ Cool';
+                                if (value > 85) return 'Danger';
+                                if (value > 75) return 'Warning';
+                                if (value > 60) return 'Normal';
+                                return 'Cool';
                             }
                         }
                     }
@@ -413,10 +413,10 @@ const chartConfigs = {
                         afterLabel: function(context) {
                             if (!context.dataset.label.includes('High Usage')) {
                                 const value = context.parsed.y;
-                                if (value > 95) return '🚨 Critical';
-                                if (value > 90) return '⚠️ Very High';
-                                if (value > 75) return '📊 High';
-                                return '✓ Normal';
+                                if (value > 95) return 'Critical';
+                                if (value > 90) return 'Very High';
+                                if (value > 75) return 'High';
+                                return 'Normal';
                             }
                         }
                     }
@@ -525,11 +525,11 @@ const chartConfigs = {
                         },
                         afterLabel: function(context) {
                             const value = context.parsed.y;
-                            if (value > 200) return '⚡ Maximum Performance';
-                            if (value > 150) return '🔥 High Performance';
-                            if (value > 100) return '💪 Active';
-                            if (value > 50) return '✓ Moderate';
-                            return '💤 Idle';
+                            if (value > 200) return 'Maximum Performance';
+                            if (value > 150) return 'High Performance';
+                            if (value > 100) return 'Active';
+                            if (value > 50) return 'Moderate';
+                            return 'Idle';
                         }
                     }
                 }
@@ -624,11 +624,11 @@ const chartConfigs = {
                         },
                         afterLabel: function(context) {
                             const value = context.parsed.y;
-                            if (value > 90) return '🌪️ Maximum';
-                            if (value > 70) return '💨 High';
-                            if (value > 40) return '🌬️ Active';
-                            if (value > 10) return '✓ Low';
-                            return '⏸️ Idle';
+                            if (value > 90) return 'Maximum';
+                            if (value > 70) return 'High';
+                            if (value > 40) return 'Active';
+                            if (value > 10) return 'Low';
+                            return 'Idle';
                         }
                     }
                 }
@@ -849,11 +849,11 @@ const chartConfigs = {
                         },
                         afterLabel: function(context) {
                             const value = context.parsed.y;
-                            if (value > 0.8) return '⭐ Excellent';
-                            if (value > 0.5) return '✓ Good';
-                            if (value > 0.3) return '📊 Fair';
-                            if (value > 0.1) return '⚡ Active';
-                            return '💤 Idle';
+                            if (value > 0.8) return 'Excellent';
+                            if (value > 0.5) return 'Good';
+                            if (value > 0.3) return 'Fair';
+                            if (value > 0.1) return 'Active';
+                            return 'Idle';
                         }
                     }
                 }

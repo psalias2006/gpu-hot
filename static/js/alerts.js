@@ -199,14 +199,14 @@
                 const url = new URL(channel.webhook_url);
                 const parts = url.pathname.split('/').filter(Boolean);
                 const suffix = parts.length ? parts[parts.length - 1] : url.pathname;
-                return `Discord • ${url.hostname}/${suffix.slice(0, 6)}…`;
+                return `Discord - ${url.hostname}/${suffix.slice(0, 6)}...`;
             } catch (_) {
-                return `Discord • ${channel.webhook_url.slice(0, 24)}…`;
+                return `Discord - ${channel.webhook_url.slice(0, 24)}...`;
             }
         }
 
         if (channel.type === 'telegram') {
-            return channel.chat_id ? `Telegram • Chat ${channel.chat_id}` : 'Telegram • Chat pending';
+            return channel.chat_id ? `Telegram - Chat ${channel.chat_id}` : 'Telegram - Chat pending';
         }
 
         return '';
@@ -285,7 +285,7 @@
         if (summaryEl) {
             let summary = buildChannelSummary(channel);
             if (!isEnabled && summary) {
-                summary += ' • Disabled';
+                summary += ' - Disabled';
             }
             summaryEl.textContent = summary;
         }
@@ -329,9 +329,9 @@
                         <span class="toggle-slider" aria-hidden="true"></span>
                     </label>
                     <button type="button" class="button button-ghost button-small" data-action="edit-channel">
-                        ${isEditing ? 'Editing…' : 'Edit'}
+                        ${isEditing ? 'Editing...' : 'Edit'}
                     </button>
-                    <button type="button" class="channel-remove" data-action="remove-channel" aria-label="Remove channel">×</button>
+                    <button type="button" class="channel-remove" data-action="remove-channel" aria-label="Remove channel">&times;</button>
                 </div>
             </div>
             <div class="channel-card-body">
@@ -774,7 +774,7 @@
 
         const restoreDisabled = testButton.disabled;
         testButton.disabled = true;
-        showStatus('Sending test alert…', 'info');
+        showStatus('Sending test alert...', 'info');
         try {
             const response = await fetch(API_TEST_ENDPOINT, {
                 method: 'POST',
@@ -801,7 +801,7 @@
             const payload = buildPayload();
             if (!payload) return;
 
-            showStatus('Saving settings…', 'info');
+            showStatus('Saving settings...', 'info');
             const response = await fetch(API_ENDPOINT, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -866,7 +866,7 @@
         } else if (lastLoadError) {
             showStatus(lastLoadError, 'error');
         } else {
-            showStatus('Loading alert settings…', 'info');
+            showStatus('Loading alert settings...', 'info');
         }
 
         // Focus first input for accessibility

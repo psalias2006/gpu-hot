@@ -32,13 +32,6 @@ TEST_EMBED_COLOR = 0x5865F2
 
 EMBED_FOOTER_ICON_URL = "https://cdn-icons-png.flaticon.com/512/481/481073.png"
 
-RULE_ICON_MAP = {
-    "temperature": "🌡️",
-    "memory_percent": "💾",
-    "utilization": "🧠",
-    "power_draw": "⚡",
-}
-
 DISCORD_BOT_NAME = "HOT-GPU"
 
 _thread_pool: Optional[ThreadPoolExecutor] = None
@@ -144,7 +137,7 @@ class DiscordWebhookBackend(NotificationBackend):
         else:
             embed.pop("fields", None)
 
-        footer_text = embed_payload.get("footer_text") or f"{context.get('node_name') or 'GPU Hot'} • GPU Monitoring"
+        footer_text = embed_payload.get("footer_text") or f"{context.get('node_name') or 'GPU Hot'} - GPU Monitoring"
         footer: Dict[str, Any] = {"text": footer_text[:2048]}
         footer_icon = embed_payload.get("footer_icon_url") or EMBED_FOOTER_ICON_URL
         if footer_icon:
@@ -440,7 +433,7 @@ class AlertManager:
                 raise ValueError("No notification backends are configured")
 
             test_message = message or (
-                f"🔔 GPU Hot test alert on {config.NODE_NAME}\n"
+                f"GPU Hot test alert on {config.NODE_NAME}\n"
                 "This is a test notification to confirm your alerting setup."
             )
             context = {
@@ -451,12 +444,11 @@ class AlertManager:
                 "test": True,
                 "event": "test",
                 "embed": {
-                    "title": "🔔 Test Alert",
+                    "title": "Test Alert",
                     "description": f"Alerts are configured for **{config.NODE_NAME}**.",
                     "color": TEST_EMBED_COLOR,
                     "fields": [],
-                    "thumbnail_url": EMBED_THUMBNAILS.get("test"),
-                    "footer_text": f"{config.NODE_NAME} • GPU Monitoring",
+                    "footer_text": f"{config.NODE_NAME} - GPU Monitoring",
                     "footer_icon_url": EMBED_FOOTER_ICON_URL,
                 },
                 "lines": test_message.splitlines() or [test_message],
@@ -528,7 +520,13 @@ class AlertManager:
                                 if value <= reset_threshold:
                                     recovered_now = True
                             if recovered_now:
-                                recovered.append((rule, value))
+                                # Avoid spamming recovery notifications if the alert just fired.
+                                cooldown = self.cooldown_seconds or 0.0
+                                should_notify = (
+                                    cooldown <= 0.0 or (timestamp - state["last_sent"]) >= cooldown
+                                )
+                                if should_notify:
+                                    recovered.append((rule, value))
 
                 if triggered:
                     message, embed = self._build_alert_message(
@@ -778,31 +776,26 @@ class AlertManager:
             except ValueError as exc:
                 logger.error("Ignoring persisted alert settings: %s", exc)
 
-    @staticmethod
-    def _rule_icon(rule_name: str) -> str:
-        return RULE_ICON_MAP.get(rule_name, "📈")
-
     def _format_rule_fields(
         self,
         entries: Sequence[Tuple[AlertRule, Optional[float]]], *, recovered: bool = False
     ) -> List[Dict[str, Any]]:
         fields: List[Dict[str, Any]] = []
         for rule, value in entries:
-            icon = self._rule_icon(rule.name)
-            field_name = f"{icon} {rule.label}" if icon else rule.label
+            field_name = rule.label
             threshold_text = rule.format_threshold()
 
             if recovered:
                 if value is not None:
                     value_text = rule.format_value(value)
-                    value_line = f"{value_text}  ▪️  Threshold: {threshold_text}"
+                    value_line = f"{value_text} | Threshold: {threshold_text}"
                 else:
                     value_line = f"Below threshold {threshold_text}"
-                status_line = "✅ Status: Recovered"
+                status_line = "Status: Recovered"
             else:
                 value_text = rule.format_value(value if value is not None else rule.threshold)
-                value_line = f"{value_text}  ▪️  Threshold: {threshold_text}"
-                status_line = "⚠️ Status: Above threshold"
+                value_line = f"{value_text} | Threshold: {threshold_text}"
+                status_line = "Status: Above threshold"
 
             fields.append({
                 "name": field_name,
@@ -821,23 +814,22 @@ class AlertManager:
     ) -> Tuple[str, Dict[str, Any]]:
         gpu_name = metrics.get("name") or f"GPU {gpu_id}"
         uuid = metrics.get("uuid")
-        header = f"🚨 GPU Hot alert on {node_name}"
+        header = f"GPU Hot alert on {node_name}"
         lines = [header]
         if uuid and uuid != "N/A":
             lines.append(f"{gpu_name} (UUID: {uuid})")
         else:
             lines.append(f"{gpu_name} (ID {gpu_id})")
 
-        display_time = datetime.now().strftime("%b %d, %Y • %I:%M %p")
+        display_time = datetime.now().strftime("%b %d, %Y - %I:%M %p")
         lines.append("")
         lines.append(f"Time: {display_time}")
         lines.append("")
 
         rule_lines: List[str] = []
         for rule, value in triggered:
-            icon = self._rule_icon(rule.name)
             rule_lines.append(
-                f"{icon} {rule.label}: {rule.format_value(value)} (threshold {rule.format_threshold()})"
+                f"{rule.label}: {rule.format_value(value)} (threshold {rule.format_threshold()})"
             )
         if rule_lines:
             lines.extend(rule_lines)
@@ -850,7 +842,7 @@ class AlertManager:
 
         fields = [
             {
-                "name": "🕒 Time",
+                "name": "Time",
                 "value": display_time,
                 "inline": False,
             }
@@ -858,7 +850,7 @@ class AlertManager:
         fields.extend(self._format_rule_fields(triggered))
         if process_line:
             fields.append({
-                "name": "🔧 Top Process",
+                "name": "Top Process",
                 "value": process_line.replace("- ", "", 1),
                 "inline": False,
             })
@@ -866,11 +858,11 @@ class AlertManager:
         description = f"**{gpu_name}** (UUID: {uuid})" if uuid and uuid != "N/A" else f"**{gpu_name}** (ID {gpu_id})"
 
         embed = {
-            "title": "🚨 GPU Overheat Warning",
+            "title": "GPU Overheat Warning",
             "description": description,
             "color": ALERT_EMBED_COLOR,
             "fields": fields,
-            "footer_text": f"{node_name} • GPU Monitoring",
+            "footer_text": f"{node_name} - GPU Monitoring",
             "footer_icon_url": EMBED_FOOTER_ICON_URL,
         }
 
@@ -885,47 +877,52 @@ class AlertManager:
     ) -> Tuple[str, Dict[str, Any]]:
         gpu_name = metrics.get("name") or f"GPU {gpu_id}"
         uuid = metrics.get("uuid")
-        header = f"✅ GPU recovered on {node_name}"
+        header = f"GPU recovered on {node_name}"
         lines = [header]
         if uuid and uuid != "N/A":
             lines.append(f"{gpu_name} (UUID: {uuid})")
         else:
             lines.append(f"{gpu_name} (ID {gpu_id})")
 
-        display_time = datetime.now().strftime("%b %d, %Y • %I:%M %p")
+        display_time = datetime.now().strftime("%b %d, %Y - %I:%M %p")
         lines.append("")
         lines.append(f"Time: {display_time}")
         lines.append("")
 
         for rule, value in recovered:
-            icon = self._rule_icon(rule.name)
             if value is not None:
                 value_text = rule.format_value(value)
                 lines.append(
-                    f"{icon} {rule.label}: recovered to {value_text} (threshold {rule.format_threshold()})"
+                    f"{rule.label}: recovered to {value_text} (threshold {rule.format_threshold()})"
                 )
             else:
                 lines.append(
-                    f"{icon} {rule.label}: recovered below threshold {rule.format_threshold()}"
+                    f"{rule.label}: recovered below threshold {rule.format_threshold()}"
                 )
             lines.append("")
 
         lines.append("All metrics back within safe limits.")
         fields = [
             {
-                "name": "🕒 Time",
+                "name": "Time",
                 "value": display_time,
                 "inline": False,
             }
         ]
         fields.extend(self._format_rule_fields(recovered, recovered=True))
 
+        description = (
+            f"**{gpu_name}** (UUID: {uuid})"
+            if uuid and uuid != "N/A"
+            else f"**{gpu_name}** (ID {gpu_id})"
+        )
+
         embed = {
-            "title": "✅ GPU Recovery",
+            "title": "GPU Recovery",
             "description": f"{description} is back within safe limits.",
             "color": RECOVERY_EMBED_COLOR,
             "fields": fields,
-            "footer_text": f"{node_name} • GPU Monitoring",
+            "footer_text": f"{node_name} - GPU Monitoring",
             "footer_icon_url": EMBED_FOOTER_ICON_URL,
         }
 
