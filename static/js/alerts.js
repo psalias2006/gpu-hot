@@ -199,14 +199,14 @@
                 const url = new URL(channel.webhook_url);
                 const parts = url.pathname.split('/').filter(Boolean);
                 const suffix = parts.length ? parts[parts.length - 1] : url.pathname;
-                return `Webhook • ${url.hostname}/${suffix.slice(0, 6)}…`;
+                return `Discord • ${url.hostname}/${suffix.slice(0, 6)}…`;
             } catch (_) {
-                return `Webhook • ${channel.webhook_url.slice(0, 24)}…`;
+                return `Discord • ${channel.webhook_url.slice(0, 24)}…`;
             }
         }
 
         if (channel.type === 'telegram') {
-            return channel.chat_id ? `Chat ${channel.chat_id}` : 'Chat ID pending';
+            return channel.chat_id ? `Telegram • Chat ${channel.chat_id}` : 'Telegram • Chat pending';
         }
 
         return '';
@@ -283,7 +283,11 @@
         }
 
         if (summaryEl) {
-            summaryEl.textContent = buildChannelSummary(channel);
+            let summary = buildChannelSummary(channel);
+            if (!isEnabled && summary) {
+                summary += ' • Disabled';
+            }
+            summaryEl.textContent = summary;
         }
 
         card.classList.toggle('is-incomplete', !isConfigured);
@@ -344,7 +348,7 @@
         return card;
     }
 
-    function renderChannels(channels = null) {
+    function renderChannels(channels = null, settings = null) {
         if (!channelContainer) return;
         if (Array.isArray(channels)) {
             currentChannels = ensureChannelIds(channels).map(channel => ({
@@ -371,8 +375,9 @@
             });
         }
 
-        updateEnabledNote(window.getAlertSettingsSnapshot());
-        updateTestButtonState(window.getAlertSettingsSnapshot());
+        const snapshot = settings || window.getAlertSettingsSnapshot();
+        updateEnabledNote(snapshot);
+        updateTestButtonState(snapshot);
     }
 
     function closeChannelMenu() {
@@ -667,7 +672,7 @@
         if (!settings || !form) return;
 
         const channelList = normalizeBackendList(settings.backends);
-        renderChannels(channelList);
+        renderChannels(channelList, settings);
 
         enabledCheckbox.checked = Boolean(settings.enabled);
 
@@ -894,7 +899,7 @@
             : String(defaults.reset_delta);
 
         const defaultChannels = normalizeBackendList(defaults.backends);
-        renderChannels(defaultChannels);
+        renderChannels(defaultChannels, defaults);
         updateTestButtonState(defaults);
         updateEnabledNote(defaults);
 
