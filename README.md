@@ -65,7 +65,7 @@ docker-compose up --build
 
 **Environment variables:**
 ```bash
-NVIDIA_VISIBLE_DEVICES=0,1    # Specific GPUs (default: all)
+NVIDIA_VISIBLE_DEVICES=0,1     # Specific GPUs (default: all)
 NVIDIA_SMI=true                # Force nvidia-smi mode for older GPUs
 GPU_HOT_MODE=hub               # Set to 'hub' for multi-node aggregation (default: single node)
 NODE_NAME=gpu-server-1         # Node display name (default: hostname)
@@ -74,8 +74,8 @@ NODE_URLS=http://host:1312...  # Comma-separated node URLs (required for hub mod
 
 **Backend (`core/config.py`):**
 ```python
-UPDATE_INTERVAL = 0.5    # Polling interval
-PORT = 1312              # Server port
+UPDATE_INTERVAL = 0.5  # Polling interval
+PORT = 1312            # Server port
 ```
 
 ---
@@ -99,7 +99,7 @@ socket.on('gpu_data', (data) => {
 
 ## Project Structure
 
-```
+```bash
 gpu-hot/
 ├── app.py                      # Flask + WebSocket server
 ├── core/
@@ -136,7 +136,7 @@ docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi  # Tes
 **Hub can't connect to nodes:**
 ```bash
 curl http://node-ip:1312/api/gpu-data  # Test connectivity
-sudo ufw allow 1312/tcp                 # Check firewall
+sudo ufw allow 1312/tcp                # Check firewall
 ```
 
 **Performance issues:** Increase `UPDATE_INTERVAL` in `core/config.py`
