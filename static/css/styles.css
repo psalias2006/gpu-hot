@@ -384,7 +384,7 @@ body::before {
 
 .metrics-grid-enhanced {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
     padding: 2.5rem;
     padding-top: 2rem;
@@ -399,8 +399,9 @@ body::before {
     /* Performance: isolate rendering */
     contain: layout style;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     backdrop-filter: blur(10px);
+    min-width: 0;
 }
 
 .metric-card::before {
@@ -466,6 +467,10 @@ body::before {
     margin-bottom: 0.5rem;
     line-height: 1;
     letter-spacing: -1px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow: visible;
 }
 
 .temp-display {
