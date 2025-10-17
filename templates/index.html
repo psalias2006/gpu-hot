@@ -108,40 +108,43 @@
 
                     <div class="form-section">
                         <h3>Notifications</h3>
-                        <label class="toggle">
-                            <input type="checkbox" id="alerts-enabled" name="enabled">
-                            <span>Enable alert notifications</span>
-                        </label>
+                        <div class="toggle">
+                            <span class="toggle-label">Enable alert notifications</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="alerts-enabled" name="enabled">
+                                <span class="toggle-slider" aria-hidden="true"></span>
+                            </label>
+                        </div>
                         <p id="alert-enabled-note" class="field-note"></p>
                         <div class="form-grid">
                             <label class="form-field">
                                 <span class="form-label">Cooldown (seconds)</span>
-                                <input type="number" id="alert-cooldown" name="cooldown_seconds" min="0" step="1" required>
+                                <input type="number" class="input" id="alert-cooldown" name="cooldown_seconds" min="0" step="1" required>
                             </label>
                             <label class="form-field">
                                 <span class="form-label">Reset delta</span>
-                                <input type="number" id="alert-reset-delta" name="reset_delta" min="0" step="0.1" placeholder="Use default">
+                                <input type="number" class="input" id="alert-reset-delta" name="reset_delta" min="0" step="0.1" placeholder="Use default">
                             </label>
                         </div>
                     </div>
 
                     <div class="form-section">
-                        <h3>Delivery Channels</h3>
-                        <p class="field-note">Provide credentials for the channels you want to use. Leave fields blank to disable a channel.</p>
-                        <div class="form-grid delivery-grid">
-                            <label class="form-field">
-                                <span class="form-label">Discord webhook URL</span>
-                                <input type="url" class="input" id="alert-discord-webhook" name="discord_webhook" placeholder="https://discord.com/api/webhooks/...">
-                            </label>
-                            <label class="form-field">
-                                <span class="form-label">Telegram bot token</span>
-                                <input type="text" class="input" id="alert-telegram-token" name="telegram_bot_token" autocomplete="off" placeholder="123456:ABCdef">
-                            </label>
-                            <label class="form-field">
-                                <span class="form-label">Telegram chat ID</span>
-                                <input type="text" class="input" id="alert-telegram-chat" name="telegram_chat_id" autocomplete="off" placeholder="-1001234567890">
-                            </label>
+                        <div class="section-header channel-toolbar">
+                            <div>
+                                <h3>Delivery Channels</h3>
+                                <p class="field-note">Add one or more destinations. Alerts will be sent to all configured channels.</p>
+                            </div>
+                            <div class="channel-picker" id="alert-channel-picker">
+                                <button type="button" class="button button-secondary" id="alert-add-channel">
+                                    + Add Channel
+                                </button>
+                                <div class="channel-picker-menu hidden" id="alert-channel-menu" role="menu">
+                                    <button type="button" class="channel-menu-item" data-channel-type="discord">Discord Webhook</button>
+                                    <button type="button" class="channel-menu-item" data-channel-type="telegram">Telegram Bot</button>
+                                </div>
+                            </div>
                         </div>
+                        <div id="alert-channel-container" class="channel-grid"></div>
                         <div class="delivery-actions">
                             <button type="button" class="button button-secondary" id="alert-test-button">
                                 Send Test Alert

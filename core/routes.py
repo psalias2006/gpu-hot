@@ -35,14 +35,14 @@ def register_routes(app, monitor, alert_manager=None):
                 'cooldown_seconds': config.ALERT_COOLDOWN_SECONDS,
                 'reset_delta': config.ALERT_RESET_DELTA,
                 'rules': [],
-                'backends': {},
+                'backends': [],
             }
             return jsonify({
                 'enabled': False,
                 'cooldown_seconds': config.ALERT_COOLDOWN_SECONDS,
                 'reset_delta': config.ALERT_RESET_DELTA,
                 'rules': [],
-                'backends': {},
+                'backends': [],
                 'available_backends': [],
                 'notifications_configured': False,
                 'active': False,

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from uuid import uuid4
 
 try:
     import eventlet  # type: ignore
@@ -146,12 +147,12 @@ class AlertManager:
         self._custom_backends: Optional[List[NotificationBackend]] = (
             list(backends) if backends is not None else None
         )
-        self.backend_settings: Dict[str, Dict[str, Any]] = {}
+        self.backend_settings: List[Dict[str, Any]] = []
 
         if self._custom_backends is not None:
             self.backends = list(self._custom_backends)
         else:
-            self.backend_settings = self._default_backend_settings()
+            self.backend_settings = self._ensure_channel_ids(self._default_backend_settings())
             self.backends = self._build_backends_from_settings(self.backend_settings)
 
         self.rules: List[AlertRule] = list(thresholds) if thresholds is not None else self._default_rules()
@@ -166,80 +167,150 @@ class AlertManager:
         if self.enabled and not self.backends:
             logger.warning("Notifications enabled but no backends configured")
 
-    def _default_backend_settings(self) -> Dict[str, Dict[str, str]]:
-        settings: Dict[str, Dict[str, str]] = {}
+    def _default_backend_settings(self) -> List[Dict[str, str]]:
+        settings: List[Dict[str, str]] = []
         if config.DISCORD_WEBHOOK_URL:
-            settings["discord"] = {"webhook_url": config.DISCORD_WEBHOOK_URL}
+            settings.append({
+                "type": "discord",
+                "webhook_url": config.DISCORD_WEBHOOK_URL,
+                "enabled": True,
+            })
         if config.TELEGRAM_BOT_TOKEN and config.TELEGRAM_CHAT_ID:
-            settings["telegram"] = {
+            settings.append({
+                "type": "telegram",
                 "bot_token": config.TELEGRAM_BOT_TOKEN,
                 "chat_id": config.TELEGRAM_CHAT_ID,
-            }
+                "enabled": True,
+            })
         return settings
 
     def _build_backends_from_settings(
-        self, settings: Optional[Dict[str, Dict[str, str]]]
+        self, settings: Optional[Sequence[Dict[str, Any]]]
     ) -> List[NotificationBackend]:
         backends: List[NotificationBackend] = []
         if not settings:
             return backends
 
-        discord_cfg = settings.get("discord")
-        if discord_cfg and discord_cfg.get("webhook_url"):
-            backends.append(DiscordWebhookBackend(discord_cfg["webhook_url"]))
-
-        telegram_cfg = settings.get("telegram")
-        if telegram_cfg and telegram_cfg.get("bot_token") and telegram_cfg.get("chat_id"):
-            backends.append(TelegramBackend(telegram_cfg["bot_token"], telegram_cfg["chat_id"]))
+        for entry in settings:
+            if not isinstance(entry, dict):
+                continue
+            channel_type = entry.get("type")
+            if entry.get("enabled") is False:
+                continue
+            if channel_type == "discord":
+                webhook = str(entry.get("webhook_url", "")).strip()
+                if webhook:
+                    backends.append(DiscordWebhookBackend(webhook))
+            elif channel_type == "telegram":
+                token = str(entry.get("bot_token", "")).strip()
+                chat_id = str(entry.get("chat_id", "")).strip()
+                if token and chat_id:
+                    backends.append(TelegramBackend(token, chat_id))
 
         return backends
 
-    def _normalize_backend_payload(
-        self,
-        payload: Any,
-        *,
-        base: Optional[Dict[str, Dict[str, str]]] = None,
-    ) -> Dict[str, Dict[str, str]]:
-        if base is None:
-            base = {}
-        else:
-            base = deepcopy(base)
-
+    def _normalize_backend_payload(self, payload: Any) -> List[Dict[str, Any]]:
         if payload is None:
-            return {}
-        if not isinstance(payload, dict):
-            raise ValueError("backends must be provided as an object")
+            return []
 
-        if "discord" in payload:
-            discord_cfg = payload["discord"]
-            if not discord_cfg:
-                base.pop("discord", None)
-            else:
+        if isinstance(payload, dict):
+            # Backwards compatibility: single discord/telegram objects
+            normalized: List[Dict[str, Any]] = []
+            discord_cfg = payload.get("discord")
+            if discord_cfg:
                 if not isinstance(discord_cfg, dict):
                     raise ValueError("discord backend must be provided as an object")
                 url = str(discord_cfg.get("webhook_url", "")).strip()
-                if not url:
-                    base.pop("discord", None)
-                else:
-                    base["discord"] = {"webhook_url": url}
-
-        if "telegram" in payload:
-            telegram_cfg = payload["telegram"]
-            if not telegram_cfg:
-                base.pop("telegram", None)
-            else:
+                if url:
+                    normalized.append({
+                        "type": "discord",
+                        "webhook_url": url,
+                        "enabled": discord_cfg.get("enabled", True) is not False,
+                    })
+            telegram_cfg = payload.get("telegram")
+            if telegram_cfg:
                 if not isinstance(telegram_cfg, dict):
                     raise ValueError("telegram backend must be provided as an object")
                 token = str(telegram_cfg.get("bot_token", "")).strip()
                 chat_id = str(telegram_cfg.get("chat_id", "")).strip()
                 if not token or not chat_id:
                     raise ValueError("telegram backend requires both bot_token and chat_id")
-                base["telegram"] = {
+                normalized.append({
+                    "type": "telegram",
                     "bot_token": token,
                     "chat_id": chat_id,
-                }
+                    "enabled": telegram_cfg.get("enabled", True) is not False,
+                })
+            return normalized
 
-        return base
+        if not isinstance(payload, (list, tuple)):
+            raise ValueError("backends must be provided as a list")
+
+        normalized: List[Dict[str, Any]] = []
+        for entry in payload:
+            if not isinstance(entry, dict):
+                continue
+            channel_type = entry.get("type")
+            enabled = entry.get("enabled", True) is not False
+            if channel_type == "discord":
+                url = str(entry.get("webhook_url", "")).strip()
+                if not enabled:
+                    normalized.append({
+                        "type": "discord",
+                        "webhook_url": url,
+                        "id": entry.get("id"),
+                        "enabled": False,
+                    })
+                    continue
+                if not url:
+                    raise ValueError("Discord channels require a webhook_url")
+                normalized.append({
+                    "type": "discord",
+                    "webhook_url": url,
+                    "id": entry.get("id"),
+                    "enabled": True,
+                })
+            elif channel_type == "telegram":
+                token = str(entry.get("bot_token", "")).strip()
+                chat_id = str(entry.get("chat_id", "")).strip()
+                if not enabled:
+                    normalized.append({
+                        "type": "telegram",
+                        "bot_token": token,
+                        "chat_id": chat_id,
+                        "id": entry.get("id"),
+                        "enabled": False,
+                    })
+                    continue
+                if not token or not chat_id:
+                    raise ValueError("Telegram channels require both bot_token and chat_id")
+                normalized.append({
+                    "type": "telegram",
+                    "bot_token": token,
+                    "chat_id": chat_id,
+                    "id": entry.get("id"),
+                    "enabled": True,
+                })
+            else:
+                logger.warning("Ignoring unknown backend type: %s", channel_type)
+
+        return normalized
+
+    @staticmethod
+    def _ensure_channel_ids(channels: Optional[Sequence[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+        ensured: List[Dict[str, Any]] = []
+        for entry in channels or []:
+            if not isinstance(entry, dict):
+                continue
+            channel_type = entry.get("type")
+            if not channel_type:
+                continue
+            channel = dict(entry)
+            if not channel.get("id"):
+                channel["id"] = uuid4().hex
+            channel["enabled"] = channel.get("enabled", True) is not False
+            ensured.append(channel)
+        return ensured
 
     def _default_rules(self) -> List[AlertRule]:
         rules: List[AlertRule] = []
@@ -397,6 +468,7 @@ class AlertManager:
         return self.enabled and bool(self.backends) and any(rule.is_enabled() for rule in self.rules)
 
     def _build_default_snapshot(self) -> Dict[str, Any]:
+        default_channels = self._ensure_channel_ids(self._default_backend_settings())
         return {
             "enabled": bool(self.enabled),
             "cooldown_seconds": float(self.cooldown_seconds),
@@ -415,7 +487,7 @@ class AlertManager:
                 }
                 for rule in self.rules
             ],
-            "backends": deepcopy(self._default_backend_settings()),
+            "backends": deepcopy(default_channels),
         }
 
     def _snapshot_for_response_locked(self) -> Dict[str, Any]:
@@ -542,13 +614,31 @@ class AlertManager:
                     "Ignoring backend updates because AlertManager was initialized with custom backends"
                 )
             else:
-                self.backend_settings = self._normalize_backend_payload(
-                    payload["backends"],
-                    base=self.backend_settings,
-                )
+                normalized = self._normalize_backend_payload(payload["backends"])
+                self.backend_settings = self._ensure_channel_ids(normalized)
                 self.backends = self._build_backends_from_settings(self.backend_settings)
                 if self.enabled and not self.backends:
                     logger.warning("Notifications enabled but no backends configured")
+
+        if persist:
+            channel_summary = [
+                f"{entry.get('type')}:{'on' if entry.get('enabled', True) else 'off'}"
+                for entry in self.backend_settings
+            ]
+            logger.info(
+                "Alert settings updated: enabled=%s cooldown=%s reset_delta=%s channels=%s",
+                self.enabled,
+                self.cooldown_seconds,
+                self.reset_delta if self.reset_delta is not None else "auto",
+                channel_summary or [],
+            )
+            for rule in self.rules:
+                logger.info(
+                    " - Rule %s threshold=%s reset_delta=%s",
+                    rule.name,
+                    rule.threshold,
+                    rule.reset_delta if rule.reset_delta is not None else "global",
+                )
 
         # Reset alert state so new thresholds are respected immediately
         self._state.clear()

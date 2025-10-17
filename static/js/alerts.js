@@ -14,11 +14,13 @@
     let enabledCheckbox;
     let cooldownInput;
     let resetInput;
-    let discordInput;
-    let telegramTokenInput;
-    let telegramChatInput;
+    let channelContainer;
+    let addChannelButton;
+    let channelMenu;
     let enabledNote;
     let testButton;
+    let channelMenuVisible = false;
+    let currentChannels = [];
     let lastLoadError = null;
 
     const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
@@ -26,8 +28,79 @@
         minimumFractionDigits: 0
     });
 
+    const CHANNEL_TYPES = {
+        discord: {
+            label: 'Discord Webhook',
+            description: 'Send alerts to a Discord channel via webhook.',
+            renderFields(channel) {
+                const value = channel.webhook_url || '';
+                return `
+                    <label class="form-field">
+                        <span class="form-label">Webhook URL</span>
+                        <input type="url" class="input channel-input" data-field="webhook_url"
+                               placeholder="https://discord.com/api/webhooks/..." value="${value}">
+                    </label>
+                `;
+            },
+            collect(card) {
+                const input = card.querySelector('input[data-field="webhook_url"]');
+                const webhook = input ? input.value.trim() : '';
+                if (!webhook) {
+                    throw new Error('Discord channels require a webhook URL.');
+                }
+                return { webhook_url: webhook };
+            }
+        },
+        telegram: {
+            label: 'Telegram Bot',
+            description: 'Send alerts via Telegram bot token and chat ID.',
+            renderFields(channel) {
+                const token = channel.bot_token || '';
+                const chatId = channel.chat_id || '';
+                return `
+                    <label class="form-field">
+                        <span class="form-label">Bot token</span>
+                        <input type="text" class="input channel-input" data-field="bot_token"
+                               autocomplete="off" placeholder="123456:ABCdef" value="${token}">
+                    </label>
+                    <label class="form-field">
+                        <span class="form-label">Chat ID</span>
+                        <input type="text" class="input channel-input" data-field="chat_id"
+                               autocomplete="off" placeholder="-1001234567890" value="${chatId}">
+                    </label>
+                `;
+            },
+            collect(card) {
+                const tokenInput = card.querySelector('input[data-field="bot_token"]');
+                const chatInput = card.querySelector('input[data-field="chat_id"]');
+                const token = tokenInput ? tokenInput.value.trim() : '';
+                const chatId = chatInput ? chatInput.value.trim() : '';
+                if (!token || !chatId) {
+                    throw new Error('Telegram channels require both a bot token and chat ID.');
+                }
+                return { bot_token: token, chat_id: chatId };
+            }
+        }
+    };
+
     function isModalOpen() {
         return modal && !modal.classList.contains('hidden');
+    }
+
+    function generateChannelId() {
+        return `chan-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
+    }
+
+    function ensureChannelIds(channels) {
+        return (channels || []).reduce((acc, entry) => {
+            if (!entry || typeof entry !== 'object') return acc;
+            if (!entry.type) return acc;
+            const clone = { ...entry };
+            if (!clone.id) clone.id = generateChannelId();
+             clone.enabled = clone.enabled !== false;
+            acc.push(clone);
+            return acc;
+        }, []);
     }
 
     function showStatus(message, variant = 'info') {
@@ -58,6 +131,24 @@
         return unit ? `${formatted}${unit}` : formatted;
     }
 
+    function normalizeBackendList(backends) {
+        if (!backends) return [];
+        if (Array.isArray(backends)) {
+            return ensureChannelIds(backends);
+        }
+        if (typeof backends === 'object') {
+            const list = [];
+            if (backends.discord && typeof backends.discord === 'object') {
+                list.push({ type: 'discord', ...backends.discord });
+            }
+            if (backends.telegram && typeof backends.telegram === 'object') {
+                list.push({ type: 'telegram', ...backends.telegram });
+            }
+            return ensureChannelIds(list);
+        }
+        return [];
+    }
+
     function getDefaultsMap(settings) {
         const defaults = (settings && settings.defaults && Array.isArray(settings.defaults.rules))
             ? settings.defaults.rules
@@ -80,6 +171,390 @@
             status.classList.add('is-disabled');
             status.classList.remove('is-active');
         }
+    }
+
+    function channelTypeLabel(type) {
+        return CHANNEL_TYPES[type]?.label || type;
+    }
+
+    function isChannelConfigured(channel) {
+        if (!channel) return false;
+        if (channel.type === 'discord') {
+            return Boolean(channel.webhook_url);
+        }
+        if (channel.type === 'telegram') {
+            return Boolean(channel.bot_token && channel.chat_id);
+        }
+        return false;
+    }
+
+    function buildChannelSummary(channel) {
+        if (!channel) return '';
+        if (!isChannelConfigured(channel)) {
+            return 'Incomplete configuration';
+        }
+
+        if (channel.type === 'discord') {
+            try {
+                const url = new URL(channel.webhook_url);
+                const parts = url.pathname.split('/').filter(Boolean);
+                const suffix = parts.length ? parts[parts.length - 1] : url.pathname;
+                return `Webhook • ${url.hostname}/${suffix.slice(0, 6)}…`;
+            } catch (_) {
+                return `Webhook • ${channel.webhook_url.slice(0, 24)}…`;
+            }
+        }
+
+        if (channel.type === 'telegram') {
+            return channel.chat_id ? `Chat ${channel.chat_id}` : 'Chat ID pending';
+        }
+
+        return '';
+    }
+
+    function setTestButtonEnabled(enabled) {
+        if (testButton) {
+            testButton.disabled = !enabled;
+        }
+    }
+
+    function updateTestButtonState(settings) {
+        const snapshot = settings || window.getAlertSettingsSnapshot();
+        const hasLocalConfigured = currentChannels.some(channel => channel.enabled !== false && isChannelConfigured(channel));
+        const hasSavedBackends = snapshot
+            ? snapshot.notifications_configured !== false && Array.isArray(snapshot.available_backends) && snapshot.available_backends.length > 0
+            : false;
+        setTestButtonEnabled(hasLocalConfigured && hasSavedBackends);
+    }
+
+    function updateEnabledNote(settings) {
+        if (!enabledNote) return;
+        const snapshot = settings || window.getAlertSettingsSnapshot();
+        const enabled = snapshot?.enabled;
+        const notificationsConfigured = snapshot?.notifications_configured;
+        const active = snapshot?.active;
+        const editingCount = currentChannels.filter(channel => channel._editing).length;
+        const configuredCount = currentChannels.filter(isChannelConfigured).length;
+        const enabledCount = currentChannels.filter(
+            channel => channel.enabled !== false && isChannelConfigured(channel)
+        ).length;
+
+        if (!currentChannels.length) {
+            enabledNote.textContent = 'Add at least one delivery channel to start receiving alerts.';
+            return;
+        }
+        if (editingCount > 0) {
+            enabledNote.textContent = 'Save or cancel your channel edits before alerts can run.';
+            return;
+        }
+        if (configuredCount === 0) {
+            enabledNote.textContent = 'Complete the channel details so alerts know where to send.';
+            return;
+        }
+        if (enabledCount === 0) {
+            enabledNote.textContent = 'All channels are disabled. Enable a channel to receive alerts.';
+            return;
+        }
+        if (enabled === false) {
+            enabledNote.textContent = 'Alerts are disabled; enable them to send notifications.';
+            return;
+        }
+        if (notificationsConfigured === false || notificationsConfigured === undefined) {
+            enabledNote.textContent = 'Save changes to activate the configured channels.';
+            return;
+        }
+        if (active === false) {
+            enabledNote.textContent = 'All thresholds are disabled, so no alerts will be sent.';
+            return;
+        }
+        enabledNote.textContent = 'Alerts are enabled and will use the configured backends.';
+    }
+
+    function updateChannelStatusVisual(card, channel) {
+        if (!card || !channel) return;
+        const statusEl = card.querySelector('.channel-status');
+        const summaryEl = card.querySelector('.channel-summary');
+        const isConfigured = isChannelConfigured(channel);
+        const isEnabled = channel.enabled !== false;
+
+        if (statusEl) {
+            statusEl.classList.toggle('is-online', isConfigured && isEnabled);
+            statusEl.classList.toggle('is-offline', !isConfigured || !isEnabled);
+        }
+
+        if (summaryEl) {
+            summaryEl.textContent = buildChannelSummary(channel);
+        }
+
+        card.classList.toggle('is-incomplete', !isConfigured);
+        card.classList.toggle('is-disabled', !isEnabled);
+    }
+
+    function createChannelCard(channel) {
+        const config = CHANNEL_TYPES[channel.type];
+        const card = document.createElement('div');
+        const isEditing = Boolean(channel._editing);
+        const isConfigured = isChannelConfigured(channel);
+        const isEnabled = channel.enabled !== false;
+
+        card.className = `channel-card channel-${channel.type}`;
+        card.dataset.channelId = channel.id;
+        card.dataset.channelType = channel.type;
+        if (isEditing) card.classList.add('is-editing');
+        if (!isConfigured) card.classList.add('is-incomplete');
+        if (!isEnabled) card.classList.add('is-disabled');
+
+        const description = config?.description ? `<p class="channel-description">${config.description}</p>` : '';
+        const fields = config ? config.renderFields(channel) : '';
+        const summary = buildChannelSummary(channel);
+        const statusClass = isConfigured && isEnabled ? 'is-online' : 'is-offline';
+        const toggleChecked = isEnabled ? 'checked' : '';
+        const saveLabel = channel._isNew ? 'Add Channel' : 'Save';
+
+        card.innerHTML = `
+            <div class="channel-card-header">
+                <div class="channel-heading">
+                    <div class="channel-type">${channelTypeLabel(channel.type)}</div>
+                    <span class="channel-status ${statusClass}" aria-hidden="true"></span>
+                    <span class="channel-summary">${summary}</span>
+                    ${description}
+                </div>
+                <div class="channel-controls">
+                    <label class="toggle-switch mini-toggle">
+                        <input type="checkbox" data-action="toggle-enabled" ${toggleChecked}>
+                        <span class="toggle-slider" aria-hidden="true"></span>
+                    </label>
+                    <button type="button" class="button button-ghost button-small" data-action="edit-channel">
+                        ${isEditing ? 'Editing…' : 'Edit'}
+                    </button>
+                    <button type="button" class="channel-remove" data-action="remove-channel" aria-label="Remove channel">×</button>
+                </div>
+            </div>
+            <div class="channel-card-body">
+                ${fields}
+            </div>
+            <div class="channel-card-footer">
+                <button type="button" class="button button-secondary button-small" data-action="channel-save">${saveLabel}</button>
+                <button type="button" class="button button-ghost button-small" data-action="channel-cancel">
+                    ${channel._isNew ? 'Cancel' : 'Discard changes'}
+                </button>
+            </div>
+        `;
+
+        return card;
+    }
+
+    function renderChannels(channels = null) {
+        if (!channelContainer) return;
+        if (Array.isArray(channels)) {
+            currentChannels = ensureChannelIds(channels).map(channel => ({
+                ...channel,
+                enabled: channel.enabled !== false,
+            }));
+        }
+
+        channelContainer.innerHTML = '';
+
+        if (!currentChannels.length) {
+            channelContainer.innerHTML = '<div class="channel-empty">No delivery channels yet. Add one to start receiving alerts.</div>';
+        } else {
+            currentChannels.forEach(channel => {
+                const card = createChannelCard(channel);
+                channelContainer.appendChild(card);
+                updateChannelStatusVisual(card, channel);
+                if (channel._editing) {
+                    requestAnimationFrame(() => {
+                        const input = card.querySelector('.channel-input');
+                        if (input) input.focus();
+                    });
+                }
+            });
+        }
+
+        updateEnabledNote(window.getAlertSettingsSnapshot());
+        updateTestButtonState(window.getAlertSettingsSnapshot());
+    }
+
+    function closeChannelMenu() {
+        if (channelMenu && channelMenuVisible) {
+            channelMenu.classList.add('hidden');
+            channelMenuVisible = false;
+        }
+    }
+
+    function openChannelMenu() {
+        if (channelMenu && !channelMenuVisible) {
+            channelMenu.classList.remove('hidden');
+            channelMenuVisible = true;
+        }
+    }
+
+    function toggleChannelMenu() {
+        if (!channelMenu) return;
+        if (channelMenuVisible) {
+            closeChannelMenu();
+        } else {
+            openChannelMenu();
+        }
+    }
+
+    function addChannel(type) {
+        const config = CHANNEL_TYPES[type];
+        if (!config) return;
+        const newChannel = {
+            id: generateChannelId(),
+            type,
+            enabled: true,
+            _editing: true,
+            _isNew: true,
+        };
+        if (type === 'discord') {
+            newChannel.webhook_url = '';
+        } else if (type === 'telegram') {
+            newChannel.bot_token = '';
+            newChannel.chat_id = '';
+        }
+        currentChannels.push(newChannel);
+        renderChannels();
+        closeChannelMenu();
+    }
+
+    function enterEditMode(id) {
+        const channel = currentChannels.find(item => item.id === id);
+        if (!channel || channel._editing) return;
+        currentChannels.forEach(item => {
+            if (item.id !== id) {
+                delete item._editing;
+                delete item._original;
+            }
+        });
+        channel._editing = true;
+        channel._original = { ...channel };
+        renderChannels();
+    }
+
+    function saveChannel(id) {
+        const channel = currentChannels.find(item => item.id === id);
+        if (!channel) return;
+        const card = channelContainer.querySelector(`.channel-card[data-channel-id="${id}"]`);
+        const config = CHANNEL_TYPES[channel.type];
+        if (!config || !card) return;
+
+        try {
+            const values = config.collect(card);
+            Object.assign(channel, values);
+            channel.enabled = channel.enabled !== false;
+            delete channel._editing;
+            delete channel._original;
+            delete channel._isNew;
+            renderChannels();
+            showStatus('Channel updated. Remember to save changes.', 'info');
+        } catch (error) {
+            showStatus(error.message || 'Channel configuration is incomplete.', 'error');
+        }
+    }
+
+    function cancelChannel(id) {
+        const index = currentChannels.findIndex(item => item.id === id);
+        if (index === -1) return;
+        const channel = currentChannels[index];
+
+        if (channel._isNew) {
+            currentChannels.splice(index, 1);
+        } else if (channel._original) {
+            Object.assign(channel, channel._original);
+            channel.enabled = channel._original.enabled !== false;
+            delete channel._original;
+            delete channel._editing;
+        } else {
+            delete channel._editing;
+        }
+
+        delete channel._isNew;
+        renderChannels();
+    }
+
+    function removeChannel(id) {
+        if (!id) return;
+        const index = currentChannels.findIndex(channel => channel.id === id);
+        if (index === -1) return;
+        currentChannels.splice(index, 1);
+        renderChannels();
+    }
+
+    function handleChannelClick(event) {
+        const actionTarget = event.target.closest('[data-action]');
+        if (!actionTarget) return;
+        const action = actionTarget.dataset.action;
+        const card = actionTarget.closest('.channel-card');
+        if (!card) return;
+        const channelId = card.dataset.channelId;
+
+        switch (action) {
+            case 'remove-channel':
+                removeChannel(channelId);
+                break;
+            case 'edit-channel':
+                enterEditMode(channelId);
+                break;
+            case 'channel-save':
+                saveChannel(channelId);
+                break;
+            case 'channel-cancel':
+                cancelChannel(channelId);
+                break;
+            default:
+                break;
+        }
+    }
+
+    function handleChannelChange(event) {
+        const target = event.target;
+        const card = target.closest('.channel-card');
+        if (!card) return;
+        const channelId = card.dataset.channelId;
+        const channel = currentChannels.find(item => item.id === channelId);
+        if (!channel) return;
+
+        if (target.dataset.action === 'toggle-enabled') {
+            channel.enabled = target.checked;
+            updateChannelStatusVisual(card, channel);
+            updateEnabledNote(window.getAlertSettingsSnapshot());
+            updateTestButtonState(window.getAlertSettingsSnapshot());
+        }
+    }
+
+    function collectChannelPayload() {
+        if (currentChannels.some(channel => channel._editing)) {
+            throw new Error('Finish editing all delivery channels before saving.');
+        }
+
+        const payload = [];
+
+        currentChannels.forEach(channel => {
+            const entry = {
+                id: channel.id,
+                type: channel.type,
+                enabled: channel.enabled !== false,
+            };
+
+            const configured = isChannelConfigured(channel);
+
+            if (channel.enabled !== false && !configured) {
+                throw new Error('Finish configuring each channel or disable it before saving.');
+            }
+
+            if (channel.type === 'discord') {
+                entry.webhook_url = channel.webhook_url || '';
+            } else if (channel.type === 'telegram') {
+                entry.bot_token = channel.bot_token || '';
+                entry.chat_id = channel.chat_id || '';
+            }
+
+            payload.push(entry);
+        });
+
+        return payload;
     }
 
     function renderRules(settings) {
@@ -164,7 +639,7 @@
     function updateBackendSummary(settings) {
         if (!backendSummaryEl) return;
 
-        const backends = Array.isArray(settings?.available_backends) ? settings.available_backends : [];
+        const backends = Array.isArray(settings?.available_backends) ? [...new Set(settings.available_backends)] : [];
         const enabled = settings?.enabled;
         const notificationsConfigured = settings?.notifications_configured;
         const active = settings?.active;
@@ -191,16 +666,8 @@
     function renderSettings(settings) {
         if (!settings || !form) return;
 
-        const backends = (settings.backends && typeof settings.backends === 'object') ? settings.backends : {};
-        if (discordInput) {
-            discordInput.value = backends.discord?.webhook_url || '';
-        }
-        if (telegramTokenInput) {
-            telegramTokenInput.value = backends.telegram?.bot_token || '';
-        }
-        if (telegramChatInput) {
-            telegramChatInput.value = backends.telegram?.chat_id || '';
-        }
+        const channelList = normalizeBackendList(settings.backends);
+        renderChannels(channelList);
 
         enabledCheckbox.checked = Boolean(settings.enabled);
 
@@ -218,21 +685,9 @@
         renderRules({ ...settings, defaults });
         updateBackendSummary(settings);
 
-        if (enabledNote) {
-            if (!settings.notifications_configured) {
-                enabledNote.textContent = 'Add a Discord webhook or Telegram destination to deliver alerts.';
-            } else if (settings.enabled === false) {
-                enabledNote.textContent = 'Alerts are disabled; enable them to send notifications.';
-            } else if (!settings.active) {
-                enabledNote.textContent = 'All thresholds are disabled, so no alerts will be sent.';
-            } else {
-                enabledNote.textContent = 'Alerts are enabled and will use the configured backends.';
-            }
-        }
+        updateEnabledNote(settings);
 
-        if (testButton) {
-            testButton.disabled = !settings.notifications_configured;
-        }
+        updateTestButtonState(settings);
     }
 
     function collectRulePayload(row) {
@@ -292,40 +747,22 @@
             }
         }
 
-        const discordUrl = discordInput ? discordInput.value.trim() : '';
-        const telegramToken = telegramTokenInput ? telegramTokenInput.value.trim() : '';
-        const telegramChat = telegramChatInput ? telegramChatInput.value.trim() : '';
+        const rulePayloads = [];
+        const rows = rulesContainer.querySelectorAll('.alert-rule-row');
+        rows.forEach(row => {
+            rulePayloads.push(collectRulePayload(row));
+        });
 
-        const telegramTokenProvided = Boolean(telegramToken);
-        const telegramChatProvided = Boolean(telegramChat);
-        if (telegramTokenProvided !== telegramChatProvided) {
-            throw new Error('Telegram channel requires both a bot token and chat ID.');
-        }
-
-    const rulePayloads = [];
-    const rows = rulesContainer.querySelectorAll('.alert-rule-row');
-    rows.forEach(row => {
-        rulePayloads.push(collectRulePayload(row));
-    });
-
-        const backendsPayload = {};
-        if (discordInput) {
-            backendsPayload.discord = discordUrl ? { webhook_url: discordUrl } : null;
-        }
-        if (telegramTokenInput || telegramChatInput) {
-            backendsPayload.telegram = (telegramTokenProvided && telegramChatProvided)
-                ? { bot_token: telegramToken, chat_id: telegramChat }
-                : null;
-        }
+        const backendChannels = collectChannelPayload();
 
         return {
             enabled: enabledCheckbox.checked,
             cooldown_seconds: cooldown,
             reset_delta: resetDelta,
             rules: rulePayloads,
-        backends: backendsPayload
-    };
-}
+            backends: backendChannels
+        };
+    }
 
     async function triggerTestAlert() {
         if (!testButton) return;
@@ -349,6 +786,7 @@
             showStatus(error.message || 'Failed to send test alert.', 'error');
         } finally {
             testButton.disabled = restoreDisabled;
+            updateTestButtonState();
         }
     }
 
@@ -407,6 +845,7 @@
         if (!modal) return;
         modal.classList.add('hidden');
         document.body.classList.remove('modal-open');
+        closeChannelMenu();
         showStatus('');
     }
 
@@ -454,16 +893,10 @@
             ? ''
             : String(defaults.reset_delta);
 
-        const defaultsBackends = (defaults.backends && typeof defaults.backends === 'object') ? defaults.backends : {};
-        if (discordInput) {
-            discordInput.value = defaultsBackends.discord?.webhook_url || '';
-        }
-        if (telegramTokenInput) {
-            telegramTokenInput.value = defaultsBackends.telegram?.bot_token || '';
-        }
-        if (telegramChatInput) {
-            telegramChatInput.value = defaultsBackends.telegram?.chat_id || '';
-        }
+        const defaultChannels = normalizeBackendList(defaults.backends);
+        renderChannels(defaultChannels);
+        updateTestButtonState(defaults);
+        updateEnabledNote(defaults);
 
         const defaultsMap = getDefaultsMap(snapshot);
         const rows = rulesContainer.querySelectorAll('.alert-rule-row');
@@ -489,11 +922,6 @@
             }
         });
 
-        if (testButton) {
-            const hasDefaultBackends = defaults.backends && Object.keys(defaults.backends).length > 0;
-            testButton.disabled = !hasDefaultBackends;
-        }
-
         showStatus('Defaults restored. Save to apply.', 'info');
     }
 
@@ -504,9 +932,29 @@
         }
     }
 
+    function handleDocumentClick(event) {
+        if (!channelMenuVisible) {
+            return;
+        }
+        if (channelMenu && channelMenu.contains(event.target)) {
+            return;
+        }
+        if (addChannelButton && addChannelButton.contains(event.target)) {
+            return;
+        }
+        closeChannelMenu();
+    }
+
     function handleKeydown(event) {
-        if (event.key === 'Escape' && isModalOpen()) {
-            closeModal();
+        if (event.key === 'Escape') {
+            if (channelMenuVisible) {
+                closeChannelMenu();
+                event.stopPropagation();
+                return;
+            }
+            if (isModalOpen()) {
+                closeModal();
+            }
         }
     }
 
@@ -521,9 +969,9 @@
         enabledCheckbox = document.getElementById('alerts-enabled');
         cooldownInput = document.getElementById('alert-cooldown');
         resetInput = document.getElementById('alert-reset-delta');
-        discordInput = document.getElementById('alert-discord-webhook');
-        telegramTokenInput = document.getElementById('alert-telegram-token');
-        telegramChatInput = document.getElementById('alert-telegram-chat');
+        channelContainer = document.getElementById('alert-channel-container');
+        addChannelButton = document.getElementById('alert-add-channel');
+        channelMenu = document.getElementById('alert-channel-menu');
         enabledNote = document.getElementById('alert-enabled-note');
         testButton = document.getElementById('alert-test-button');
         const openButton = document.getElementById('alert-settings-button');
@@ -536,8 +984,27 @@
         if (cancelButton) cancelButton.addEventListener('click', closeModal);
         if (restoreButton) restoreButton.addEventListener('click', restoreDefaults);
         if (testButton) testButton.addEventListener('click', triggerTestAlert);
+        if (addChannelButton) addChannelButton.addEventListener('click', event => {
+            event.stopPropagation();
+            toggleChannelMenu();
+        });
+        if (channelMenu) {
+            channelMenu.addEventListener('click', event => {
+                event.stopPropagation();
+                const target = event.target;
+                const type = target?.dataset?.channelType;
+                if (type) {
+                    addChannel(type);
+                }
+            });
+        }
+        if (channelContainer) {
+            channelContainer.addEventListener('click', handleChannelClick);
+            channelContainer.addEventListener('change', handleChannelChange);
+        }
         if (form) form.addEventListener('submit', submitSettings);
         modal.addEventListener('click', handleModalClick);
+        document.addEventListener('click', handleDocumentClick);
         document.addEventListener('keydown', handleKeydown);
 
         fetchSettings();

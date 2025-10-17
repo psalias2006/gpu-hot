@@ -153,19 +153,23 @@ class AlertManagerTest(unittest.TestCase):
             )
 
             snapshot = manager.update_settings({
-                "backends": {
-                    "discord": {"webhook_url": "https://discord.com/api/webhooks/example"},
-                    "telegram": {"bot_token": "123456:ABCdef", "chat_id": "999"},
-                }
+                "backends": [
+                    {"type": "discord", "webhook_url": "https://discord.com/api/webhooks/example"},
+                    {"type": "telegram", "bot_token": "123456:ABCdef", "chat_id": "999"},
+                ]
             })
 
             names = {backend.name for backend in manager.backends}
             self.assertIn("discord", names)
             self.assertIn("telegram", names)
+            discord_channels = [entry for entry in snapshot["backends"] if entry["type"] == "discord"]
+            self.assertTrue(discord_channels)
             self.assertEqual(
-                snapshot["backends"]["discord"]["webhook_url"],
+                discord_channels[0]["webhook_url"],
                 "https://discord.com/api/webhooks/example",
             )
+            self.assertTrue(all("id" in entry for entry in snapshot["backends"]))
+            self.assertTrue(all(entry.get("enabled", True) is True for entry in snapshot["backends"]))
 
             reloaded = AlertManager(
                 thresholds=[self.temperature_rule],
@@ -177,6 +181,10 @@ class AlertManagerTest(unittest.TestCase):
             reloaded_names = {backend.name for backend in reloaded.backends}
             self.assertIn("discord", reloaded_names)
             self.assertIn("telegram", reloaded_names)
+            reloaded_snapshot = reloaded.get_settings()
+            self.assertEqual(len(reloaded_snapshot["backends"]), 2)
+            self.assertTrue(any(entry["type"] == "discord" for entry in reloaded_snapshot["backends"]))
+            self.assertTrue(any(entry["type"] == "telegram" for entry in reloaded_snapshot["backends"]))
 
     def test_update_settings_requires_complete_telegram_config(self):
         self._captured = []
@@ -191,9 +199,9 @@ class AlertManagerTest(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 manager.update_settings({
-                    "backends": {
-                        "telegram": {"bot_token": "only-token"}
-                    }
+                    "backends": [
+                        {"type": "telegram", "bot_token": "only-token"}
+                    ]
                 })
 
     def test_update_settings_can_clear_backends(self):
@@ -208,14 +216,60 @@ class AlertManagerTest(unittest.TestCase):
                 reset_delta=5.0,
             )
             manager.update_settings({
-                "backends": {
-                    "discord": {"webhook_url": "https://discord.com/api/webhooks/example"},
-                }
+                "backends": [
+                    {"type": "discord", "webhook_url": "https://discord.com/api/webhooks/example"},
+                ]
             })
             self.assertTrue(any(backend.name == "discord" for backend in manager.backends))
 
-            manager.update_settings({"backends": {"discord": None}})
+            manager.update_settings({"backends": []})
             self.assertFalse(any(backend.name == "discord" for backend in manager.backends))
+            self.assertEqual(manager.get_settings()["backends"], [])
+
+    def test_update_settings_supports_multiple_discord_channels(self):
+        self._captured = []
+        with patch.object(alerts_module.config, "DISCORD_WEBHOOK_URL", None):
+            manager = AlertManager(
+                thresholds=[self.temperature_rule],
+                enabled=True,
+                cooldown_seconds=60.0,
+                reset_delta=5.0,
+            )
+
+            manager.update_settings({
+                "backends": [
+                    {"type": "discord", "webhook_url": "https://discord.com/api/webhooks/one"},
+                    {"type": "discord", "webhook_url": "https://discord.com/api/webhooks/two"},
+                ]
+            })
+
+            self.assertEqual(len(manager.backends), 2)
+            snapshot = manager.get_settings()
+            self.assertEqual(len(snapshot["backends"]), 2)
+            self.assertTrue(all(entry.get("enabled", True) is True for entry in snapshot["backends"]))
+
+    def test_disabled_channel_is_skipped(self):
+        self._captured = []
+        with patch.object(alerts_module.config, "DISCORD_WEBHOOK_URL", None):
+            manager = AlertManager(
+                thresholds=[self.temperature_rule],
+                enabled=True,
+                cooldown_seconds=60.0,
+                reset_delta=5.0,
+            )
+
+            manager.update_settings({
+                "backends": [{
+                    "type": "discord",
+                    "webhook_url": "https://discord.com/api/webhooks/example",
+                    "enabled": False,
+                }]
+            })
+
+            self.assertFalse(manager.backends)
+            snapshot = manager.get_settings()
+            self.assertEqual(len(snapshot["backends"]), 1)
+            self.assertFalse(snapshot["backends"][0]["enabled"])
 
     def test_update_settings_validates_threshold(self):
         self._captured = []
