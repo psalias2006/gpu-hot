@@ -2,6 +2,60 @@
  * Chart configurations and chart-related functions
  */
 
+window.alertSettings = window.alertSettings || {
+    data: null,
+    thresholds: {
+        temperature: 85,
+        memory_percent: 90,
+        utilization: 80,
+        power_draw: 0
+    }
+};
+
+const ALERT_RULE_UNITS = {
+    temperature: '°C',
+    memory_percent: '%',
+    utilization: '%',
+    power_draw: 'W'
+};
+
+function resolveAlertThreshold(ruleName, fallback) {
+    const settings = window.alertSettings?.thresholds || {};
+    const value = settings[ruleName];
+    if (typeof value === 'number' && !Number.isNaN(value)) {
+        return value;
+    }
+    return fallback;
+}
+
+function formatThresholdValue(ruleName, value) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return 'disabled';
+    }
+    const unit = ALERT_RULE_UNITS[ruleName] || '';
+    if (unit === '%') {
+        return `${Number(value).toFixed(0)}${unit}`;
+    }
+    if (unit === '°C') {
+        return `${Number(value).toFixed(0)}${unit}`;
+    }
+    return `${Number(value).toFixed(1)}${unit}`;
+}
+
+function computeTemperatureWarning(baseThreshold) {
+    if (baseThreshold === null || baseThreshold === undefined || baseThreshold <= 0) {
+        return null;
+    }
+    return Math.max(0, baseThreshold - 10);
+}
+
+function fillSeries(series, value) {
+    if (!Array.isArray(series)) return;
+    for (let i = 0; i < series.length; i += 1) {
+        series[i] = value;
+    }
+}
+
 // Chart configurations with modern styling and thresholds
 const chartConfigs = {
     utilization: {
@@ -31,7 +85,10 @@ const chartConfigs = {
                     borderWidth: 1,
                     borderDash: [5, 5],
                     pointRadius: 0,
-                    fill: false
+                    fill: false,
+                    alertRule: 'utilization',
+                    defaultThreshold: 80,
+                    labelBase: 'High Load'
                 }
             ]
         },
@@ -145,7 +202,11 @@ const chartConfigs = {
                     borderWidth: 1,
                     borderDash: [5, 5],
                     pointRadius: 0,
-                    fill: false
+                    fill: false,
+                    alertRule: 'temperature',
+                    defaultThreshold: 85,
+                    labelBase: 'Warning',
+                    alertType: 'warning'
                 },
                 {
                     label: 'Danger (85°C)',
@@ -155,7 +216,11 @@ const chartConfigs = {
                     borderWidth: 1,
                     borderDash: [10, 5],
                     pointRadius: 0,
-                    fill: false
+                    fill: false,
+                    alertRule: 'temperature',
+                    defaultThreshold: 85,
+                    labelBase: 'Danger',
+                    alertType: 'danger'
                 }
             ]
         },
@@ -269,7 +334,10 @@ const chartConfigs = {
                     borderWidth: 1,
                     borderDash: [5, 5],
                     pointRadius: 0,
-                    fill: false
+                    fill: false,
+                    alertRule: 'memory_percent',
+                    defaultThreshold: 90,
+                    labelBase: 'High Usage'
                 }
             ]
         },
@@ -374,6 +442,19 @@ const chartConfigs = {
                     pointBackgroundColor: '#43e97b',
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2
+                },
+                {
+                    label: 'Alert Threshold',
+                    data: [],
+                    borderColor: 'rgba(250, 112, 154, 0.6)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false,
+                    alertRule: 'power_draw',
+                    defaultThreshold: 0,
+                    labelBase: 'Alert Threshold'
                 }
             ]
         },
@@ -1039,7 +1120,7 @@ function initGPUData(gpuId) {
         utilization: { labels: [], data: [], thresholdData: [] },
         temperature: { labels: [], data: [], warningData: [], dangerData: [] },
         memory: { labels: [], data: [], thresholdData: [] },
-        power: { labels: [], data: [] },
+        power: { labels: [], data: [], thresholdData: [] },
         fanSpeed: { labels: [], data: [] },
         clocks: { labels: [], graphicsData: [], smData: [], memoryData: [] },
         efficiency: { labels: [], data: [] },
@@ -1135,12 +1216,19 @@ function updateChart(gpuId, chartType, value, value2, value3, value4) {
 
     // Add threshold data based on chart type
     if (chartType === 'utilization') {
-        data.thresholdData.push(80); // High load threshold at 80%
+        const threshold = resolveAlertThreshold('utilization', 80);
+        data.thresholdData.push(threshold > 0 ? threshold : null);
     } else if (chartType === 'temperature') {
-        data.warningData.push(75); // Warning at 75°C
-        data.dangerData.push(85);  // Danger at 85°C
+        const baseThreshold = resolveAlertThreshold('temperature', 85);
+        const warningValue = computeTemperatureWarning(baseThreshold);
+        data.warningData.push(warningValue);
+        data.dangerData.push(baseThreshold > 0 ? baseThreshold : null);
     } else if (chartType === 'memory') {
-        data.thresholdData.push(90); // High usage at 90%
+        const threshold = resolveAlertThreshold('memory_percent', 90);
+        data.thresholdData.push(threshold > 0 ? threshold : null);
+    } else if (chartType === 'power' && data.thresholdData) {
+        const threshold = resolveAlertThreshold('power_draw', 0);
+        data.thresholdData.push(threshold > 0 ? threshold : null);
     }
 
     // Keep only last 120 data points (60 seconds at 0.5s interval)
@@ -1256,6 +1344,9 @@ function initGPUCharts(gpuId) {
             } else if (type === 'memory') {
                 config.data.datasets[0].data = chartData[gpuId][type].data;
                 config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
+            } else if (type === 'power') {
+                config.data.datasets[0].data = chartData[gpuId][type].data;
+                config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
             } else if (type === 'clocks') {
                 config.data.datasets[0].data = chartData[gpuId][type].graphicsData;
                 config.data.datasets[1].data = chartData[gpuId][type].smData;
@@ -1278,6 +1369,99 @@ function initGPUCharts(gpuId) {
     });
 }
 
+function syncChartThresholds() {
+    const dataByGpu = chartData || {};
+    Object.keys(dataByGpu).forEach(gpuId => {
+        const gpuData = dataByGpu[gpuId];
+        if (!gpuData) return;
+
+        if (gpuData.utilization?.thresholdData) {
+            const utilThreshold = resolveAlertThreshold('utilization', 80);
+            fillSeries(gpuData.utilization.thresholdData, utilThreshold > 0 ? utilThreshold : null);
+        }
+
+        if (gpuData.memory?.thresholdData) {
+            const memThreshold = resolveAlertThreshold('memory_percent', 90);
+            fillSeries(gpuData.memory.thresholdData, memThreshold > 0 ? memThreshold : null);
+        }
+
+        if (gpuData.temperature) {
+            const tempThreshold = resolveAlertThreshold('temperature', 85);
+            const warningValue = computeTemperatureWarning(tempThreshold);
+            fillSeries(gpuData.temperature.dangerData, tempThreshold > 0 ? tempThreshold : null);
+            fillSeries(gpuData.temperature.warningData, warningValue);
+        }
+
+        if (gpuData.power?.thresholdData) {
+            const powerThreshold = resolveAlertThreshold('power_draw', 0);
+            fillSeries(gpuData.power.thresholdData, powerThreshold > 0 ? powerThreshold : null);
+        }
+    });
+
+    Object.values(charts).forEach(chartGroup => {
+        if (!chartGroup) return;
+        Object.values(chartGroup).forEach(chart => {
+            if (!chart) return;
+            let needsUpdate = false;
+            chart.config.data.datasets.forEach(dataset => {
+                if (!dataset.alertRule) return;
+
+                const ruleName = dataset.alertRule;
+                const base = resolveAlertThreshold(ruleName, dataset.defaultThreshold || 0);
+                let renderedValue = base;
+
+                if (dataset.alertType === 'warning') {
+                    renderedValue = computeTemperatureWarning(base);
+                } else if (typeof dataset.alertOffset === 'number') {
+                    renderedValue = base + dataset.alertOffset;
+                }
+
+                const showThreshold = typeof renderedValue === 'number' && renderedValue > 0;
+                dataset.hidden = !showThreshold;
+
+                if (Array.isArray(dataset.data)) {
+                    fillSeries(dataset.data, showThreshold ? renderedValue : null);
+                }
+
+                if (dataset.labelBase) {
+                    dataset.label = showThreshold
+                        ? `${dataset.labelBase} (${formatThresholdValue(ruleName, renderedValue)})`
+                        : `${dataset.labelBase} (disabled)`;
+                }
+
+                needsUpdate = true;
+            });
+
+            if (needsUpdate && chart.update) {
+                chart.update('none');
+            }
+        });
+    });
+}
+
+window.setAlertSettingsSnapshot = function(settings) {
+    if (settings) {
+        window.alertSettings.data = settings;
+        if (Array.isArray(settings.rules)) {
+            const updatedThresholds = { ...(window.alertSettings.thresholds || {}) };
+            settings.rules.forEach(rule => {
+                if (typeof rule.threshold === 'number' && !Number.isNaN(rule.threshold)) {
+                    updatedThresholds[rule.name] = rule.threshold;
+                }
+            });
+            window.alertSettings.thresholds = updatedThresholds;
+        }
+    }
+    syncChartThresholds();
+};
+
+window.getAlertSettingsSnapshot = function() {
+    return window.alertSettings?.data || null;
+};
+
+// Initialize threshold visuals with default values
+syncChartThresholds();
+
 // Initialize overview mini chart
 function initOverviewMiniChart(gpuId, currentValue) {
     const canvas = document.getElementById(`overview-chart-${gpuId}`);
@@ -1292,7 +1476,8 @@ function initOverviewMiniChart(gpuId, currentValue) {
             const t = new Date(Date.now() - i * 500).toLocaleTimeString(); // 0.5s intervals
             chartData[gpuId].utilization.labels.push(t);
             chartData[gpuId].utilization.data.push(Number.isFinite(seedValue) ? seedValue : 0);
-            chartData[gpuId].utilization.thresholdData.push(80);
+            const seedThreshold = resolveAlertThreshold('utilization', 80);
+            chartData[gpuId].utilization.thresholdData.push(seedThreshold > 0 ? seedThreshold : null);
         }
     }
 

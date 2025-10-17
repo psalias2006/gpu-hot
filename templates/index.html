@@ -27,6 +27,11 @@
                 <span>Live Monitoring</span>
             </div>
             <div id="connection-status">Connecting...</div>
+            <div class="status-actions">
+                <button id="alert-settings-button" class="button button-secondary" type="button">
+                    Alert Settings
+                </button>
+            </div>
         </div>
 
         <!-- View Selector -->
@@ -80,11 +85,90 @@
                 <div class="metric-sublabel">Host Memory</div>
             </div>
         </div>
+
+        <div id="alert-settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="alert-settings-title">
+            <div class="modal-backdrop" data-action="close-alert-settings"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 id="alert-settings-title">Alert Settings</h2>
+                        <p class="modal-subtitle">Configure alert thresholds, cooldowns, and delivery channels.</p>
+                    </div>
+                    <div class="modal-header-actions">
+                        <button type="button" class="button button-ghost" id="alert-settings-restore">
+                            Restore Defaults
+                        </button>
+                        <button type="button" class="modal-close" id="alert-settings-close" aria-label="Close alert settings">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+                <form id="alert-settings-form" class="modal-body">
+                    <div id="alert-backend-summary" class="settings-summary"></div>
+
+                    <div class="form-section">
+                        <h3>Notifications</h3>
+                        <label class="toggle">
+                            <input type="checkbox" id="alerts-enabled" name="enabled">
+                            <span>Enable alert notifications</span>
+                        </label>
+                        <p id="alert-enabled-note" class="field-note"></p>
+                        <div class="form-grid">
+                            <label class="form-field">
+                                <span class="form-label">Cooldown (seconds)</span>
+                                <input type="number" id="alert-cooldown" name="cooldown_seconds" min="0" step="1" required>
+                            </label>
+                            <label class="form-field">
+                                <span class="form-label">Reset delta</span>
+                                <input type="number" id="alert-reset-delta" name="reset_delta" min="0" step="0.1" placeholder="Use default">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Delivery Channels</h3>
+                        <p class="field-note">Provide credentials for the channels you want to use. Leave fields blank to disable a channel.</p>
+                        <div class="form-grid delivery-grid">
+                            <label class="form-field">
+                                <span class="form-label">Discord webhook URL</span>
+                                <input type="url" class="input" id="alert-discord-webhook" name="discord_webhook" placeholder="https://discord.com/api/webhooks/...">
+                            </label>
+                            <label class="form-field">
+                                <span class="form-label">Telegram bot token</span>
+                                <input type="text" class="input" id="alert-telegram-token" name="telegram_bot_token" autocomplete="off" placeholder="123456:ABCdef">
+                            </label>
+                            <label class="form-field">
+                                <span class="form-label">Telegram chat ID</span>
+                                <input type="text" class="input" id="alert-telegram-chat" name="telegram_chat_id" autocomplete="off" placeholder="-1001234567890">
+                            </label>
+                        </div>
+                        <div class="delivery-actions">
+                            <button type="button" class="button button-secondary" id="alert-test-button">
+                                Send Test Alert
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Thresholds</h3>
+                        <div id="alert-rules-container" class="rules-grid"></div>
+                    </div>
+
+                    <div id="alert-settings-status" class="form-status" role="status" aria-live="polite"></div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="button button-ghost" id="alert-settings-cancel">Cancel</button>
+                        <button type="submit" class="button button-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Application Scripts -->
-    <!-- Load in order: charts -> gpu-cards -> ui -> socket-handlers -> app -->
+    <!-- Load in order: charts -> alerts -> gpu-cards -> ui -> socket-handlers -> app -->
     <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/alerts.js') }}"></script>
     <script src="{{ url_for('static', filename='js/gpu-cards.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
     <script src="{{ url_for('static', filename='js/socket-handlers.js') }}"></script>

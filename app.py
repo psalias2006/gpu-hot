@@ -48,7 +48,7 @@ if config.MODE == 'hub':
     from core.routes import register_routes
     
     hub = Hub(config.NODE_URLS, socketio, alert_manager=alert_manager)
-    register_routes(app, None)  # No local monitor
+    register_routes(app, None, alert_manager=alert_manager)  # No local monitor
     register_hub_handlers(socketio, hub)
     monitor_or_hub = hub
     
@@ -62,7 +62,7 @@ else:
     from core.handlers import register_handlers
     
     monitor = GPUMonitor()
-    register_routes(app, monitor)
+    register_routes(app, monitor, alert_manager=alert_manager)
     register_handlers(socketio, monitor, alert_manager=alert_manager)
     monitor_or_hub = monitor
 

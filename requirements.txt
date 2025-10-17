@@ -6,3 +6,4 @@ eventlet==0.33.3
 nvidia-ml-py==13.580.82
 requests==2.31.0
 websocket-client==1.6.3
+pytest

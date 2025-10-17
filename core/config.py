@@ -58,3 +58,6 @@ ALERT_TEMPERATURE_THRESHOLD = _env_float('GPU_HOT_ALERT_TEMP', 85.0)
 ALERT_MEMORY_PERCENT_THRESHOLD = _env_float('GPU_HOT_ALERT_MEMORY', 90.0)
 ALERT_UTILIZATION_THRESHOLD = _env_float('GPU_HOT_ALERT_UTILIZATION', 95.0)
 ALERT_POWER_THRESHOLD = _env_float('GPU_HOT_ALERT_POWER', 0.0)  # 0 disables power alerts
+
+# Runtime settings persistence
+ALERT_SETTINGS_FILE = os.getenv('GPU_HOT_ALERT_SETTINGS_FILE', 'alert-settings.json')
