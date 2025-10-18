@@ -37,6 +37,8 @@ Open `http://localhost:1312`
 
 **Older GPUs:** Add `-e NVIDIA_SMI=true` if metrics don't appear.
 
+**Process monitoring:** Add `--init --pid=host` to see process names. Note: This allows the container to access host process information.
+
 **From source:**
 ```bash
 git clone https://github.com/psalias2006/gpu-hot
