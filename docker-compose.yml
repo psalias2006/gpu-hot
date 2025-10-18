@@ -14,6 +14,8 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    init: true
+    pid: "host"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:1312/api/gpu-data"]
