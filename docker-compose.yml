@@ -15,6 +15,11 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    # Required for GPU disconnect functionality
+    privileged: true
+    volumes:
+      - /sys/bus/pci:/sys/bus/pci:rw
+      - /sys/devices:/sys/devices:ro
     init: true
     pid: "host"
     restart: unless-stopped
