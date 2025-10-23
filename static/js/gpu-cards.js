@@ -10,12 +10,6 @@ function createOverviewCard(gpuId, gpuInfo) {
 
     return `
         <div class="overview-gpu-card" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')" style="pointer-events: auto; position: relative;">
-            <div class="gpu-select-container" style="position: absolute; top: 10px; right: 10px; z-index: 10;">
-                <label onclick="event.stopPropagation();">
-                    <input type="checkbox" class="gpu-select-checkbox" data-gpu-id="${gpuId}">
-                    Select
-                </label>
-            </div>
             <div class="overview-header">
                 <div>
                     <h2 style="font-size: 1.5rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">
@@ -638,18 +632,6 @@ function createGPUCard(gpuId, gpuInfo) {
                 </div>` : ''}
             </div>
             
-            <!-- GPU Actions Section -->
-            <div class="gpu-actions">
-                <div class="gpu-select-container">
-                    <label>
-                        <input type="checkbox" class="gpu-select-checkbox" data-gpu-id="${gpuId}">
-                        Select
-                    </label>
-                </div>
-                <button class="disconnect-button" onclick="showDisconnectModal(${gpuId})">
-                    <span class="disconnect-icon">⚡</span> Disconnect
-                </button>
-            </div>
         </div>
     `;
 }

@@ -173,23 +173,33 @@ class GPUDisconnector:
         try:
             bdf = await self._get_gpu_bdf(gpu_index)
             
-            # Check slot power
-            if self._has_slot_power(bdf):
-                methods.append(DisconnectMethod.SLOT_POWER.value)
-            
-            # Check hot reset capability
-            if self._has_hot_reset_capability(bdf):
-                methods.append(DisconnectMethod.HOT_RESET.value)
-            
-            # Logical remove always available
-            methods.append(DisconnectMethod.LOGICAL.value)
-            
-            # NVIDIA reset (if nvidia-smi available)
-            if await self._has_nvidia_smi():
-                methods.append(DisconnectMethod.NVIDIA_RESET.value)
+            # In WSL2, only memory flood works (experimental)
+            if is_wsl2():
+                methods.append(DisconnectMethod.MEMORY_FLOOD.value)
+                logger.info("WSL2 detected - Only MEMORY_FLOOD available (experimental)")
+            else:
+                # Check slot power (Linux only)
+                if self._has_slot_power(bdf):
+                    methods.append(DisconnectMethod.SLOT_POWER.value)
+                
+                # Check hot reset capability (Linux only)
+                if self._has_hot_reset_capability(bdf):
+                    methods.append(DisconnectMethod.HOT_RESET.value)
+                
+                # Logical remove (Linux only)
+                methods.append(DisconnectMethod.LOGICAL.value)
+                
+                # NVIDIA reset (if nvidia-smi available)
+                if await self._has_nvidia_smi():
+                    methods.append(DisconnectMethod.NVIDIA_RESET.value)
+                
+                # Memory flood experimental method
+                methods.append(DisconnectMethod.MEMORY_FLOOD.value)
                 
         except Exception as e:
             logger.error(f"Error checking methods for GPU {gpu_index}: {e}")
+            # Fallback to memory flood if error
+            methods.append(DisconnectMethod.MEMORY_FLOOD.value)
         
         return methods
 
@@ -286,16 +296,16 @@ class GPUDisconnector:
     async def _select_best_method(self, bdf: str, gpu_index: int = None) -> DisconnectMethod:
         """Select the best available method based on environment"""
         
-        # WSL2 detection - use soft methods
+        # WSL2 detection - use memory flood (experimental)
         if is_wsl2():
-            logger.info("WSL2 detected - using SIMULATED disconnect (PCI methods unavailable)")
-            return DisconnectMethod.SIMULATED
+            logger.info("WSL2 detected - using MEMORY_FLOOD disconnect (experimental)")
+            return DisconnectMethod.MEMORY_FLOOD
         
         # Native Linux - check PCI capabilities
         device_path = SYSFS_PCI_DEVICES / bdf
         if not device_path.exists():
-            logger.warning(f"PCI device {bdf} not accessible - falling back to SIMULATED")
-            return DisconnectMethod.SIMULATED
+            logger.warning(f"PCI device {bdf} not accessible - falling back to MEMORY_FLOOD")
+            return DisconnectMethod.MEMORY_FLOOD
         
         # Use real PCI methods in order of preference
         if self._has_slot_power(bdf):

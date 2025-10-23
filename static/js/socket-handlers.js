@@ -106,6 +106,12 @@ socket.onmessage = function(event) {
             overviewContainer.insertAdjacentHTML('beforeend', createOverviewCard(gpuId, gpuInfo));
             initOverviewMiniChart(gpuId, gpuInfo.utilization);
             lastDOMUpdate[gpuId] = now;
+            
+            // Add disconnect button to the card
+            const card = overviewContainer.querySelector(`[data-gpu-id="${gpuId}"]`);
+            if (card && window.addGPUSelectCheckbox) {
+                window.addGPUSelectCheckbox(gpuId, card);
+            }
         }
     });
     
@@ -331,6 +337,12 @@ function handleClusterData(data) {
                     nodeGrid.insertAdjacentHTML('beforeend', createClusterGPUCard(nodeName, gpuId, gpuInfo));
                     initOverviewMiniChart(fullGpuId, gpuInfo.utilization);
                     lastDOMUpdate[fullGpuId] = now;
+                    
+                    // Add disconnect button to the card
+                    const card = nodeGrid.querySelector(`[data-gpu-id="${fullGpuId}"]`);
+                    if (card && window.addGPUSelectCheckbox) {
+                        window.addGPUSelectCheckbox(fullGpuId, card, { node_name: nodeName });
+                    }
                 }
             });
         } else {

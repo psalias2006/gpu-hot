@@ -101,12 +101,7 @@ function setupDisconnectEventListeners() {
         }
     });
     
-    // Listen for multi-select changes
-    document.addEventListener('change', (e) => {
-        if (e.target.classList.contains('gpu-select-checkbox')) {
-            handleGPUSelection(e);
-        }
-    });
+    // Multi-select functionality removed - using individual disconnect buttons now
 }
 
 /**
@@ -142,38 +137,50 @@ function addDisconnectButton(gpuId, gpuCard, nodeInfo = null) {
  * Add multi-select checkbox to GPU card
  */
 function addGPUSelectCheckbox(gpuId, gpuCard, nodeInfo = null) {
-    // Check if checkbox already exists
-    if (gpuCard.querySelector('.gpu-select-checkbox')) {
+    // Check if disconnect button already exists
+    if (gpuCard.querySelector('.gpu-disconnect-button')) {
         return;
     }
     
-    // Create checkbox container
-    const checkboxContainer = document.createElement('div');
-    checkboxContainer.className = 'gpu-select-container';
+    // Create disconnect button container
+    const disconnectContainer = document.createElement('div');
+    disconnectContainer.className = 'gpu-disconnect-container';
     
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'gpu-select-checkbox';
-    checkbox.dataset.gpuId = gpuId;
+    // Create pill-shaped disconnect button
+    const disconnectButton = document.createElement('button');
+    disconnectButton.className = 'gpu-disconnect-button';
+    disconnectButton.dataset.gpuId = gpuId;
     if (nodeInfo) {
-        checkbox.dataset.nodeName = nodeInfo.node_name;
+        disconnectButton.dataset.nodeName = nodeInfo.node_name;
     }
     
-    const label = document.createElement('label');
-    label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(' Select'));
+    // Add icon and text
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'disconnect-dot';
+    disconnectButton.appendChild(iconSpan);
     
-    checkboxContainer.appendChild(label);
+    const textSpan = document.createElement('span');
+    textSpan.className = 'disconnect-text';
+    textSpan.textContent = 'Simulate Disconnect';
+    disconnectButton.appendChild(textSpan);
     
-    // Add to GPU card header
-    const header = gpuCard.querySelector('.gpu-header') || gpuCard.querySelector('h3');
-    if (header) {
-        header.style.position = 'relative';
-        checkboxContainer.style.position = 'absolute';
-        checkboxContainer.style.right = '10px';
-        checkboxContainer.style.top = '10px';
-        header.appendChild(checkboxContainer);
-    }
+    // Add click handler
+    disconnectButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent card click
+        showDisconnectModal(gpuId, nodeInfo);
+    });
+    
+    disconnectContainer.appendChild(disconnectButton);
+    
+    // Position at top-right of the GPU card, aligned with ONLINE badge
+    disconnectContainer.style.position = 'absolute';
+    disconnectContainer.style.right = '200px';
+    disconnectContainer.style.top = '35px';
+    disconnectContainer.style.zIndex = '10';
+    
+    // Add to GPU card (not header, so it's positioned relative to the card)
+    gpuCard.style.position = 'relative';
+    gpuCard.appendChild(disconnectContainer);
 }
 
 /**
@@ -238,14 +245,6 @@ function createDisconnectModal(gpuId, methods, nodeInfo) {
                 </div>
                 
                 <div class="modal-content">
-                    <div class="disconnect-warning">
-                        <div class="warning-icon">⚠️</div>
-                        <div class="warning-text">
-                            <strong>Caution:</strong> This will temporarily disconnect the GPU, interrupting any running processes.
-                            The GPU will automatically reconnect after the specified time.
-                        </div>
-                    </div>
-                    
                     <div class="method-selection">
                         <label>Disconnect Method:</label>
                         <select id="disconnect-method-select">
@@ -747,9 +746,6 @@ function handleGPUSelection(event) {
  */
 function clearGPUSelection() {
     disconnectState.selectedGpus.clear();
-    document.querySelectorAll('.gpu-select-checkbox').forEach(cb => {
-        cb.checked = false;
-    });
     updateMultiSelectUI();
 }
 
@@ -895,10 +891,11 @@ function updateDisconnectButtonState(button, gpuId) {
 function formatMethodName(method) {
     const names = {
         'auto': 'Auto (Best Available)',
-        'slot': 'Slot Power Toggle',
-        'hot': 'Hot Reset',
-        'logical': 'Logical Remove/Rescan',
-        'nvidia': 'NVIDIA GPU Reset'
+        'slot': 'Slot Power Toggle (Linux)',
+        'hot': 'Hot Reset (Linux)',
+        'logical': 'Logical Remove/Rescan (Linux)',
+        'nvidia': 'NVIDIA GPU Reset (Linux)',
+        'memory_flood': 'Memory Flood ⚠️ EXPERIMENTAL (WSL2/Docker/Linux)'
     };
     return names[method] || method.charAt(0).toUpperCase() + method.slice(1);
 }
@@ -909,10 +906,11 @@ function formatMethodName(method) {
 function getMethodDescription(method) {
     const descriptions = {
         'auto': 'Automatically select the most realistic method available on this system.',
-        'slot': 'Actually cut and restore slot power (closest to physical disconnect).',
-        'hot': 'Reset the PCIe link using upstream bridge controls.',
-        'logical': 'Software-only remove and re-scan (no hardware reset).',
-        'nvidia': 'Use NVIDIA driver reset functionality.'
+        'slot': 'Actually cut and restore slot power (closest to physical disconnect). Linux only.',
+        'hot': 'Reset the PCIe link using upstream bridge controls. Linux only.',
+        'logical': 'Software-only remove and re-scan. Linux only.',
+        'nvidia': 'Use NVIDIA driver reset functionality. Linux only.',
+        'memory_flood': '⚠️ EXPERIMENTAL: Floods GPU memory to trigger OOM/driver reset. May cause system instability! This is the only method available in WSL2/Docker.'
     };
     return descriptions[method] || 'Custom disconnect method.';
 }
