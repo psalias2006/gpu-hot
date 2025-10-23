@@ -10,7 +10,6 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from . import config
 from .gpu_disconnect import disconnect_gpu, disconnect_multiple_gpus, get_available_methods, GPUDisconnectError
-from .gpu_test_workloads import workload_manager, WorkloadType
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +27,6 @@ class MultiDisconnectRequest(BaseModel):
     gpu_indices: list[int]
     method: str = "auto"
     down_time: float = 5.0
-
-
-class WorkloadRequest(BaseModel):
-    gpu_id: int
-    workload_type: str = "compute_intensive"
-    duration: float = 10.0
 
 
 def register_handlers(app, monitor):
@@ -63,11 +56,20 @@ def register_handlers(app, monitor):
     async def get_disconnect_methods(gpu_id: int):
         """Get available disconnect methods for a GPU"""
         try:
+            from .gpu_disconnect import is_wsl2
+            
             methods = await get_available_methods(gpu_id)
+            in_wsl2 = is_wsl2()
+            
             return {
                 "gpu_id": gpu_id,
                 "available_methods": methods,
-                "default_method": "auto"
+                "default_method": "auto",
+                "environment": {
+                    "is_wsl2": in_wsl2,
+                    "recommended_method": "simulated" if in_wsl2 else "auto",
+                    "pci_available": not in_wsl2
+                }
             }
         except Exception as e:
             logger.error(f"Error getting disconnect methods for GPU {gpu_id}: {e}")
@@ -115,10 +117,72 @@ def register_handlers(app, monitor):
             logger.error(f"Unexpected error during multi-GPU disconnect: {e}")
             raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
     
+    @app.get("/api/gpu/verify-disconnect/{gpu_id}")
+    async def verify_gpu_disconnect(gpu_id: int):
+        """Verify GPU visibility - check if GPU exists via NVML, nvidia-smi, and sysfs"""
+        import subprocess
+        from pathlib import Path
+        
+        result = {
+            "gpu_id": gpu_id,
+            "timestamp": datetime.now().isoformat(),
+            "checks": {}
+        }
+        
+        # Check NVML device count
+        try:
+            import pynvml
+            device_count = pynvml.nvmlDeviceGetCount()
+            result["checks"]["nvml_total_devices"] = device_count
+            result["checks"]["nvml_status"] = "success"
+            
+            # Try to get handle for specific GPU
+            try:
+                handle = pynvml.nvmlDeviceGetHandleByIndex(gpu_id)
+                pci_info = pynvml.nvmlDeviceGetPciInfo(handle)
+                result["checks"]["nvml_gpu_exists"] = True
+                result["checks"]["nvml_pci_bdf"] = pci_info.busId.decode('utf-8')
+            except Exception as e:
+                result["checks"]["nvml_gpu_exists"] = False
+                result["checks"]["nvml_gpu_error"] = str(e)
+        except Exception as e:
+            result["checks"]["nvml_status"] = f"error: {e}"
+        
+        # Check nvidia-smi
+        try:
+            smi_result = subprocess.run(
+                ['nvidia-smi', '--query-gpu=index,name,pci.bus_id', '--format=csv,noheader'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            result["checks"]["nvidia_smi_success"] = smi_result.returncode == 0
+            if smi_result.returncode == 0:
+                gpu_lines = [line for line in smi_result.stdout.strip().split('\n') if line.startswith(str(gpu_id))]
+                result["checks"]["nvidia_smi_gpu_found"] = len(gpu_lines) > 0
+                if gpu_lines:
+                    result["checks"]["nvidia_smi_output"] = gpu_lines[0]
+            else:
+                result["checks"]["nvidia_smi_error"] = smi_result.stderr
+        except Exception as e:
+            result["checks"]["nvidia_smi_success"] = False
+            result["checks"]["nvidia_smi_error"] = str(e)
+        
+        # Check PCI sysfs path
+        if "nvml_pci_bdf" in result["checks"]:
+            bdf = result["checks"]["nvml_pci_bdf"]
+            pci_path = Path(f"/sys/bus/pci/devices/{bdf}")
+            result["checks"]["pci_device_exists"] = pci_path.exists()
+            result["checks"]["pci_device_path"] = str(pci_path)
+        
+        return JSONResponse(content=result)
+    
     @app.get("/api/gpu/disconnect/status")
     async def get_disconnect_status():
         """Get current disconnect operation status and system capabilities"""
         try:
+            from .gpu_disconnect import is_wsl2
+            
             # Check root permissions
             import os
             has_root = os.geteuid() == 0
@@ -131,115 +195,48 @@ def register_handlers(app, monitor):
             from pathlib import Path
             sysfs_accessible = Path("/sys/bus/pci/devices").exists()
             
+            # WSL2 detection
+            in_wsl2 = is_wsl2()
+            
+            # Determine readiness based on environment
+            if in_wsl2:
+                ready = has_nvidia_smi  # WSL2 only needs nvidia-smi for some methods
+            else:
+                ready = has_root and has_nvidia_smi and sysfs_accessible
+            
+            warnings = []
+            if in_wsl2:
+                warnings.append("WSL2 detected - PCI disconnect unavailable, using simulated/soft methods")
+            else:
+                if not has_root:
+                    warnings.append("Root privileges required for PCI operations")
+                if not has_nvidia_smi:
+                    warnings.append("nvidia-smi not found in PATH")
+                if not sysfs_accessible:
+                    warnings.append("PCI sysfs interface not accessible")
+            
             return {
-                "ready": has_root and has_nvidia_smi and sysfs_accessible,
+                "ready": ready,
+                "environment": {
+                    "is_wsl2": in_wsl2,
+                    "platform": "WSL2" if in_wsl2 else "Native Linux"
+                },
                 "permissions": {
                     "root_access": has_root,
                     "nvidia_smi_available": has_nvidia_smi,
                     "sysfs_accessible": sysfs_accessible
                 },
-                "warnings": [
-                    "Root privileges required for PCI operations" if not has_root else None,
-                    "nvidia-smi not found in PATH" if not has_nvidia_smi else None,
-                    "PCI sysfs interface not accessible" if not sysfs_accessible else None
-                ]
+                "capabilities": {
+                    "pci_disconnect": not in_wsl2 and sysfs_accessible,
+                    "nvidia_reset": has_nvidia_smi,
+                    "simulated": True,
+                    "memory_flood": has_nvidia_smi  # Needs torch/CUDA
+                },
+                "warnings": [w for w in warnings if w]
             }
             
         except Exception as e:
             logger.error(f"Error checking disconnect status: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-    
-    # GPU Workload Testing API Endpoints
-    @app.post("/api/gpu/workload/create")
-    async def create_workload(request: WorkloadRequest):
-        """Create a new GPU workload for testing"""
-        try:
-            workload_id = workload_manager.create_workload(
-                gpu_id=request.gpu_id,
-                workload_type=WorkloadType(request.workload_type),
-                duration=request.duration
-            )
-            
-            return {
-                "workload_id": workload_id,
-                "gpu_id": request.gpu_id,
-                "workload_type": request.workload_type,
-                "duration": request.duration,
-                "status": "created"
-            }
-            
-        except Exception as e:
-            logger.error(f"Error creating workload: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.post("/api/gpu/workload/{workload_id}/start")
-    async def start_workload(workload_id: str):
-        """Start a GPU workload"""
-        try:
-            workload_manager.start_workload(workload_id)
-            status = workload_manager.get_workload_status(workload_id)
-            return status
-            
-        except ValueError as e:
-            raise HTTPException(status_code=404, detail=str(e))
-        except Exception as e:
-            logger.error(f"Error starting workload: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.post("/api/gpu/workload/{workload_id}/stop")
-    async def stop_workload(workload_id: str):
-        """Stop a running GPU workload"""
-        try:
-            workload_manager.stop_workload(workload_id)
-            status = workload_manager.get_workload_status(workload_id)
-            return status
-            
-        except ValueError as e:
-            raise HTTPException(status_code=404, detail=str(e))
-        except Exception as e:
-            logger.error(f"Error stopping workload: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.get("/api/gpu/workload/{workload_id}/status")
-    async def get_workload_status_api(workload_id: str):
-        """Get status of a specific workload"""
-        try:
-            status = workload_manager.get_workload_status(workload_id)
-            return status
-            
-        except ValueError as e:
-            raise HTTPException(status_code=404, detail=str(e))
-        except Exception as e:
-            logger.error(f"Error getting workload status: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.get("/api/gpu/workloads")
-    async def get_all_workloads():
-        """Get status of all workloads"""
-        try:
-            workloads = workload_manager.get_all_workloads()
-            active = workload_manager.get_active_workloads()
-            
-            return {
-                "total_workloads": len(workloads),
-                "active_workloads": len(active),
-                "workloads": workloads,
-                "active": active
-            }
-            
-        except Exception as e:
-            logger.error(f"Error getting workloads: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.delete("/api/gpu/workloads/cleanup")
-    async def cleanup_workloads():
-        """Clean up completed workloads"""
-        try:
-            workload_manager.cleanup_completed()
-            return {"status": "ok", "message": "Cleaned up completed workloads"}
-            
-        except Exception as e:
-            logger.error(f"Error cleaning up workloads: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
 

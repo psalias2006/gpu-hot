@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 from typing import Optional, Dict, List
 from enum import Enum
+import pynvml
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +20,36 @@ SYSFS_PCI_DEVICES = Path("/sys/bus/pci/devices")
 SYSFS_PCI_SLOTS = Path("/sys/bus/pci/slots")
 SYSFS_PCI_RESCAN = Path("/sys/bus/pci/rescan")
 
+# Global state for simulated disconnects
+_simulated_offline_gpus = set()
+
+
+def is_wsl2() -> bool:
+    """Detect if running in WSL2"""
+    try:
+        with open('/proc/version', 'r') as f:
+            version = f.read().lower()
+            return 'wsl2' in version or 'microsoft' in version
+    except Exception:
+        return False
+
+
+def is_gpu_simulated_offline(gpu_index: int) -> bool:
+    """Check if GPU is in simulated offline state"""
+    return gpu_index in _simulated_offline_gpus
+
 
 class DisconnectMethod(Enum):
     """Available GPU disconnect methods"""
     AUTO = "auto"
+    # Real PCI disconnects (Linux native only)
     SLOT_POWER = "slot"
     HOT_RESET = "hot"
     LOGICAL = "logical"
+    # WSL2-compatible methods
     NVIDIA_RESET = "nvidia"
+    SIMULATED = "simulated"
+    MEMORY_FLOOD = "memory_flood"  # Experimental
 
 
 class GPUDisconnectError(Exception):
@@ -44,6 +67,12 @@ class GPUDisconnector:
         """Check if running with sufficient privileges"""
         if os.geteuid() != 0:
             logger.warning("GPU disconnect requires root privileges. Operations may fail.")
+        
+        # Log environment detection
+        if is_wsl2():
+            logger.info("WSL2 environment detected - PCI methods unavailable, will use WSL2-compatible methods")
+        else:
+            logger.info("Native Linux environment detected - all disconnect methods available")
 
     async def disconnect_gpu(
         self, 
@@ -73,7 +102,7 @@ class GPUDisconnector:
                 logger.warning(f"GPU {gpu_index} has {len(processes)} active processes")
             
             # Perform disconnect/reconnect
-            result = await self._execute_disconnect(bdf, method, down_time)
+            result = await self._execute_disconnect(bdf, method, down_time, gpu_index)
             result.update({
                 'gpu_index': gpu_index,
                 'bdf': bdf,
@@ -214,10 +243,10 @@ class GPUDisconnector:
         except Exception:
             return []
 
-    async def _execute_disconnect(self, bdf: str, method: DisconnectMethod, down_time: float) -> Dict:
+    async def _execute_disconnect(self, bdf: str, method: DisconnectMethod, down_time: float, gpu_index: int = None) -> Dict:
         """Execute the actual disconnect/reconnect operation"""
         if method == DisconnectMethod.AUTO:
-            method = await self._select_best_method(bdf)
+            method = await self._select_best_method(bdf, gpu_index)
         
         start_time = time.time()
         
@@ -229,7 +258,11 @@ class GPUDisconnector:
             elif method == DisconnectMethod.LOGICAL:
                 await self._logical_disconnect(bdf, down_time)
             elif method == DisconnectMethod.NVIDIA_RESET:
-                await self._nvidia_reset_disconnect(bdf, down_time)
+                await self._nvidia_reset_disconnect(bdf, down_time, gpu_index)
+            elif method == DisconnectMethod.SIMULATED:
+                await self._simulated_disconnect(gpu_index, down_time)
+            elif method == DisconnectMethod.MEMORY_FLOOD:
+                await self._memory_flood_disconnect(gpu_index, down_time)
             else:
                 raise GPUDisconnectError(f"Unsupported method: {method}")
             
@@ -250,8 +283,21 @@ class GPUDisconnector:
                 'error': str(e)
             }
 
-    async def _select_best_method(self, bdf: str) -> DisconnectMethod:
-        """Select the best available method for maximum realism"""
+    async def _select_best_method(self, bdf: str, gpu_index: int = None) -> DisconnectMethod:
+        """Select the best available method based on environment"""
+        
+        # WSL2 detection - use soft methods
+        if is_wsl2():
+            logger.info("WSL2 detected - using SIMULATED disconnect (PCI methods unavailable)")
+            return DisconnectMethod.SIMULATED
+        
+        # Native Linux - check PCI capabilities
+        device_path = SYSFS_PCI_DEVICES / bdf
+        if not device_path.exists():
+            logger.warning(f"PCI device {bdf} not accessible - falling back to SIMULATED")
+            return DisconnectMethod.SIMULATED
+        
+        # Use real PCI methods in order of preference
         if self._has_slot_power(bdf):
             return DisconnectMethod.SLOT_POWER
         elif self._has_hot_reset_capability(bdf):
@@ -403,25 +449,72 @@ class GPUDisconnector:
 
     async def _logical_disconnect(self, bdf: str, down_time: float):
         """Execute logical disconnect (remove/rescan)"""
-        logger.info(f"Executing logical disconnect for {bdf}")
+        logger.info(f"[DISCONNECT START] GPU {bdf} - target down_time: {down_time}s")
+        
+        device_path = SYSFS_PCI_DEVICES / bdf
+        
+        # Log state before removal
+        try:
+            nvml_count_pre = pynvml.nvmlDeviceGetCount()
+        except Exception as e:
+            nvml_count_pre = f"Error: {e}"
+        
+        logger.info(f"[PRE-REMOVE] Device path exists: {device_path.exists()}")
+        logger.info(f"[PRE-REMOVE] NVML device count: {nvml_count_pre}")
         
         # Unbind and remove
         await self._unbind_driver(bdf)
-        await self._write_sysfs(SYSFS_PCI_DEVICES / bdf / "remove", "1")
+        logger.info(f"[REMOVE] Writing '1' to {device_path / 'remove'}")
+        await self._write_sysfs(device_path / "remove", "1")
         
+        # Wait briefly for removal to take effect, then verify
+        await asyncio.sleep(0.5)
+        
+        try:
+            nvml_count_post = pynvml.nvmlDeviceGetCount()
+        except Exception as e:
+            nvml_count_post = f"Error: {e}"
+        
+        logger.info(f"[POST-REMOVE] Device path exists: {device_path.exists()}")
+        logger.info(f"[POST-REMOVE] NVML device count: {nvml_count_post}")
+        
+        if device_path.exists():
+            logger.warning(f"[POST-REMOVE] WARNING: Device {bdf} still exists after removal!")
+        else:
+            logger.info(f"[POST-REMOVE] Confirmed: Device {bdf} successfully removed from PCI bus")
+        
+        # Sleep for down_time
+        sleep_start = time.time()
+        logger.info(f"[SLEEP START] Sleeping for {down_time}s to simulate disconnect")
         await asyncio.sleep(down_time)
+        sleep_duration = time.time() - sleep_start
+        logger.info(f"[SLEEP END] Actual sleep duration: {sleep_duration:.2f}s")
         
-        # Rescan
+        # Rescan PCI bus
+        logger.info(f"[RESCAN] Triggering PCI bus rescan")
         await self._write_sysfs(SYSFS_PCI_RESCAN, "1")
+        
+        # Wait for device to reappear
+        logger.info(f"[RESCAN] Waiting for {bdf} to reappear (timeout: 30s)")
         await self._wait_for_condition(
             lambda: (SYSFS_PCI_DEVICES / bdf).exists(),
             timeout=30,
             description=f"{bdf} to reappear"
         )
+        
+        # Verify reconnection
+        try:
+            nvml_count_final = pynvml.nvmlDeviceGetCount()
+        except Exception as e:
+            nvml_count_final = f"Error: {e}"
+        
+        logger.info(f"[POST-RESCAN] Device path exists: {device_path.exists()}")
+        logger.info(f"[POST-RESCAN] NVML device count: {nvml_count_final}")
+        logger.info(f"[DISCONNECT END] GPU {bdf} reconnected successfully")
 
-    async def _nvidia_reset_disconnect(self, bdf: str, down_time: float):
-        """Execute NVIDIA GPU reset"""
-        logger.info(f"Executing NVIDIA reset for {bdf}")
+    async def _nvidia_reset_disconnect(self, bdf: str, down_time: float, gpu_index: int = None):
+        """Execute NVIDIA GPU reset using nvidia-smi"""
+        logger.info(f"[NVIDIA-RESET] Resetting GPU {gpu_index if gpu_index is not None else 'unknown'} ({bdf})")
         
         # Find GPU index from BDF
         gpu_index = await self._get_gpu_index_from_bdf(bdf)
@@ -521,6 +614,79 @@ class GPUDisconnector:
             await asyncio.sleep(0.25)
         
         raise GPUDisconnectError(f"Timeout waiting for {description}")
+    
+    async def _simulated_disconnect(self, gpu_index: int, down_time: float):
+        """Simulate disconnect in software only - WSL2 safe"""
+        logger.info(f"[SIMULATED] Marking GPU {gpu_index} as offline for {down_time}s")
+        logger.info(f"[SIMULATED] This is a software-only simulation - GPU remains physically available")
+        
+        # Add to simulated offline set
+        _simulated_offline_gpus.add(gpu_index)
+        
+        try:
+            logger.info(f"[SIMULATED] GPU {gpu_index} now appears 'disconnected' to monitor")
+            await asyncio.sleep(down_time)
+        finally:
+            # Remove from offline set
+            if gpu_index in _simulated_offline_gpus:
+                _simulated_offline_gpus.remove(gpu_index)
+            logger.info(f"[SIMULATED] GPU {gpu_index} back online - disconnect simulation complete")
+    
+    async def _memory_flood_disconnect(self, gpu_index: int, down_time: float):
+        """Flood GPU memory to trigger potential OOM/driver reset - EXPERIMENTAL"""
+        logger.warning(f"[MEMORY-FLOOD] Starting EXPERIMENTAL memory flood on GPU {gpu_index}")
+        logger.warning(f"[MEMORY-FLOOD] This may cause unpredictable behavior or system instability!")
+        
+        try:
+            import torch
+        except ImportError:
+            raise GPUDisconnectError("PyTorch not available - memory flood requires torch")
+        
+        try:
+            torch.cuda.set_device(gpu_index)
+            total_mem = torch.cuda.get_device_properties(gpu_index).total_memory
+            logger.info(f"[MEMORY-FLOOD] GPU {gpu_index} total memory: {total_mem / 1e9:.2f}GB")
+            
+            allocations = []
+            allocated_bytes = 0
+            chunk_size = 100 * 1024 * 1024  # 100MB chunks
+            
+            # Phase 1: Allocate until OOM
+            logger.info(f"[MEMORY-FLOOD] Phase 1: Allocating memory until OOM...")
+            try:
+                while allocated_bytes < total_mem * 0.95:  # Don't try to allocate 100%
+                    tensor = torch.empty(chunk_size // 4, dtype=torch.float32, device=f'cuda:{gpu_index}')
+                    allocations.append(tensor)
+                    allocated_bytes += chunk_size
+                    
+                    if len(allocations) % 10 == 0:
+                        logger.debug(f"[MEMORY-FLOOD] Allocated {allocated_bytes / 1e9:.2f}GB")
+                        
+            except RuntimeError as e:
+                if "out of memory" in str(e).lower():
+                    logger.info(f"[MEMORY-FLOOD] OOM reached at {allocated_bytes / 1e9:.2f}GB: {e}")
+                else:
+                    raise
+            
+            # Phase 2: Hold memory for down_time
+            logger.info(f"[MEMORY-FLOOD] Phase 2: Holding {allocated_bytes / 1e9:.2f}GB for {down_time}s")
+            logger.info(f"[MEMORY-FLOOD] GPU {gpu_index} should be unresponsive during this time")
+            
+            await asyncio.sleep(down_time)
+            
+        except Exception as e:
+            logger.error(f"[MEMORY-FLOOD] Error during memory flood: {e}")
+            raise
+        finally:
+            # Phase 3: Release memory
+            logger.info(f"[MEMORY-FLOOD] Phase 3: Releasing memory...")
+            allocations.clear()
+            
+            if 'torch' in dir():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize(gpu_index)
+            
+            logger.info(f"[MEMORY-FLOOD] Memory flood complete - GPU {gpu_index} should recover")
 
 
 # Global instance

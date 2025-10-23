@@ -7,6 +7,7 @@ import logging
 from .metrics import MetricsCollector
 from .nvidia_smi_fallback import parse_nvidia_smi
 from .config import NVIDIA_SMI
+from .gpu_disconnect import is_gpu_simulated_offline
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class GPUMonitor:
         self.gpu_data = {}
         self.collector = MetricsCollector()
         self.use_smi = {}  # Track which GPUs use nvidia-smi (decided at boot)
+        self.last_device_count = None  # Track device count changes
 
         try:
             pynvml.nvmlInit()
@@ -87,6 +89,16 @@ class GPUMonitor:
 
         try:
             device_count = pynvml.nvmlDeviceGetCount()
+            
+            # Log device count changes (indicates GPU disconnect/reconnect)
+            if self.last_device_count is not None and device_count != self.last_device_count:
+                logger.warning(f"[MONITOR] *** GPU DEVICE COUNT CHANGED: {self.last_device_count} -> {device_count} ***")
+                if device_count < self.last_device_count:
+                    logger.warning(f"[MONITOR] *** GPU(s) DISAPPEARED - {self.last_device_count - device_count} device(s) missing ***")
+                else:
+                    logger.info(f"[MONITOR] *** GPU(s) REAPPEARED - {device_count - self.last_device_count} device(s) added ***")
+            
+            self.last_device_count = device_count
             gpu_data = {}
 
             # Get nvidia-smi data once if any GPU needs it
@@ -104,6 +116,24 @@ class GPUMonitor:
             tasks = []
             for i in range(device_count):
                 gpu_id = str(i)
+                
+                # Check if GPU is in simulated offline state
+                if is_gpu_simulated_offline(i):
+                    logger.debug(f"[MONITOR] GPU {i} is in simulated offline state - skipping")
+                    # Create offline data
+                    gpu_data[gpu_id] = {
+                        'index': gpu_id,
+                        'name': self.gpu_data.get(gpu_id, {}).get('name', 'Unknown GPU'),
+                        'simulated_offline': True,
+                        'status': 'Simulated Disconnect',
+                        'utilization': None,
+                        'memory_used': 0,
+                        'memory_total': 0,
+                        'temperature': None,
+                        'power_draw': None,
+                    }
+                    continue
+                
                 if self.use_smi.get(gpu_id, False):
                     # Use nvidia-smi data
                     if smi_data and gpu_id in smi_data:
@@ -141,8 +171,16 @@ class GPUMonitor:
         try:
             handle = pynvml.nvmlDeviceGetHandleByIndex(gpu_index)
             return self.collector.collect_all(handle, str(gpu_index))
+        except pynvml.NVMLError as e:
+            # NVML-specific errors might indicate GPU is disconnected
+            error_str = str(e)
+            if "Not Found" in error_str or "Unknown Error" in error_str or "GPU is lost" in error_str:
+                logger.warning(f"[MONITOR] GPU {gpu_index}: Cannot access GPU - may be disconnected ({error_str})")
+            else:
+                logger.error(f"[MONITOR] GPU {gpu_index}: NVML Error - {e}")
+            return {}
         except Exception as e:
-            logger.error(f"GPU {gpu_index}: Error - {e}")
+            logger.error(f"[MONITOR] GPU {gpu_index}: Unexpected error - {e}")
             return {}
 
     async def get_processes(self):
