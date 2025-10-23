@@ -230,7 +230,7 @@ def register_handlers(app, monitor):
                     "pci_disconnect": not in_wsl2 and sysfs_accessible,
                     "nvidia_reset": has_nvidia_smi,
                     "simulated": True,
-                    "memory_flood": has_nvidia_smi  # Needs torch/CUDA
+                    "memory_flood": True  # Uses ctypes + CUDA Driver API (zero dependencies)
                 },
                 "warnings": [w for w in warnings if w]
             }

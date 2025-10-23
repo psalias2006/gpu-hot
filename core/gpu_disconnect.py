@@ -449,75 +449,40 @@ class GPUDisconnector:
 
     async def _logical_disconnect(self, bdf: str, down_time: float):
         """Execute logical disconnect (remove/rescan)"""
-        logger.info(f"[DISCONNECT START] GPU {bdf} - target down_time: {down_time}s")
+        logger.info(f"Executing logical disconnect for {bdf}")
         
         device_path = SYSFS_PCI_DEVICES / bdf
         
-        # Log state before removal
-        try:
-            nvml_count_pre = pynvml.nvmlDeviceGetCount()
-        except Exception as e:
-            nvml_count_pre = f"Error: {e}"
-        
-        logger.info(f"[PRE-REMOVE] Device path exists: {device_path.exists()}")
-        logger.info(f"[PRE-REMOVE] NVML device count: {nvml_count_pre}")
-        
         # Unbind and remove
         await self._unbind_driver(bdf)
-        logger.info(f"[REMOVE] Writing '1' to {device_path / 'remove'}")
         await self._write_sysfs(device_path / "remove", "1")
         
-        # Wait briefly for removal to take effect, then verify
+        # Wait briefly for removal to take effect
         await asyncio.sleep(0.5)
         
-        try:
-            nvml_count_post = pynvml.nvmlDeviceGetCount()
-        except Exception as e:
-            nvml_count_post = f"Error: {e}"
-        
-        logger.info(f"[POST-REMOVE] Device path exists: {device_path.exists()}")
-        logger.info(f"[POST-REMOVE] NVML device count: {nvml_count_post}")
-        
         if device_path.exists():
-            logger.warning(f"[POST-REMOVE] WARNING: Device {bdf} still exists after removal!")
-        else:
-            logger.info(f"[POST-REMOVE] Confirmed: Device {bdf} successfully removed from PCI bus")
+            logger.warning(f"Device {bdf} still exists after removal - may not be properly disconnected")
         
         # Sleep for down_time
-        sleep_start = time.time()
-        logger.info(f"[SLEEP START] Sleeping for {down_time}s to simulate disconnect")
         await asyncio.sleep(down_time)
-        sleep_duration = time.time() - sleep_start
-        logger.info(f"[SLEEP END] Actual sleep duration: {sleep_duration:.2f}s")
         
         # Rescan PCI bus
-        logger.info(f"[RESCAN] Triggering PCI bus rescan")
         await self._write_sysfs(SYSFS_PCI_RESCAN, "1")
         
         # Wait for device to reappear
-        logger.info(f"[RESCAN] Waiting for {bdf} to reappear (timeout: 30s)")
         await self._wait_for_condition(
             lambda: (SYSFS_PCI_DEVICES / bdf).exists(),
             timeout=30,
             description=f"{bdf} to reappear"
         )
-        
-        # Verify reconnection
-        try:
-            nvml_count_final = pynvml.nvmlDeviceGetCount()
-        except Exception as e:
-            nvml_count_final = f"Error: {e}"
-        
-        logger.info(f"[POST-RESCAN] Device path exists: {device_path.exists()}")
-        logger.info(f"[POST-RESCAN] NVML device count: {nvml_count_final}")
-        logger.info(f"[DISCONNECT END] GPU {bdf} reconnected successfully")
 
     async def _nvidia_reset_disconnect(self, bdf: str, down_time: float, gpu_index: int = None):
         """Execute NVIDIA GPU reset using nvidia-smi"""
-        logger.info(f"[NVIDIA-RESET] Resetting GPU {gpu_index if gpu_index is not None else 'unknown'} ({bdf})")
+        # Find GPU index from BDF if not provided
+        if gpu_index is None:
+            gpu_index = await self._get_gpu_index_from_bdf(bdf)
         
-        # Find GPU index from BDF
-        gpu_index = await self._get_gpu_index_from_bdf(bdf)
+        logger.info(f"Executing NVIDIA reset for GPU {gpu_index}")
         
         result = await asyncio.create_subprocess_exec(
             'nvidia-smi', '--gpu-reset', '-i', str(gpu_index),
@@ -589,7 +554,6 @@ class GPUDisconnector:
                 unbind_file = Path(f"/sys/bus/pci/drivers/{driver_name}/unbind")
                 if unbind_file.exists():
                     await self._write_sysfs(unbind_file, bdf)
-                    logger.debug(f"Unbound driver {driver_name} from {bdf}")
         except Exception as e:
             logger.warning(f"Failed to unbind driver for {bdf}: {e}")
 
@@ -600,7 +564,6 @@ class GPUDisconnector:
                 path.write_text(value)
             
             await asyncio.get_event_loop().run_in_executor(None, write_sync)
-            logger.debug(f"Wrote '{value}' to {path}")
             
         except Exception as e:
             raise GPUDisconnectError(f"Failed to write to {path}: {e}")
@@ -617,76 +580,111 @@ class GPUDisconnector:
     
     async def _simulated_disconnect(self, gpu_index: int, down_time: float):
         """Simulate disconnect in software only - WSL2 safe"""
-        logger.info(f"[SIMULATED] Marking GPU {gpu_index} as offline for {down_time}s")
-        logger.info(f"[SIMULATED] This is a software-only simulation - GPU remains physically available")
+        logger.info(f"Simulating disconnect for GPU {gpu_index} ({down_time}s)")
         
         # Add to simulated offline set
         _simulated_offline_gpus.add(gpu_index)
         
         try:
-            logger.info(f"[SIMULATED] GPU {gpu_index} now appears 'disconnected' to monitor")
             await asyncio.sleep(down_time)
         finally:
             # Remove from offline set
             if gpu_index in _simulated_offline_gpus:
                 _simulated_offline_gpus.remove(gpu_index)
-            logger.info(f"[SIMULATED] GPU {gpu_index} back online - disconnect simulation complete")
     
     async def _memory_flood_disconnect(self, gpu_index: int, down_time: float):
         """Flood GPU memory to trigger potential OOM/driver reset - EXPERIMENTAL"""
-        logger.warning(f"[MEMORY-FLOOD] Starting EXPERIMENTAL memory flood on GPU {gpu_index}")
-        logger.warning(f"[MEMORY-FLOOD] This may cause unpredictable behavior or system instability!")
+        logger.warning(f"Starting EXPERIMENTAL memory flood on GPU {gpu_index} - may cause instability!")
+        
+        import ctypes
+        
+        allocations = []
+        ctx = None
         
         try:
-            import torch
-        except ImportError:
-            raise GPUDisconnectError("PyTorch not available - memory flood requires torch")
-        
-        try:
-            torch.cuda.set_device(gpu_index)
-            total_mem = torch.cuda.get_device_properties(gpu_index).total_memory
-            logger.info(f"[MEMORY-FLOOD] GPU {gpu_index} total memory: {total_mem / 1e9:.2f}GB")
+            # Load CUDA driver library
+            try:
+                libcuda = ctypes.CDLL('libcuda.so.1')
+            except OSError as e:
+                raise GPUDisconnectError(f"CUDA driver library not found: {e}")
             
-            allocations = []
+            # Define CUDA function signatures
+            cuInit = libcuda.cuInit
+            cuInit.argtypes = [ctypes.c_uint]
+            cuInit.restype = ctypes.c_int
+            
+            cuDeviceGet = libcuda.cuDeviceGet
+            cuDeviceGet.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int]
+            cuDeviceGet.restype = ctypes.c_int
+            
+            cuCtxCreate = libcuda.cuCtxCreate_v2
+            cuCtxCreate.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_uint, ctypes.c_int]
+            cuCtxCreate.restype = ctypes.c_int
+            
+            cuCtxDestroy = libcuda.cuCtxDestroy_v2
+            cuCtxDestroy.argtypes = [ctypes.c_void_p]
+            cuCtxDestroy.restype = ctypes.c_int
+            
+            cuMemAlloc = libcuda.cuMemAlloc_v2
+            cuMemAlloc.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_size_t]
+            cuMemAlloc.restype = ctypes.c_int
+            
+            cuMemFree = libcuda.cuMemFree_v2
+            cuMemFree.argtypes = [ctypes.c_void_p]
+            cuMemFree.restype = ctypes.c_int
+            
+            # Initialize CUDA and create context
+            if cuInit(0) != 0:
+                raise GPUDisconnectError(f"CUDA initialization failed")
+            
+            device = ctypes.c_int()
+            if cuDeviceGet(ctypes.byref(device), gpu_index) != 0:
+                raise GPUDisconnectError(f"Failed to get CUDA device {gpu_index}")
+            
+            ctx = ctypes.c_void_p()
+            if cuCtxCreate(ctypes.byref(ctx), 0, device) != 0:
+                raise GPUDisconnectError(f"Failed to create CUDA context for GPU {gpu_index}")
+            
+            # Get GPU memory info
+            handle = pynvml.nvmlDeviceGetHandleByIndex(gpu_index)
+            mem_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+            free_mem = mem_info.free
+            
+            # Allocate memory chunks
             allocated_bytes = 0
             chunk_size = 100 * 1024 * 1024  # 100MB chunks
+            target_bytes = int(free_mem * 0.95)
             
-            # Phase 1: Allocate until OOM
-            logger.info(f"[MEMORY-FLOOD] Phase 1: Allocating memory until OOM...")
-            try:
-                while allocated_bytes < total_mem * 0.95:  # Don't try to allocate 100%
-                    tensor = torch.empty(chunk_size // 4, dtype=torch.float32, device=f'cuda:{gpu_index}')
-                    allocations.append(tensor)
+            while allocated_bytes < target_bytes:
+                ptr = ctypes.c_void_p()
+                result = cuMemAlloc(ctypes.byref(ptr), chunk_size)
+                
+                if result == 0:
+                    allocations.append(ptr)
                     allocated_bytes += chunk_size
-                    
-                    if len(allocations) % 10 == 0:
-                        logger.debug(f"[MEMORY-FLOOD] Allocated {allocated_bytes / 1e9:.2f}GB")
-                        
-            except RuntimeError as e:
-                if "out of memory" in str(e).lower():
-                    logger.info(f"[MEMORY-FLOOD] OOM reached at {allocated_bytes / 1e9:.2f}GB: {e}")
                 else:
-                    raise
+                    break
             
-            # Phase 2: Hold memory for down_time
-            logger.info(f"[MEMORY-FLOOD] Phase 2: Holding {allocated_bytes / 1e9:.2f}GB for {down_time}s")
-            logger.info(f"[MEMORY-FLOOD] GPU {gpu_index} should be unresponsive during this time")
-            
+            logger.info(f"Allocated {allocated_bytes / 1e9:.2f}GB on GPU {gpu_index}, holding for {down_time}s")
             await asyncio.sleep(down_time)
             
         except Exception as e:
-            logger.error(f"[MEMORY-FLOOD] Error during memory flood: {e}")
+            logger.error(f"Memory flood error: {e}")
             raise
         finally:
-            # Phase 3: Release memory
-            logger.info(f"[MEMORY-FLOOD] Phase 3: Releasing memory...")
-            allocations.clear()
+            # Release memory
+            for ptr in allocations:
+                try:
+                    cuMemFree(ptr)
+                except Exception:
+                    pass
             
-            if 'torch' in dir():
-                torch.cuda.empty_cache()
-                torch.cuda.synchronize(gpu_index)
-            
-            logger.info(f"[MEMORY-FLOOD] Memory flood complete - GPU {gpu_index} should recover")
+            # Destroy CUDA context
+            if ctx and ctx.value:
+                try:
+                    cuCtxDestroy(ctx)
+                except Exception:
+                    pass
 
 
 # Global instance
