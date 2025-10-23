@@ -1,73 +1,243 @@
-# GPU Hot - Load Testing (FastAPI + AsyncIO)
+# GPU Disconnect Integration Tests
 
-Simple load testing for multi-node GPU monitoring with realistic async patterns.
+This directory contains comprehensive integration tests for GPU disconnect functionality.
 
 ## Quick Start
 
+### Run Full Test Suite
 ```bash
 cd tests
-docker-compose -f docker-compose.test.yml up
+python3 test_gpu_disconnect_integration.py
 ```
 
-Open http://localhost:1312 to see the dashboard.
+This will run a complete suite of disconnect tests including:
+- Basic disconnect during compute workload
+- Memory stress test with disconnect
+- Immediate disconnect after workload start  
+- Continuous workload disconnect
 
-## Architecture
+## Requirements
 
-- **FastAPI + AsyncIO**: Modern async Python for better performance
-- **Native WebSockets**: No Socket.IO overhead, direct WebSocket protocol
-- **Concurrent Mock Nodes**: Multiple nodes running in parallel
-- **Realistic GPU Patterns**: Training jobs with epochs, warmup, validation
+### System Requirements
+- **Linux** with PCI sysfs (`/sys/bus/pci/devices`)
+- **Root privileges** (for actual GPU disconnect)
+- **NVIDIA GPU** with drivers installed
+- **PyTorch with CUDA** support
 
-## Load Test Presets
-
-Edit `docker-compose.test.yml` and uncomment the preset you want:
-
-### LIGHT (3 nodes, 14 GPUs)
-Good for development and quick testing.
-```yaml
-- NODES=2,4,8
-- NODE_URLS=http://mock-cluster:13120,http://mock-cluster:13121,http://mock-cluster:13122
+### Python Dependencies
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cu118
 ```
 
-### MEDIUM (8 nodes, 64 GPUs) ⭐ Default
-Realistic medium-sized cluster.
-```yaml
-- NODES=8,8,8,8,8,8,8,8
-- NODE_URLS=http://mock-cluster:13120,...,http://mock-cluster:13127
+Or use the Docker container which includes all dependencies.
+
+## Test Components
+
+### 1. GPU Workload Generator (`core/gpu_test_workloads.py`)
+Generates various GPU workloads for testing:
+
+**Workload Types:**
+- `MEMORY_STRESS` - Rapid memory allocation/deallocation
+- `COMPUTE_INTENSIVE` - Matrix multiplications and heavy compute
+- `LONG_RUNNING` - Single long operation with many iterations
+- `CONTINUOUS` - Rapid small operations in tight loop
+- `MIXED` - Combination of memory and compute operations
+
+### 2. Integration Test Framework (`test_gpu_disconnect_integration.py`)
+Orchestrates complete test scenarios:
+
+**Test Phases:**
+1. **Start Workload** - Begin GPU operation
+2. **Monitor** - Track workload progress
+3. **Disconnect** - Trigger GPU disconnect
+4. **Validate** - Verify expected behavior
+
+**Expected Results:**
+- Workload interrupted or fails during disconnect
+- CUDA errors captured appropriately
+- GPU unavailable during disconnect period
+- GPU recovers after reconnect
+
+### 3. Pre-configured Test Scenarios
+Ready-to-use test configurations:
+
+```python
+from tests.test_gpu_disconnect_integration import (
+    create_basic_disconnect_test,
+    create_memory_stress_disconnect_test,
+    create_immediate_disconnect_test,
+    create_continuous_workload_test,
+    create_standard_test_suite
+)
+
+# Run single test
+test = create_basic_disconnect_test(gpu_id=0)
+result = await test.run()
+
+# Run full suite
+suite = create_standard_test_suite(gpu_id=0)
+results = await suite.run_all()
 ```
 
-### HEAVY (20 nodes, 160 GPUs)
-Stress test for large production environments.
-```yaml
-- NODES=8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
-- NODE_URLS=http://mock-cluster:13120,...,http://mock-cluster:13139
+## Manual Testing with API
+
+You can also test via the REST API when the application is running:
+
+### 1. Create and Start Workload
+```bash
+# Create workload
+curl -X POST http://localhost:1312/api/gpu/workload/create \
+  -H "Content-Type: application/json" \
+  -d '{"gpu_id": 0, "workload_type": "compute_intensive", "duration": 30.0}'
+
+# Response includes workload_id
+# {"workload_id": "workload_1_1234567890", ...}
+
+# Start the workload
+curl -X POST http://localhost:1312/api/gpu/workload/workload_1_1234567890/start
 ```
 
-## What's Simulated
+### 2. Monitor Workload
+```bash
+# Check workload status
+curl http://localhost:1312/api/gpu/workload/workload_1_1234567890/status
 
-- **Realistic GPU patterns**: Training jobs with epochs, warmup, validation
-- **Idle + busy GPUs**: ~40% utilization typical of real clusters
-- **Stable memory**: Memory allocated at job start, stays constant
-- **Clock speeds**: Proper P-states (P0/P2/P8)
-- **Data loading dips**: Periodic utilization drops
-- **Temperature correlation**: Realistic thermal behavior
+# List all workloads
+curl http://localhost:1312/api/gpu/workloads
+```
 
-## Files
+### 3. Trigger Disconnect During Workload
+```bash
+# While workload is running, trigger disconnect
+curl -X POST http://localhost:1312/api/gpu/0/disconnect \
+  -H "Content-Type: application/json" \
+  -d '{"method": "auto", "down_time": 5.0}'
+```
 
-- `test_cluster.py` - Mock GPU node with realistic patterns (FastAPI + AsyncIO)
-- `docker-compose.test.yml` - Test stack with preset configurations
-- `Dockerfile.test` - Container for mock nodes (FastAPI dependencies)
+### 4. Check Results
+```bash
+# Check final workload status
+curl http://localhost:1312/api/gpu/workload/workload_1_1234567890/status
 
-## Performance Benefits
+# Expected: status should be "interrupted" or "failed"
+```
 
-- **20-40% latency reduction** with true async/await
-- **2-3x more concurrent connections** supported
-- **Better resource utilization** for hub mode aggregation
-- **Sub-500ms latency** consistently achieved
+## Test Validation Criteria
 
-## Rebuild After Changes
+### Successful Disconnect Test:
+✅ Workload starts successfully  
+✅ Disconnect operation completes  
+✅ Workload is interrupted/fails during disconnect  
+✅ GPU becomes unavailable (nvidia-smi shows error)  
+✅ GPU recovers after reconnect  
+✅ New operations can be scheduled after recovery  
+
+### Expected Behaviors:
+
+**During Disconnect:**
+- Running CUDA operations fail with errors
+- New operations cannot be scheduled
+- `nvidia-smi` reports GPU unavailable
+- Workload status changes to `interrupted` or `failed`
+
+**After Reconnect:**
+- GPU reappears in system
+- New workloads can be created
+- Operations complete successfully
+- No memory leaks or resource issues
+
+## Troubleshooting
+
+### "PyTorch CUDA not available"
+Install PyTorch with CUDA support:
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cu118
+```
+
+### "Permission denied" during disconnect
+Tests require root privileges for actual GPU disconnect:
+```bash
+sudo python3 test_gpu_disconnect_integration.py
+```
+
+### "Workload completed despite disconnect"
+This indicates the disconnect didn't actually affect the GPU. Possible causes:
+- Insufficient privileges (need root)
+- WSL2 limitations (use bare metal Linux)
+- Disconnect method not supported on platform
+
+### Tests pass but you want to verify manually
+Check system logs during test:
+```bash
+# Terminal 1: Run tests
+sudo python3 test_gpu_disconnect_integration.py
+
+# Terminal 2: Watch GPU status
+watch -n 0.5 nvidia-smi
+
+# Terminal 3: Monitor kernel messages
+sudo dmesg -w | grep -i gpu
+```
+
+## Advanced Usage
+
+### Custom Test Scenario
+```python
+from tests.test_gpu_disconnect_integration import DisconnectTestScenario
+from core.gpu_test_workloads import WorkloadType
+
+# Create custom test
+test = DisconnectTestScenario(
+    test_id="custom_test_1",
+    name="Custom Stress Test",
+    description="My custom disconnect scenario",
+    gpu_id=0,
+    workload_type=WorkloadType.MEMORY_STRESS,
+    workload_duration=60.0,      # 60 second workload
+    disconnect_delay=10.0,        # Disconnect after 10s
+    disconnect_method="logical",  # Force logical method
+    disconnect_duration=15.0      # Keep disconnected for 15s
+)
+
+result = await test.run()
+print(result)
+```
+
+### Multi-GPU Testing
+```python
+# Test on different GPUs
+suite = DisconnectTestSuite("Multi-GPU Tests")
+
+for gpu_id in [0, 1, 2, 3]:
+    test = create_basic_disconnect_test(gpu_id=gpu_id)
+    suite.add_test(test)
+
+results = await suite.run_all()
+```
+
+## CI/CD Integration
+
+For automated testing in CI/CD pipelines:
 
 ```bash
-docker-compose -f docker-compose.test.yml down
-docker-compose -f docker-compose.test.yml up --build
+# Run tests with JSON output
+python3 test_gpu_disconnect_integration.py --json > results.json
+
+# Check exit code
+if [ $? -eq 0 ]; then
+    echo "All tests passed"
+else
+    echo "Tests failed"
+    exit 1
+fi
 ```
+
+## WSL2 / Limited Environments
+
+In WSL2 or environments without full PCI access, tests will:
+- Execute workloads successfully ✅
+- Attempt disconnect operations ✅
+- Report permission errors (expected) ⚠️
+- Still validate UI/API functionality ✅
+
+This allows partial validation even without hardware disconnect capability.

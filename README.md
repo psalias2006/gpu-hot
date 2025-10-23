@@ -126,6 +126,37 @@ POST /api/hub/gpu/{node_name}/{gpu_id}/disconnect
 POST /api/hub/gpu/disconnect-multiple
 ```
 
+### Integration Testing
+
+GPU Hot includes a comprehensive testing framework to validate disconnect functionality:
+
+**Run Full Test Suite:**
+```bash
+cd tests
+sudo python3 test_gpu_disconnect_integration.py
+```
+
+**Manual API Testing:**
+```bash
+# 1. Create GPU workload
+curl -X POST http://localhost:1312/api/gpu/workload/create \
+  -H "Content-Type: application/json" \
+  -d '{"gpu_id": 0, "workload_type": "compute_intensive", "duration": 30.0}'
+
+# 2. Start workload (use workload_id from response)
+curl -X POST http://localhost:1312/api/gpu/workload/{workload_id}/start
+
+# 3. Trigger disconnect while workload is running
+curl -X POST http://localhost:1312/api/gpu/0/disconnect \
+  -H "Content-Type": application/json" \
+  -d '{"method": "auto", "down_time": 5.0}'
+
+# 4. Check workload status (should be "interrupted" or "failed")
+curl http://localhost:1312/api/gpu/workload/{workload_id}/status
+```
+
+See [`tests/README.md`](tests/README.md) for detailed testing documentation.
+
 ---
 
 ## Configuration
@@ -166,6 +197,14 @@ GET  /api/hub/gpu/{node}/{gpu_id}/disconnect/methods  # Get methods for node GPU
 POST /api/hub/gpu/{node}/{gpu_id}/disconnect   # Disconnect GPU on specific node
 POST /api/hub/gpu/disconnect-multiple          # Multi-node batch disconnect
 GET  /api/hub/gpu/disconnect/status             # Hub-wide disconnect status
+
+# GPU Workload Testing API
+POST   /api/gpu/workload/create                # Create new GPU workload
+POST   /api/gpu/workload/{id}/start            # Start workload
+POST   /api/gpu/workload/{id}/stop             # Stop workload
+GET    /api/gpu/workload/{id}/status           # Get workload status
+GET    /api/gpu/workloads                      # List all workloads
+DELETE /api/gpu/workloads/cleanup              # Clean up completed workloads
 ```
 
 ### WebSocket

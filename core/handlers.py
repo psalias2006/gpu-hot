@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from . import config
 from .gpu_disconnect import disconnect_gpu, disconnect_multiple_gpus, get_available_methods, GPUDisconnectError
+from .gpu_test_workloads import workload_manager, WorkloadType
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,12 @@ class MultiDisconnectRequest(BaseModel):
     gpu_indices: list[int]
     method: str = "auto"
     down_time: float = 5.0
+
+
+class WorkloadRequest(BaseModel):
+    gpu_id: int
+    workload_type: str = "compute_intensive"
+    duration: float = 10.0
 
 
 def register_handlers(app, monitor):
@@ -140,6 +147,99 @@ def register_handlers(app, monitor):
             
         except Exception as e:
             logger.error(f"Error checking disconnect status: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    # GPU Workload Testing API Endpoints
+    @app.post("/api/gpu/workload/create")
+    async def create_workload(request: WorkloadRequest):
+        """Create a new GPU workload for testing"""
+        try:
+            workload_id = workload_manager.create_workload(
+                gpu_id=request.gpu_id,
+                workload_type=WorkloadType(request.workload_type),
+                duration=request.duration
+            )
+            
+            return {
+                "workload_id": workload_id,
+                "gpu_id": request.gpu_id,
+                "workload_type": request.workload_type,
+                "duration": request.duration,
+                "status": "created"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error creating workload: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    @app.post("/api/gpu/workload/{workload_id}/start")
+    async def start_workload(workload_id: str):
+        """Start a GPU workload"""
+        try:
+            workload_manager.start_workload(workload_id)
+            status = workload_manager.get_workload_status(workload_id)
+            return status
+            
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error starting workload: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    @app.post("/api/gpu/workload/{workload_id}/stop")
+    async def stop_workload(workload_id: str):
+        """Stop a running GPU workload"""
+        try:
+            workload_manager.stop_workload(workload_id)
+            status = workload_manager.get_workload_status(workload_id)
+            return status
+            
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error stopping workload: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    @app.get("/api/gpu/workload/{workload_id}/status")
+    async def get_workload_status_api(workload_id: str):
+        """Get status of a specific workload"""
+        try:
+            status = workload_manager.get_workload_status(workload_id)
+            return status
+            
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error getting workload status: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    @app.get("/api/gpu/workloads")
+    async def get_all_workloads():
+        """Get status of all workloads"""
+        try:
+            workloads = workload_manager.get_all_workloads()
+            active = workload_manager.get_active_workloads()
+            
+            return {
+                "total_workloads": len(workloads),
+                "active_workloads": len(active),
+                "workloads": workloads,
+                "active": active
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting workloads: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    @app.delete("/api/gpu/workloads/cleanup")
+    async def cleanup_workloads():
+        """Clean up completed workloads"""
+        try:
+            workload_manager.cleanup_completed()
+            return {"status": "ok", "message": "Cleaned up completed workloads"}
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up workloads: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
 
