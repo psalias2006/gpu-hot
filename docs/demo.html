@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPU Hot - Interactive Demo</title>
     
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RPQC788155"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-RPQC788155');
+    </script>
+    
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -48,7 +57,7 @@
 
         <!-- View Selector -->
         <div class="view-selector" id="view-selector">
-            <button class="view-option active" data-view="overview" onclick="switchToView('overview')">All GPUs</button>
+            <button class="view-option active" data-view="overview" onclick="switchToView('overview'); if (typeof gtag !== 'undefined') gtag('event', 'view_switch', {'event_category': 'Demo Interaction', 'event_label': 'Overview'});">All GPUs</button>
         </div>
 
         <!-- Overview Tab -->
@@ -60,7 +69,7 @@
         <!-- Individual GPU Tabs (dynamically created) -->
 
         <div class="processes-section">
-            <div class="processes-header" onclick="toggleProcesses()">
+            <div class="processes-header" onclick="toggleProcesses(); if (typeof gtag !== 'undefined') gtag('event', 'toggle_processes', {'event_category': 'Demo Interaction', 'event_label': 'Process Section'});">
                 <div class="processes-title">
                     Active GPU Processes
                 </div>

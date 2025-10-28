@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPU Hot - Real-time NVIDIA GPU Monitoring</title>
     <meta name="description" content="Sub-second GPU monitoring in your browser. No monitoring infrastructure, no complex dashboards.">
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RPQC788155"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-RPQC788155');
+    </script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -608,7 +618,7 @@
         <nav>
             <div class="nav-content">
                 <div class="logo">GPU Hot</div>
-                <a href="https://github.com/psalias2006/gpu-hot" class="github-link">GitHub</a>
+                <a href="https://github.com/psalias2006/gpu-hot" class="github-link" onclick="gtag('event', 'click', {'event_category': 'Navigation', 'event_label': 'GitHub Header'});">GitHub</a>
             </div>
         </nav>
 
@@ -617,13 +627,13 @@
             <h1>GPU Hot<br>Metrics in Seconds</h1>
             <p>Real-time GPU monitoring in your browser. Start with one server, scale to dozens. No infrastructure, no setup, no SSH. Just one command.</p>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <a href="./demo.html" class="cta" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none;">
+                <a href="./demo.html" class="cta" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none;" onclick="gtag('event', 'click', {'event_category': 'CTA', 'event_label': 'Try Interactive Demo'});">
                     Try Interactive Demo
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 12h14M12 5l7 7-7 7"/>
                     </svg>
                 </a>
-                <a href="https://github.com/psalias2006/gpu-hot" class="cta">
+                <a href="https://github.com/psalias2006/gpu-hot" class="cta" onclick="gtag('event', 'click', {'event_category': 'CTA', 'event_label': 'View on GitHub'});">
                     View on GitHub
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M7 17L17 7M17 7v10M17 7H7"/>
@@ -659,9 +669,9 @@
             <div class="footer-content">
                 <div>Open source. Built for developers.</div>
                 <div class="footer-links">
-                    <a href="https://github.com/psalias2006/gpu-hot">GitHub</a>
-                    <a href="https://github.com/psalias2006/gpu-hot/issues">Issues</a>
-                    <a href="https://github.com/psalias2006/gpu-hot/blob/main/LICENSE">License</a>
+                    <a href="https://github.com/psalias2006/gpu-hot" onclick="gtag('event', 'click', {'event_category': 'Footer', 'event_label': 'GitHub'});">GitHub</a>
+                    <a href="https://github.com/psalias2006/gpu-hot/issues" onclick="gtag('event', 'click', {'event_category': 'Footer', 'event_label': 'Issues'});">Issues</a>
+                    <a href="https://github.com/psalias2006/gpu-hot/blob/main/LICENSE" onclick="gtag('event', 'click', {'event_category': 'Footer', 'event_label': 'License'});">License</a>
                 </div>
             </div>
         </div>
@@ -673,6 +683,10 @@
             navigator.clipboard.writeText(text).then(() => {
                 const original = btn.textContent;
                 btn.textContent = 'Copied';
+                // Track copy event
+                if (typeof gtag !== 'undefined') {
+                    gtag('event', 'copy_docker_command', {'event_category': 'Engagement', 'event_label': 'Docker Run Command'});
+                }
                 setTimeout(() => btn.textContent = original, 2000);
             });
         }

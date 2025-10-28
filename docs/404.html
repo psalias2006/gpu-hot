@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Page Not Found | GPU Hot</title>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RPQC788155"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-RPQC788155');
+    </script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -360,10 +370,10 @@
             <div class="error-code">404</div>
             <h1>Page Not Found</h1>
             <p>This page doesn't exist. Even the GPU couldn't compute this one.</p>
-            <a href="/gpu-hot/" class="btn">Back to Home</a>
+            <a href="/gpu-hot/" class="btn" onclick="gtag('event', 'click', {'event_category': '404', 'event_label': 'Back to Home'});">Back to Home</a>
             <div class="links">
-                <a href="https://github.com/psalias2006/gpu-hot">GitHub</a>
-                <a href="https://github.com/psalias2006/gpu-hot/issues">Report Issue</a>
+                <a href="https://github.com/psalias2006/gpu-hot" onclick="gtag('event', 'click', {'event_category': '404', 'event_label': 'GitHub'});">GitHub</a>
+                <a href="https://github.com/psalias2006/gpu-hot/issues" onclick="gtag('event', 'click', {'event_category': '404', 'event_label': 'Report Issue'});">Report Issue</a>
             </div>
         </div>
     </div>
