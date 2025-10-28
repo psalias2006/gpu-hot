@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Hot - Interactive Demo</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Embed the exact CSS from the real application via CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/css/styles.css">
+    
+    <style>
+    /* Demo-specific notice banner */
+    .demo-notice {
+        background: rgba(255, 193, 7, 0.15);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 2rem;
+        text-align: center;
+        color: #ffc107;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 GPU Hot</h1>
+            <p>Real-time NVIDIA GPU monitoring dashboard</p>
+        </div>
+
+        <div class="demo-notice">
+            ⚠️ Interactive Demo - Simulated Data
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Live Monitoring (Demo)</span>
+            </div>
+            <div id="connection-status">Running Demo</div>
+        </div>
+
+        <!-- View Selector -->
+        <div class="view-selector" id="view-selector">
+            <button class="view-option active" data-view="overview" onclick="switchToView('overview')">All GPUs</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="tab-overview" class="tab-content active">
+            <div id="overview-container" class="overview-grid">
+            </div>
+        </div>
+
+        <!-- Individual GPU Tabs (dynamically created) -->
+
+        <div class="processes-section">
+            <div class="processes-header" onclick="toggleProcesses()">
+                <div class="processes-title">
+                    Active GPU Processes
+                </div>
+                <div class="processes-toggle">
+                    <span id="process-count">0 processes</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+            </div>
+            <div class="processes-content" id="processes-content">
+                <div class="processes-inner" id="processes-container">
+                </div>
+            </div>
+        </div>
+
+        <div class="system-info">
+            <div class="system-metric">
+                <canvas class="system-metric-chart" id="cpu-chart"></canvas>
+                <div class="system-metric-value" id="cpu-usage">0%</div>
+                <div class="system-metric-label">System CPU</div>
+                <div class="metric-sublabel">Host Processor</div>
+            </div>
+            <div class="system-metric">
+                <canvas class="system-metric-chart" id="memory-chart"></canvas>
+                <div class="system-metric-value" id="memory-usage">0%</div>
+                <div class="system-metric-label">System RAM</div>
+                <div class="metric-sublabel">Host Memory</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load the EXACT same JavaScript files from the real application via CDN -->
+    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/charts.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/gpu-cards.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/ui.js"></script>
+    
+    <!-- Demo Data Generator (replaces socket-handlers.js) -->
+    <script>
+    // ============================================================================
+    // DEMO DATA GENERATOR - Simulates realistic GPU data
+    // ============================================================================
+    
+    const GPU_NAMES = [
+        'NVIDIA GeForce RTX 4060 Ti',
+        'NVIDIA GeForce RTX 4080',
+    ];
+    
+    const PROCESS_NAMES = [
+        'python3',
+        'pytorch_train.py',
+        'tensorflow',
+        'chrome',
+        'code',
+    ];
+    
+    class DemoDataGenerator {
+        constructor(numGPUs = 1) {
+            this.numGPUs = numGPUs;
+            this.gpuStates = [];
+            this.time = 0;
+            
+            // Initialize GPU states - realistic idle behavior
+            for (let i = 0; i < numGPUs; i++) {
+                this.gpuStates.push({
+                    baseUtil: 0 + Math.random() * 5,  // Very low idle utilization
+                    baseTemp: 30 + Math.random() * 5,  // Cool at idle
+                    basePower: 10 + Math.random() * 10,  // Low idle power
+                    baseMemUsed: 500 + Math.random() * 100,  // Minimal memory at idle
+                    memTotal: 16384,
+                    totalEnergy: 0
+                });
+            }
+        }
+        
+        generateGPUData() {
+            this.time += 1;
+            const gpus = {};
+            
+            for (let i = 0; i < this.numGPUs; i++) {
+                const state = this.gpuStates[i];
+                
+                // Simulate realistic idle with occasional small spikes
+                const noise = () => (Math.random() - 0.5) * 3;
+                const wave = Math.sin(this.time * 0.03 + i) * 8;
+                
+                const utilization = Math.max(0, Math.min(100, state.baseUtil + wave + noise()));
+                const temperature = Math.max(25, Math.min(85, 31 + utilization * 0.2 + noise() * 0.3));
+                
+                // Power scales with utilization
+                const idlePower = 11.5;
+                const powerDraw = utilization > 3 ? 
+                    Math.max(idlePower, Math.min(165, idlePower + (utilization / 100) * 150 + wave + noise() * 2)) :
+                    idlePower;
+                
+                const memoryUsed = Math.max(512, Math.min(state.memTotal, state.baseMemUsed + wave * 20 + noise() * 50));
+                
+                // Clock speeds - idle clocks when idle
+                const idleGraphicsClock = 210;
+                const maxGraphicsClock = 2610;
+                const idleMemoryClock = 405;
+                const maxMemoryClock = 10501;
+                
+                const clockGraphics = utilization > 3 ?
+                    Math.round(idleGraphicsClock + (utilization / 100) * (maxGraphicsClock - idleGraphicsClock)) :
+                    idleGraphicsClock;
+                    
+                const clockMemory = utilization > 3 ?
+                    Math.round(idleMemoryClock + (utilization / 100) * (maxMemoryClock - idleMemoryClock)) :
+                    idleMemoryClock;
+                    
+                const clockSm = Math.round(clockGraphics * 1.0);
+                const clockSmMax = 3105;
+                const clockVideo = Math.round(clockGraphics * 0.95);
+                
+                // PCIe link adjusts with utilization
+                const pcieGen = utilization > 10 ? 4 : utilization > 5 ? 2 : 1;
+                const pcieWidth = utilization > 10 ? 16 : 8;
+                
+                // Energy accumulation (Wh)
+                if (!state.totalEnergy) state.totalEnergy = 0;
+                state.totalEnergy += (powerDraw * (0.5 / 3600)); // 500ms interval, in Wh
+                
+                // BAR1 memory (small portion of total)
+                const bar1Used = Math.round(memoryUsed * 0.0004);
+                const bar1Total = Math.round(state.memTotal * 0.016);
+                
+                // Process counts
+                const computeProcesses = utilization > 20 ? Math.floor(utilization / 30) : 0;
+                const graphicsProcesses = utilization > 10 ? Math.floor(Math.random() * 2) : utilization > 5 ? 2 : 0;
+                
+                gpus[i] = {
+                    name: GPU_NAMES[i % GPU_NAMES.length],
+                    utilization: Math.round(utilization),
+                    temperature: Math.round(temperature),
+                    memory_used: Math.round(memoryUsed),
+                    memory_total: state.memTotal,
+                    power_draw: powerDraw,
+                    power_limit: 165,
+                    fan_speed: temperature < 40 ? 0 : Math.round(Math.max(0, Math.min(100, (temperature - 35) * 2))),
+                    clock_graphics: clockGraphics,
+                    clock_memory: clockMemory,
+                    clock_sm: clockSm,
+                    clock_sm_max: clockSmMax,
+                    clock_video: clockVideo,
+                    memory_utilization: Math.round(utilization * 0.7),
+                    pcie_gen: pcieGen,
+                    pcie_width: pcieWidth,
+                    pcie_link_gen_max: 4,
+                    pcie_link_width_max: 8,
+                    pcie_tx_throughput: Math.round((utilization / 100) * 50 + Math.random() * 5),
+                    pcie_rx_throughput: Math.round((utilization / 100) * 30 + Math.random() * 3),
+                    performance_state: utilization > 70 ? 'P0' : utilization > 40 ? 'P2' : utilization > 3 ? 'P5' : 'P8',
+                    throttle_reasons: utilization > 90 ? 'Active' : 'None',
+                    driver_version: '550.163.01',
+                    energy_consumption_wh: state.totalEnergy, // Already in Wh
+                    brand: 'GRID',
+                    architecture: 'Ada Lovelace',
+                    memory_free: state.memTotal - Math.round(memoryUsed),
+                    bar1_memory_used: bar1Used,
+                    bar1_memory_total: bar1Total,
+                    compute_processes_count: computeProcesses,
+                    graphics_processes_count: graphicsProcesses,
+                    pcie_gen_max: 4,
+                    pcie_width_max: 8,
+                    _fallback_mode: false
+                };
+            }
+            
+            return gpus;
+        }
+        
+        generateProcesses() {
+            const numProcesses = Math.floor(Math.random() * 3);
+            const processes = [];
+            
+            for (let i = 0; i < numProcesses; i++) {
+                processes.push({
+                    pid: 1000 + Math.floor(Math.random() * 30000),
+                    name: PROCESS_NAMES[Math.floor(Math.random() * PROCESS_NAMES.length)],
+                    memory: Math.round(500 + Math.random() * 3000)
+                });
+            }
+            
+            return processes;
+        }
+        
+        generateSystemInfo() {
+            const cpuBase = 10 + Math.random() * 20;
+            const cpuNoise = (Math.random() - 0.5) * 10;
+            const memBase = 30 + Math.random() * 20;
+            
+            return {
+                cpu_percent: Math.max(5, Math.min(95, cpuBase + cpuNoise)),
+                memory_percent: Math.max(20, Math.min(85, memBase + (Math.random() - 0.5) * 5))
+            };
+        }
+        
+        generateFullData() {
+            return {
+                gpus: this.generateGPUData(),
+                processes: this.generateProcesses(),
+                system: this.generateSystemInfo()
+            };
+        }
+    }
+    
+    // ============================================================================
+    // DEMO APPLICATION - Uses the same update functions as the real app
+    // ============================================================================
+    
+    const dataGenerator = new DemoDataGenerator(1); // 1 GPU for demo
+    
+    function updateDemo() {
+        const data = dataGenerator.generateFullData();
+        
+        // Use the EXACT same update functions from the real application
+        handleGPUDataUpdate(data);
+    }
+    
+    // This function mimics what socket-handlers.js does
+    function handleGPUDataUpdate(data) {
+        const overviewContainer = document.getElementById('overview-container');
+        
+        if (!data.gpus || Object.keys(data.gpus).length === 0) {
+            overviewContainer.innerHTML = '<div class="loading">No GPU data available</div>';
+            return;
+        }
+        
+        // Update each GPU
+        Object.keys(data.gpus).forEach(gpuId => {
+            const gpuInfo = data.gpus[gpuId];
+            
+            // Initialize chart data if needed
+            if (!chartData[gpuId]) {
+                initGPUData(gpuId);
+            }
+            
+            // Create or update overview card
+            const existingOverview = overviewContainer.querySelector(`[data-gpu-id="${gpuId}"]`);
+            if (!existingOverview) {
+                overviewContainer.insertAdjacentHTML('beforeend', createOverviewCard(gpuId, gpuInfo));
+                initOverviewMiniChart(gpuId, gpuInfo.utilization);
+            } else {
+                updateOverviewCard(gpuId, gpuInfo, true);
+            }
+            
+            // Create or update detailed GPU tab
+            ensureGPUTab(gpuId, gpuInfo, true);
+        });
+        
+        // Update processes
+        if (data.processes) {
+            updateProcesses(data.processes);
+        }
+        
+        // Update system info
+        if (data.system) {
+            updateSystemInfo(data.system);
+        }
+        
+        // Auto-switch to single GPU view on first load
+        const gpuCount = Object.keys(data.gpus).length;
+        const gpuIds = Object.keys(data.gpus);
+        autoSwitchSingleGPU(gpuCount, gpuIds);
+    }
+    
+    // Initialize and start demo
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('GPU Hot Demo initialized');
+        
+        // Initial update
+        updateDemo();
+        
+        // Update every 500ms (same as real app)
+        setInterval(updateDemo, 500);
+        
+        // Initialize system charts
+        initSystemCharts();
+    });
+    </script>
+</body>
+</html>
