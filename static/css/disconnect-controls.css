@@ -1,0 +1,662 @@
+/* GPU Disconnect Controls Styles */
+
+/* Disconnect Button Styling */
+.disconnect-button {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.disconnect-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ff5252, #e53935);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.disconnect-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.disconnect-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.disconnect-icon {
+    font-size: 1rem;
+    display: inline-block;
+}
+
+/* GPU Actions Container */
+.gpu-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* GPU Disconnect Button (styled like ONLINE badge) */
+.gpu-disconnect-container {
+    z-index: 10;
+}
+
+.gpu-disconnect-button {
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 107, 107, 0.15);
+    border: 2px solid rgba(255, 107, 107, 0.4);
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #ff6b6b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: 1px;
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.gpu-disconnect-button:hover {
+    background: rgba(255, 107, 107, 0.25);
+    border-color: rgba(255, 107, 107, 0.6);
+    box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+    transform: translateY(-2px);
+}
+
+.gpu-disconnect-button:active {
+    transform: translateY(0);
+    box-shadow: 0 0 15px rgba(255, 107, 107, 0.4);
+}
+
+.disconnect-dot {
+    width: 8px;
+    height: 8px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+    animation: pulse-disconnect 2s ease-in-out infinite;
+}
+
+@keyframes pulse-disconnect {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 107, 107, 1);
+    }
+}
+
+.disconnect-text {
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+}
+
+/* Multi-Select Toolbar */
+.multi-select-toolbar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(45, 45, 45, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    display: none;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.toolbar-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: white;
+    font-weight: 500;
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.selected-count {
+    color: #4fc3f7;
+    font-weight: 600;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.disconnect-modal {
+    background: linear-gradient(135deg, #2a2a2a, #1e1e1e);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    min-width: 480px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    transform: scale(0.8);
+    transition: transform 0.2s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.multi-disconnect-modal {
+    min-width: 560px;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #333, #2a2a2a);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.modal-content {
+    padding: 24px;
+    color: white;
+}
+
+.disconnect-warning {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.multi-warning {
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.15), rgba(233, 30, 99, 0.1));
+    border-color: rgba(244, 67, 54, 0.4);
+}
+
+.warning-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.warning-text {
+    line-height: 1.5;
+}
+
+.warning-text strong {
+    color: #ffeb3b;
+}
+
+/* Method Selection */
+.method-selection {
+    margin-bottom: 20px;
+}
+
+.method-selection label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.method-selection select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    color: white;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.method-selection select option {
+    background: #2a2a2a;
+    color: white;
+    padding: 8px;
+}
+
+.method-selection select:focus {
+    outline: none;
+    border-color: #4fc3f7;
+    box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.2);
+}
+
+.method-description {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+/* Timing Controls */
+.timing-controls {
+    margin-bottom: 20px;
+}
+
+.timing-controls label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.time-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.time-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 14px;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+}
+
+.time-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.time-btn.active {
+    background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+    border-color: #4fc3f7;
+    color: white;
+}
+
+#custom-time, #multi-custom-time {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: white;
+    width: 120px;
+    font-size: 0.85rem;
+}
+
+#custom-time:focus, #multi-custom-time:focus {
+    outline: none;
+    border-color: #4fc3f7;
+    box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.2);
+}
+
+/* Selected GPUs Display */
+.selected-gpus {
+    margin-bottom: 20px;
+}
+
+.selected-gpus label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.gpu-list {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+/* Active Processes Warning */
+.active-processes-warning {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(3, 169, 244, 0.1));
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+/* Modal Actions */
+.modal-actions {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #e53935, #c62828);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+/* GPU Status Indicators */
+.disconnect-status {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 5;
+}
+
+.gpu-card {
+    position: relative;
+}
+
+.gpu-card.disconnecting {
+    opacity: 0.7;
+    border-color: #ff9800 !important;
+}
+
+.gpu-card.disconnect-completed {
+    animation: successPulse 2s ease;
+}
+
+.gpu-card.disconnect-failed {
+    border-color: #f44336 !important;
+    animation: errorShake 0.5s ease;
+}
+
+@keyframes successPulse {
+    0%, 100% { border-color: inherit; }
+    50% { border-color: #4caf50; }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+.status-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top: 2px solid #4fc3f7;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.status-success {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.status-error {
+    color: #f44336;
+    font-weight: bold;
+}
+
+/* Button Spinner */
+.btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Notifications */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.notification {
+    background: rgba(45, 45, 45, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-left: 4px solid;
+    animation: slideInRight 0.3s ease;
+    max-width: 400px;
+}
+
+.notification-info {
+    border-left-color: #2196f3;
+}
+
+.notification-success {
+    border-left-color: #4caf50;
+}
+
+.notification-warning {
+    border-left-color: #ff9800;
+}
+
+.notification-error {
+    border-left-color: #f44336;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    color: white;
+}
+
+.notification-message {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+    margin-left: 12px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .disconnect-modal {
+        min-width: 90vw;
+        margin: 20px;
+    }
+    
+    .multi-select-toolbar {
+        left: 10px;
+        right: 10px;
+        transform: none;
+        border-radius: 8px;
+    }
+    
+    .toolbar-content {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .time-options {
+        justify-content: center;
+    }
+    
+    .notification-container {
+        left: 10px;
+        right: 10px;
+        top: 10px;
+    }
+    
+    .notification {
+        max-width: none;
+    }
+    
+    /* Adjust disconnect button for mobile */
+    .gpu-disconnect-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        gap: 0.35rem;
+    }
+    
+    .gpu-disconnect-container {
+        right: 10px !important;
+        top: 60px !important;
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .disconnect-modal {
+        background: linear-gradient(135deg, #1a1a1a, #0d1117);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .modal-header {
+        background: linear-gradient(135deg, #21262d, #1a1a1a);
+    }
+}

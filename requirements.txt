@@ -5,3 +5,4 @@ psutil==5.9.6
 nvidia-ml-py==13.580.82
 requests==2.31.0
 websocket-client==1.6.3
+aiohttp==3.9.1

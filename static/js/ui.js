@@ -84,6 +84,12 @@ function ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM = true) {
         // Do not reinitialize chartData here; it would break existing chart references
         if (!chartData[gpuId]) initGPUData(gpuId);
         initGPUCharts(gpuId);
+        
+        // Add disconnect button to the card
+        const card = document.getElementById(`gpu-${gpuId}`);
+        if (card && window.addGPUSelectCheckbox) {
+            window.addGPUSelectCheckbox(gpuId, card);
+        }
     } else if (existingCard) {
         updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM);
     }

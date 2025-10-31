@@ -58,8 +58,88 @@ docker-compose up --build
 - Historical charts (utilization, temperature, power, clocks)
 - System metrics (CPU, RAM)
 - Scale from 1 to 100+ GPUs
+- **GPU Disconnect Testing** - Simulate GPU failures for fault tolerance testing
 
 **Metrics:** Utilization, temperature, memory, power draw, fan speed, clock speeds, PCIe info, P-State, throttle status, encoder/decoder sessions
+
+---
+
+## GPU Disconnect Testing
+
+GPU Hot includes advanced fault tolerance testing through simulated GPU disconnect/reconnect operations. This feature helps test how your applications handle GPU failures in production environments.
+
+### Features
+- **Multiple disconnect methods** - Auto-select the most realistic method available:
+  - **Slot Power Toggle** - Actually cut and restore slot power (closest to physical disconnect)
+  - **Hot Reset** - Reset PCIe link using upstream bridge controls  
+  - **Logical Remove** - Software remove and re-scan (no hardware reset)
+  - **NVIDIA Reset** - Use NVIDIA driver reset functionality
+- **Individual GPU control** - Disconnect specific GPUs from detailed view
+- **Multi-GPU operations** - Select and disconnect multiple GPUs simultaneously
+- **Hub coordination** - Hub can trigger disconnects on remote nodes
+- **Real-time feedback** - Live status updates during operations
+- **Safety features** - Process detection, confirmation dialogs, timeout protection
+
+### Requirements
+
+**For GPU disconnect functionality, the container requires elevated privileges:**
+```bash
+# Docker run with privileged mode
+docker run -d --gpus all --privileged \
+  -v /sys/bus/pci:/sys/bus/pci:rw \
+  -v /sys/devices:/sys/devices:ro \
+  -p 1312:1312 ghcr.io/psalias2006/gpu-hot:latest
+```
+
+**Or use docker-compose (recommended):**
+```bash
+# docker-compose.yml includes the required privileged configuration
+docker-compose up -d
+```
+
+### Usage
+
+1. **Individual GPU**: Click the "Disconnect" button in any GPU's detailed view
+2. **Multiple GPUs**: 
+   - Select GPUs using checkboxes in overview tab
+   - Click "Disconnect Selected" from the batch toolbar
+3. **Choose method** and duration in the modal dialog
+4. **Monitor progress** with real-time status updates
+
+### Security & Safety
+
+⚠️ **Important Considerations:**
+- Requires **root privileges** inside container (privileged mode)
+- Will **interrupt running processes** on affected GPUs
+- Includes **confirmation dialogs** and active process warnings
+- All operations are **logged** for audit trails
+- **Rate limiting** prevents abuse
+- Works on **dedicated GPU slots** (avoid shared PCIe buses)
+
+### Hub Mode
+The hub can coordinate disconnect operations across multiple nodes:
+```bash
+# Hub triggers disconnect on specific node
+POST /api/hub/gpu/{node_name}/{gpu_id}/disconnect
+
+# Multi-node batch operations supported
+POST /api/hub/gpu/disconnect-multiple
+```
+
+### Integration Testing
+
+GPU Hot includes comprehensive API testing for disconnect functionality:
+
+**Manual API Testing:**
+```bash
+# Test disconnect functionality
+curl -X POST http://localhost:1312/api/gpu/disconnect-multiple \
+  -H "Content-Type: application/json" \
+  -d '{"gpu_indices": [0], "method": "auto", "down_time": 10}'
+
+# Check disconnect status
+curl http://localhost:1312/api/gpu/disconnect/status
+```
 
 ---
 
@@ -88,6 +168,19 @@ PORT = 1312            # Server port
 ```bash
 GET /              # Dashboard
 GET /api/gpu-data  # JSON metrics
+
+# GPU Disconnect API (Node Mode)
+GET  /api/gpu/{gpu_id}/disconnect/methods        # Get available disconnect methods
+POST /api/gpu/{gpu_id}/disconnect               # Disconnect specific GPU
+POST /api/gpu/disconnect-multiple               # Disconnect multiple GPUs
+GET  /api/gpu/disconnect/status                 # System disconnect capabilities
+
+# GPU Disconnect API (Hub Mode)
+GET  /api/hub/nodes                             # List connected nodes
+GET  /api/hub/gpu/{node}/{gpu_id}/disconnect/methods  # Get methods for node GPU
+POST /api/hub/gpu/{node}/{gpu_id}/disconnect   # Disconnect GPU on specific node
+POST /api/hub/gpu/disconnect-multiple          # Multi-node batch disconnect
+GET  /api/hub/gpu/disconnect/status             # Hub-wide disconnect status
 ```
 
 ### WebSocket

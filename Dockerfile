@@ -1,5 +1,14 @@
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
 
+# GPU Hot - Real-time NVIDIA GPU Monitoring with Disconnect Testing
+# 
+# IMPORTANT: For GPU disconnect functionality, this container requires:
+# - privileged: true (to access PCI sysfs)
+# - volumes: /sys/bus/pci:/sys/bus/pci:rw (for PCI operations)
+# - volumes: /sys/devices:/sys/devices:ro (for device enumeration)
+# 
+# See docker-compose.yml for complete configuration example
+
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1

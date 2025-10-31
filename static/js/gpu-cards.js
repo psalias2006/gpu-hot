@@ -9,7 +9,7 @@ function createOverviewCard(gpuId, gpuInfo) {
     const memPercent = (memory_used / memory_total) * 100;
 
     return `
-        <div class="overview-gpu-card" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')" style="pointer-events: auto;">
+        <div class="overview-gpu-card" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')" style="pointer-events: auto; position: relative;">
             <div class="overview-header">
                 <div>
                     <h2 style="font-size: 1.5rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">
@@ -631,6 +631,7 @@ function createGPUCard(gpuId, gpuInfo) {
                     <canvas id="chart-appclocks-${gpuId}"></canvas>
                 </div>` : ''}
             </div>
+            
         </div>
     `;
 }
