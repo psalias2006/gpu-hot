@@ -49,6 +49,17 @@ body::before {
     50% { opacity: 0.7; }
 }
 
+body {
+    /* Default 75% zoom on desktop */
+    zoom: 0.75;
+}
+
+@media (max-width: 768px) {
+    body {
+        zoom: 1;
+    }
+}
+
 .container {
     position: relative;
     z-index: 1;
@@ -109,7 +120,50 @@ body::before {
     margin-bottom: 0.75rem;
 }
 
-.header .github-link {
+.header-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.version-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.version-current {
+    font-family: 'Courier New', monospace;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.update-badge a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(79, 172, 254, 0.3);
+}
+
+.update-badge a:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(79, 172, 254, 0.4);
+}
+
+.github-link {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -125,7 +179,7 @@ body::before {
     backdrop-filter: blur(10px);
 }
 
-.header .github-link:hover {
+.github-link:hover {
     color: rgba(255, 255, 255, 0.95);
     background: rgba(79, 172, 254, 0.12);
     border-color: rgba(79, 172, 254, 0.3);
@@ -1669,3 +1723,4 @@ body::before {
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.5rem;
 }
+
