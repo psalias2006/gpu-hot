@@ -2,6 +2,65 @@
  * Chart configurations and chart-related functions
  */
 
+// Detect if we're on a mobile device
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
+// Get mobile-optimized chart options
+function getMobileChartOptions(baseOptions) {
+    if (!isMobile()) return baseOptions;
+    
+    // Clone the options to avoid mutating the base config
+    const mobileOptions = JSON.parse(JSON.stringify(baseOptions));
+    
+    const isVerySmall = window.innerWidth <= 375;
+    
+    // Simplify axes for mobile - minimal but readable
+    if (mobileOptions.scales) {
+        if (mobileOptions.scales.x) {
+            mobileOptions.scales.x.display = false; // Hide x-axis time labels
+        }
+        if (mobileOptions.scales.y) {
+            // Keep y-axis visible and simple
+            mobileOptions.scales.y.display = true;
+            mobileOptions.scales.y.ticks = mobileOptions.scales.y.ticks || {};
+            mobileOptions.scales.y.ticks.font = { size: isVerySmall ? 8 : 9 };
+            mobileOptions.scales.y.ticks.padding = 3;
+            mobileOptions.scales.y.ticks.color = 'rgba(255, 255, 255, 0.5)';
+            mobileOptions.scales.y.ticks.maxTicksLimit = 3;
+            mobileOptions.scales.y.grid = mobileOptions.scales.y.grid || {};
+            mobileOptions.scales.y.grid.color = 'rgba(255, 255, 255, 0.08)';
+            mobileOptions.scales.y.grid.lineWidth = 1;
+            mobileOptions.scales.y.grid.drawBorder = true;
+        }
+    }
+    
+    // Keep tooltips but simplify them
+    if (mobileOptions.plugins && mobileOptions.plugins.tooltip) {
+        mobileOptions.plugins.tooltip.enabled = true;
+        mobileOptions.plugins.tooltip.padding = 8;
+        mobileOptions.plugins.tooltip.titleFont = { size: 11 };
+        mobileOptions.plugins.tooltip.bodyFont = { size: 10 };
+    }
+    
+    // Hide legends on mobile
+    if (mobileOptions.plugins && mobileOptions.plugins.legend) {
+        mobileOptions.plugins.legend.display = false;
+    }
+    
+    // Keep some padding so chart renders properly
+    if (mobileOptions.layout && mobileOptions.layout.padding) {
+        mobileOptions.layout.padding = { left: 10, right: 15, top: 5, bottom: 10 };
+    }
+    
+    // Ensure chart renders
+    mobileOptions.responsive = true;
+    mobileOptions.maintainAspectRatio = false;
+    
+    return mobileOptions;
+}
+
 // Chart configurations with modern styling and thresholds
 const chartConfigs = {
     utilization: {
@@ -1107,6 +1166,15 @@ function updatePCIeChartStats(gpuId, statsRX, statsTX) {
     if (txAvgEl) txAvgEl.textContent = `${formatter(statsTX.avg)}${unit}`;
 }
 
+// Update mobile chart header value display
+function updateMobileChartValue(gpuId, chartType, value, unit) {
+    const chartHeader = document.querySelector(`#chart-${chartType}-${gpuId}`)?.closest('.chart-container')?.querySelector('.chart-header');
+    if (chartHeader) {
+        const formattedValue = chartType === 'efficiency' ? value.toFixed(2) : Math.round(value);
+        chartHeader.setAttribute('data-value', `${formattedValue}${unit}`);
+    }
+}
+
 // Update chart data
 function updateChart(gpuId, chartType, value, value2, value3, value4) {
     if (!chartData[gpuId]) initGPUData(gpuId);
@@ -1187,6 +1255,11 @@ function updateChart(gpuId, chartType, value, value2, value3, value4) {
         };
         const unit = unitMap[chartType] || '';
         updateChartStats(gpuId, chartType, stats, unit);
+        
+        // Update mobile chart header with current value
+        if (isMobile()) {
+            updateMobileChartValue(gpuId, chartType, stats.current, unit);
+        }
     }
 
     // Update chart if it exists
@@ -1245,34 +1318,52 @@ function initGPUCharts(gpuId) {
         if (canvas) {
             const config = JSON.parse(JSON.stringify(chartConfigs[type])); // Deep clone
 
-            // Link datasets to chartData
+            // Link datasets to chartData FIRST
             if (type === 'utilization') {
                 config.data.datasets[0].data = chartData[gpuId][type].data;
-                config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
+                if (config.data.datasets[1]) config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
             } else if (type === 'temperature') {
                 config.data.datasets[0].data = chartData[gpuId][type].data;
-                config.data.datasets[1].data = chartData[gpuId][type].warningData;
-                config.data.datasets[2].data = chartData[gpuId][type].dangerData;
+                if (config.data.datasets[1]) config.data.datasets[1].data = chartData[gpuId][type].warningData;
+                if (config.data.datasets[2]) config.data.datasets[2].data = chartData[gpuId][type].dangerData;
             } else if (type === 'memory') {
                 config.data.datasets[0].data = chartData[gpuId][type].data;
-                config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
+                if (config.data.datasets[1]) config.data.datasets[1].data = chartData[gpuId][type].thresholdData;
             } else if (type === 'clocks') {
                 config.data.datasets[0].data = chartData[gpuId][type].graphicsData;
-                config.data.datasets[1].data = chartData[gpuId][type].smData;
-                config.data.datasets[2].data = chartData[gpuId][type].memoryData;
+                if (config.data.datasets[1]) config.data.datasets[1].data = chartData[gpuId][type].smData;
+                if (config.data.datasets[2]) config.data.datasets[2].data = chartData[gpuId][type].memoryData;
             } else if (type === 'pcie') {
                 config.data.datasets[0].data = chartData[gpuId][type].dataRX;
-                config.data.datasets[1].data = chartData[gpuId][type].dataTX;
+                if (config.data.datasets[1]) config.data.datasets[1].data = chartData[gpuId][type].dataTX;
             } else if (type === 'appclocks') {
                 config.data.datasets[0].data = chartData[gpuId][type].dataGr;
-                config.data.datasets[1].data = chartData[gpuId][type].dataMem;
-                config.data.datasets[2].data = chartData[gpuId][type].dataSM;
-                config.data.datasets[3].data = chartData[gpuId][type].dataVideo;
+                if (config.data.datasets[1]) config.data.datasets[1].data = chartData[gpuId][type].dataMem;
+                if (config.data.datasets[2]) config.data.datasets[2].data = chartData[gpuId][type].dataSM;
+                if (config.data.datasets[3]) config.data.datasets[3].data = chartData[gpuId][type].dataVideo;
             } else {
                 config.data.datasets[0].data = chartData[gpuId][type].data;
             }
 
             config.data.labels = chartData[gpuId][type].labels;
+            
+            // Optimize dataset appearance for mobile (BEFORE applying options)
+            if (isMobile() && config.data.datasets) {
+                // Make first dataset prominent
+                config.data.datasets[0].borderWidth = 3;
+                config.data.datasets[0].pointRadius = 0;
+                config.data.datasets[0].fill = true;
+                
+                // Hide other datasets by making them invisible (don't remove them!)
+                for (let i = 1; i < config.data.datasets.length; i++) {
+                    config.data.datasets[i].hidden = true;
+                    config.data.datasets[i].borderWidth = 0;
+                }
+            }
+            
+            // Apply mobile optimizations to chart options
+            config.options = getMobileChartOptions(config.options);
+            
             charts[gpuId][type] = new Chart(canvas, config);
         }
     });
@@ -1296,6 +1387,10 @@ function initOverviewMiniChart(gpuId, currentValue) {
         }
     }
 
+    // Mobile-specific configuration for mini charts
+    const fontSize = isMobile() ? 8 : 10;
+    const yAxisDisplay = !isMobile() || window.innerWidth > 480;
+
     const config = {
         type: 'line',
         data: {
@@ -1304,7 +1399,7 @@ function initOverviewMiniChart(gpuId, currentValue) {
                 data: chartData[gpuId].utilization.data,
                 borderColor: '#4facfe',
                 backgroundColor: 'rgba(79, 172, 254, 0.15)',
-                borderWidth: 2.5,
+                borderWidth: isMobile() ? 2 : 2.5,
                 tension: 0.4,
                 fill: true,
                 pointRadius: 0,
@@ -1320,14 +1415,14 @@ function initOverviewMiniChart(gpuId, currentValue) {
                 y: {
                     min: 0,
                     max: 100,
-                    display: true,
+                    display: yAxisDisplay,
                     grid: {
                         color: 'rgba(255, 255, 255, 0.08)',
                         drawBorder: false
                     },
                     ticks: {
                         color: 'rgba(255, 255, 255, 0.4)',
-                        font: { size: 10 },
+                        font: { size: fontSize },
                         stepSize: 50,
                         callback: value => value + '%'
                     }
@@ -1338,8 +1433,10 @@ function initOverviewMiniChart(gpuId, currentValue) {
                 tooltip: {
                     enabled: true,
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    padding: 12,
+                    padding: isMobile() ? 8 : 12,
                     cornerRadius: 8,
+                    titleFont: { size: isMobile() ? 11 : 12 },
+                    bodyFont: { size: isMobile() ? 10 : 11 },
                     callbacks: {
                         label: context => `GPU: ${context.parsed.y.toFixed(1)}%`
                     }

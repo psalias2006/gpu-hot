@@ -404,8 +404,8 @@ function createGPUCard(gpuId, gpuInfo) {
 
             <div class="charts-section">
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">GPU Utilization History</div>
+                    <div class="chart-header" data-value="0%">
+                        <div class="chart-title">Utilization</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -429,8 +429,8 @@ function createGPUCard(gpuId, gpuInfo) {
                 </div>
 
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">GPU Temperature History</div>
+                    <div class="chart-header" data-value="0°C">
+                        <div class="chart-title">Temperature</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -454,8 +454,8 @@ function createGPUCard(gpuId, gpuInfo) {
                 </div>
 
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">Memory Usage History</div>
+                    <div class="chart-header" data-value="0%">
+                        <div class="chart-title">Memory</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -479,8 +479,8 @@ function createGPUCard(gpuId, gpuInfo) {
                 </div>
 
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">Power Draw History</div>
+                    <div class="chart-header" data-value="0W">
+                        <div class="chart-title">Power</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -504,8 +504,8 @@ function createGPUCard(gpuId, gpuInfo) {
                 </div>
 
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">Fan Speed History</div>
+                    <div class="chart-header" data-value="0%">
+                        <div class="chart-title">Fan Speed</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -529,8 +529,8 @@ function createGPUCard(gpuId, gpuInfo) {
                 </div>
 
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">Clock Speeds History</div>
+                    <div class="chart-header" data-value="0 MHz">
+                        <div class="chart-title">Clocks</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -554,8 +554,8 @@ function createGPUCard(gpuId, gpuInfo) {
                 </div>
 
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">Power Efficiency History</div>
+                    <div class="chart-header" data-value="0 %/W">
+                        <div class="chart-title">Efficiency</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current</span>
@@ -581,8 +581,8 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 ${hasMetric(gpuInfo, 'pcie_rx_throughput') || hasMetric(gpuInfo, 'pcie_tx_throughput') ? `
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">PCIe Throughput History</div>
+                    <div class="chart-header" data-value="0 KB/s">
+                        <div class="chart-title">PCIe</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Current RX</span>
@@ -607,8 +607,8 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 ${hasMetric(gpuInfo, 'clock_graphics_app') || hasMetric(gpuInfo, 'clock_memory_app') ? `
                 <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">Application Clocks History</div>
+                    <div class="chart-header" data-value="0 MHz">
+                        <div class="chart-title">App Clocks</div>
                         <div class="chart-stats">
                             <div class="chart-stat">
                                 <span class="chart-stat-label">Graphics</span>
