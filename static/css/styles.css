@@ -738,14 +738,14 @@ body {
 
 .chart-container {
     position: relative;
-    height: 320px;
-    margin-bottom: 1.5rem;
+    height: 340px;
+    margin-bottom: 2.5rem;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
     border-radius: 16px;
     /* Performance: optimize canvas rendering */
     contain: layout style;
     will-change: contents;
-    padding: 24px 32px 48px 32px;
+    padding: 16px 20px 32px 20px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     overflow: visible;
@@ -761,9 +761,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 0.75rem;
 }
 
 .chart-title {
@@ -776,7 +774,7 @@ body {
 
 .chart-stats {
     display: flex;
-    gap: 1.25rem;
+    gap: 0.75rem;
     font-size: 0.75rem;
     color: var(--text-secondary);
 }
@@ -785,24 +783,24 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.35rem 0.65rem;
+    padding: 0.25rem 0.5rem;
     background: rgba(255, 255, 255, 0.04);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .chart-stat-label {
-    font-size: 0.625rem;
+    font-size: 0.55rem;
     opacity: 0.65;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.5px;
     font-weight: 500;
 }
 
 .chart-stat-value {
-    font-size: 0.9rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    margin-top: 0.15rem;
+    margin-top: 0.1rem;
 }
 
 .chart-stat-value.current {
@@ -1412,7 +1410,7 @@ body {
     .chart-container {
         height: 200px;
         padding: 1rem 0.5rem 0.5rem 0.5rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1588,7 +1586,7 @@ body {
     .chart-container {
         height: 185px;
         padding: 0.85rem 0.5rem 0.5rem 0.5rem;
-        margin-bottom: 0.85rem;
+        margin-bottom: 1.25rem;
     }
     
     .chart-container canvas {

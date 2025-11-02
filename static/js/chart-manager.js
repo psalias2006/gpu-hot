@@ -178,8 +178,13 @@ function updateChartStats(gpuId, chartType, stats, unit) {
 
 // Update statistics display for PCIe chart (RX and TX separately)
 function updatePCIeChartStats(gpuId, statsRX, statsTX) {
-    const unit = ' KB/s';
-    const formatter = (value) => Math.round(value);
+    // Smart formatter that converts KB/s to MB/s when >= 1000
+    const formatBandwidth = (value) => {
+        if (value >= 1000) {
+            return `${(value / 1024).toFixed(1)} MB/s`;
+        }
+        return `${Math.round(value)} KB/s`;
+    };
 
     // Update RX stats
     const rxCurrentEl = document.getElementById(`stat-pcie-rx-current-${gpuId}`);
@@ -187,10 +192,10 @@ function updatePCIeChartStats(gpuId, statsRX, statsTX) {
     const rxMaxEl = document.getElementById(`stat-pcie-rx-max-${gpuId}`);
     const rxAvgEl = document.getElementById(`stat-pcie-rx-avg-${gpuId}`);
 
-    if (rxCurrentEl) rxCurrentEl.textContent = `${formatter(statsRX.current)}${unit}`;
-    if (rxMinEl) rxMinEl.textContent = `${formatter(statsRX.min)}${unit}`;
-    if (rxMaxEl) rxMaxEl.textContent = `${formatter(statsRX.max)}${unit}`;
-    if (rxAvgEl) rxAvgEl.textContent = `${formatter(statsRX.avg)}${unit}`;
+    if (rxCurrentEl) rxCurrentEl.textContent = formatBandwidth(statsRX.current);
+    if (rxMinEl) rxMinEl.textContent = formatBandwidth(statsRX.min);
+    if (rxMaxEl) rxMaxEl.textContent = formatBandwidth(statsRX.max);
+    if (rxAvgEl) rxAvgEl.textContent = formatBandwidth(statsRX.avg);
 
     // Update TX stats
     const txCurrentEl = document.getElementById(`stat-pcie-tx-current-${gpuId}`);
@@ -198,10 +203,10 @@ function updatePCIeChartStats(gpuId, statsRX, statsTX) {
     const txMaxEl = document.getElementById(`stat-pcie-tx-max-${gpuId}`);
     const txAvgEl = document.getElementById(`stat-pcie-tx-avg-${gpuId}`);
 
-    if (txCurrentEl) txCurrentEl.textContent = `${formatter(statsTX.current)}${unit}`;
-    if (txMinEl) txMinEl.textContent = `${formatter(statsTX.min)}${unit}`;
-    if (txMaxEl) txMaxEl.textContent = `${formatter(statsTX.max)}${unit}`;
-    if (txAvgEl) txAvgEl.textContent = `${formatter(statsTX.avg)}${unit}`;
+    if (txCurrentEl) txCurrentEl.textContent = formatBandwidth(statsTX.current);
+    if (txMinEl) txMinEl.textContent = formatBandwidth(statsTX.min);
+    if (txMaxEl) txMaxEl.textContent = formatBandwidth(statsTX.max);
+    if (txAvgEl) txAvgEl.textContent = formatBandwidth(statsTX.avg);
 }
 
 // Update mobile chart header value display

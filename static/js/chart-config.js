@@ -13,7 +13,7 @@ function getBaseChartOptions() {
             mode: 'index'
         },
         layout: {
-            padding: { left: 0, right: 0, top: 5, bottom: 0 }
+            padding: { left: 0, right: 0, top: 5, bottom: 10 }
         },
         scales: {
             x: {
