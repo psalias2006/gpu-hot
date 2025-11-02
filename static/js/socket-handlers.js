@@ -161,10 +161,20 @@ function handleSocketMessage(event) {
         // Still update chart data arrays (lightweight) to maintain continuity
         // This ensures no data gaps when scroll ends
         Object.keys(data.gpus).forEach(gpuId => {
+            const gpuInfo = data.gpus[gpuId];
             if (!chartData[gpuId]) {
-                initGPUData(gpuId);
+                initGPUData(gpuId, {
+                    utilization: gpuInfo.utilization,
+                    temperature: gpuInfo.temperature,
+                    memory: (gpuInfo.memory_used / gpuInfo.memory_total) * 100,
+                    power: gpuInfo.power_draw,
+                    fanSpeed: gpuInfo.fan_speed,
+                    clockGraphics: gpuInfo.clock_graphics,
+                    clockSm: gpuInfo.clock_sm,
+                    clockMemory: gpuInfo.clock_memory
+                });
             }
-            updateAllChartDataOnly(gpuId, data.gpus[gpuId]);
+            updateAllChartDataOnly(gpuId, gpuInfo);
         });
         return; // Exit early - zero DOM work during scroll = smooth 60 FPS
     }
@@ -175,7 +185,16 @@ function handleSocketMessage(event) {
 
         // Initialize chart data structures if first time seeing this GPU
         if (!chartData[gpuId]) {
-            initGPUData(gpuId);
+            initGPUData(gpuId, {
+                utilization: gpuInfo.utilization,
+                temperature: gpuInfo.temperature,
+                memory: (gpuInfo.memory_used / gpuInfo.memory_total) * 100,
+                power: gpuInfo.power_draw,
+                fanSpeed: gpuInfo.fan_speed,
+                clockGraphics: gpuInfo.clock_graphics,
+                clockSm: gpuInfo.clock_sm,
+                clockMemory: gpuInfo.clock_memory
+            });
         }
 
         // Determine if text/card DOM should update (throttled) or just charts (every frame)
@@ -374,12 +393,21 @@ function handleClusterData(data) {
         // Still update chart data for continuity
         Object.entries(data.nodes).forEach(([nodeName, nodeData]) => {
             if (nodeData.status === 'online') {
-                Object.keys(nodeData.gpus).forEach(gpuId => {
+                Object.entries(nodeData.gpus).forEach(([gpuId, gpuInfo]) => {
                     const fullGpuId = `${nodeName}-${gpuId}`;
                     if (!chartData[fullGpuId]) {
-                        initGPUData(fullGpuId);
+                        initGPUData(fullGpuId, {
+                            utilization: gpuInfo.utilization,
+                            temperature: gpuInfo.temperature,
+                            memory: (gpuInfo.memory_used / gpuInfo.memory_total) * 100,
+                            power: gpuInfo.power_draw,
+                            fanSpeed: gpuInfo.fan_speed,
+                            clockGraphics: gpuInfo.clock_graphics,
+                            clockSm: gpuInfo.clock_sm,
+                            clockMemory: gpuInfo.clock_memory
+                        });
                     }
-                    updateAllChartDataOnly(fullGpuId, nodeData.gpus[gpuId]);
+                    updateAllChartDataOnly(fullGpuId, gpuInfo);
                 });
             }
         });
@@ -407,9 +435,18 @@ function handleClusterData(data) {
             Object.entries(nodeData.gpus).forEach(([gpuId, gpuInfo]) => {
                 const fullGpuId = `${nodeName}-${gpuId}`;
                 
-                // Initialize chart data
+                // Initialize chart data with current values
                 if (!chartData[fullGpuId]) {
-                    initGPUData(fullGpuId);
+                    initGPUData(fullGpuId, {
+                        utilization: gpuInfo.utilization,
+                        temperature: gpuInfo.temperature,
+                        memory: (gpuInfo.memory_used / gpuInfo.memory_total) * 100,
+                        power: gpuInfo.power_draw,
+                        fanSpeed: gpuInfo.fan_speed,
+                        clockGraphics: gpuInfo.clock_graphics,
+                        clockSm: gpuInfo.clock_sm,
+                        clockMemory: gpuInfo.clock_memory
+                    });
                 }
                 
                 // Queue update
