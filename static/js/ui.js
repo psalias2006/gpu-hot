@@ -20,6 +20,11 @@ function toggleProcesses() {
 
 // Tab switching with smooth transitions
 function switchToView(viewName) {
+    if (!viewName) {
+        console.warn('switchToView: Missing viewName');
+        return;
+    }
+    
     currentTab = viewName;
 
     // Update view selector states
@@ -36,17 +41,45 @@ function switchToView(viewName) {
     });
 
     const targetContent = document.getElementById(`tab-${viewName}`);
-    if (targetContent) {
-        targetContent.classList.add('active');
+    if (!targetContent) {
+        console.warn(`switchToView: Tab content not found for "${viewName}"`);
+        return;
+    }
+    
+    targetContent.classList.add('active');
 
-        // Trigger chart resize for visible charts using RAF for better timing
-        if (viewName.startsWith('gpu-')) {
-            const gpuId = viewName.replace('gpu-', '');
-            requestAnimationFrame(() => {
-                if (charts[gpuId]) {
-                    Object.values(charts[gpuId]).forEach(chart => {
-                        if (chart && chart.resize) chart.resize();
-                    });
+    // Trigger chart resize for visible charts immediately without animation
+    if (viewName.startsWith('gpu-')) {
+        const gpuId = viewName.replace('gpu-', '');
+        
+        // Disable animations during resize to prevent glitchy transitions
+        if (charts && charts[gpuId]) {
+            Object.values(charts[gpuId]).forEach(chart => {
+                if (!chart) return;
+                
+                try {
+                    if (chart.options) {
+                        // Store original animation setting
+                        const originalAnimation = chart.options.animation;
+                        
+                        // Temporarily disable all animations
+                        chart.options.animation = false;
+                        
+                        // Resize without animation
+                        if (typeof chart.resize === 'function') {
+                            chart.resize();
+                        }
+                        
+                        // Force immediate update without animation
+                        if (typeof chart.update === 'function') {
+                            chart.update('none');
+                        }
+                        
+                        // Restore original animation setting
+                        chart.options.animation = originalAnimation;
+                    }
+                } catch (error) {
+                    console.error(`Error resizing chart for GPU ${gpuId}:`, error);
                 }
             });
         }

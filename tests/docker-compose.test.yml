@@ -10,13 +10,13 @@ services:
       - "13120-13150:13120-13150"
     environment:
       # LOAD TEST PRESETS - uncomment one:
-      # LIGHT: 3 nodes, 14 GPUs (typical small lab)
-      - NODES=2,4,8
+      # LIGHT: 3 nodes, 5 GPUs (typical small lab)
+      - NODES=1,2,2
       # MEDIUM: 8 nodes, 64 GPUs (medium cluster)
       #- NODES=8,8,8,8,8,8,8,8
       # HEAVY: 20 nodes, 160 GPUs (large production)
       # - NODES=8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
-      
+
       - BASE_PORT=13120
       - PREFIX=gpu-server
     networks:

@@ -14,4 +14,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // - socket-handlers.js: Real-time data updates via Socket.IO
     
     // The socket connection is established automatically when socket-handlers.js loads
+    
+    // Check for version updates
+    checkVersion();
 });
+
+/**
+ * Check current version and update availability
+ */
+async function checkVersion() {
+    try {
+        const response = await fetch('/api/version');
+        const data = await response.json();
+        
+        const versionCurrent = document.getElementById('version-current');
+        const updateBadge = document.getElementById('update-badge');
+        const updateLink = document.getElementById('update-link');
+        
+        if (versionCurrent) {
+            versionCurrent.textContent = `v${data.current}`;
+        }
+        
+        if (data.update_available && data.latest) {
+            updateBadge.style.display = 'inline-block';
+            updateLink.href = data.release_url || 'https://github.com/psalias2006/gpu-hot/releases/latest';
+            updateLink.title = `Update to v${data.latest}`;
+        }
+    } catch (error) {
+        console.debug('Failed to check version:', error);
+        const versionCurrent = document.getElementById('version-current');
+        if (versionCurrent) {
+            versionCurrent.textContent = 'Unknown';
+        }
+    }
+}

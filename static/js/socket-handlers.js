@@ -2,9 +2,97 @@
  * WebSocket event handlers
  */
 
-// Initialize WebSocket connection with protocol detection
-const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-const socket = new WebSocket(protocol + '//' + window.location.host + '/socket.io/');
+// WebSocket connection with auto-reconnect
+let socket = null;
+let reconnectInterval = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_DELAY = 2000; // Start with 2 seconds
+
+function createWebSocketConnection() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(protocol + '//' + window.location.host + '/socket.io/');
+    return ws;
+}
+
+function connectWebSocket() {
+    if (socket && (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN)) {
+        return; // Already connected or connecting
+    }
+    
+    socket = createWebSocketConnection();
+    setupWebSocketHandlers();
+}
+
+function setupWebSocketHandlers() {
+    if (!socket) return;
+    
+    socket.onopen = handleSocketOpen;
+    socket.onmessage = handleSocketMessage;
+    socket.onclose = handleSocketClose;
+    socket.onerror = handleSocketError;
+}
+
+function handleSocketOpen() {
+    console.log('Connected to server');
+    reconnectAttempts = 0;
+    clearInterval(reconnectInterval);
+    reconnectInterval = null;
+    
+    const statusEl = document.getElementById('connection-status');
+    if (statusEl) {
+        statusEl.textContent = 'Connected';
+        statusEl.style.color = '#43e97b';
+    }
+}
+
+function handleSocketClose() {
+    console.log('Disconnected from server');
+    
+    const statusEl = document.getElementById('connection-status');
+    if (statusEl) {
+        statusEl.textContent = 'Reconnecting...';
+        statusEl.style.color = '#ffc107';
+    }
+    
+    // Attempt to reconnect
+    attemptReconnect();
+}
+
+function handleSocketError(error) {
+    console.error('WebSocket error:', error);
+    const statusEl = document.getElementById('connection-status');
+    if (statusEl) {
+        statusEl.textContent = 'Connection Error';
+        statusEl.style.color = '#f5576c';
+    }
+}
+
+function attemptReconnect() {
+    if (reconnectInterval) return; // Already trying to reconnect
+    
+    reconnectInterval = setInterval(() => {
+        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl) {
+                statusEl.textContent = 'Disconnected - Tap to Reload';
+                statusEl.style.color = '#f5576c';
+                statusEl.style.cursor = 'pointer';
+                statusEl.onclick = () => location.reload();
+            }
+            return;
+        }
+        
+        reconnectAttempts++;
+        console.log(`Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+        connectWebSocket();
+    }, RECONNECT_DELAY);
+}
+
+// Initialize connection
+connectWebSocket();
 
 // Performance: Scroll detection to pause DOM updates during scroll
 let isScrolling = false;
@@ -50,7 +138,7 @@ const lastDOMUpdate = {}; // Track last update time per GPU
 const DOM_UPDATE_INTERVAL = 1000; // Text/card updates every 1s, charts update every frame
 
 // Handle incoming GPU data
-socket.onmessage = function(event) {
+function handleSocketMessage(event) {
     const data = JSON.parse(event.data);
     // Hub mode: different data structure with nodes
     if (data.mode === 'hub') {
@@ -73,10 +161,20 @@ socket.onmessage = function(event) {
         // Still update chart data arrays (lightweight) to maintain continuity
         // This ensures no data gaps when scroll ends
         Object.keys(data.gpus).forEach(gpuId => {
+            const gpuInfo = data.gpus[gpuId];
             if (!chartData[gpuId]) {
-                initGPUData(gpuId);
+                initGPUData(gpuId, {
+                    utilization: gpuInfo.utilization,
+                    temperature: gpuInfo.temperature,
+                    memory: (gpuInfo.memory_used / gpuInfo.memory_total) * 100,
+                    power: gpuInfo.power_draw,
+                    fanSpeed: gpuInfo.fan_speed,
+                    clockGraphics: gpuInfo.clock_graphics,
+                    clockSm: gpuInfo.clock_sm,
+                    clockMemory: gpuInfo.clock_memory
+                });
             }
-            updateAllChartDataOnly(gpuId, data.gpus[gpuId]);
+            updateAllChartDataOnly(gpuId, gpuInfo);
         });
         return; // Exit early - zero DOM work during scroll = smooth 60 FPS
     }
@@ -87,7 +185,16 @@ socket.onmessage = function(event) {
 
         // Initialize chart data structures if first time seeing this GPU
         if (!chartData[gpuId]) {
-            initGPUData(gpuId);
+            initGPUData(gpuId, {
+                utilization: gpuInfo.utilization,
+                temperature: gpuInfo.temperature,
+                memory: (gpuInfo.memory_used / gpuInfo.memory_total) * 100,
+                power: gpuInfo.power_draw,
+                fanSpeed: gpuInfo.fan_speed,
+                clockGraphics: gpuInfo.clock_graphics,
+                clockSm: gpuInfo.clock_sm,
+                clockMemory: gpuInfo.clock_memory
+            });
         }
 
         // Determine if text/card DOM should update (throttled) or just charts (every frame)
@@ -127,7 +234,7 @@ socket.onmessage = function(event) {
     
     // Auto-switch to single GPU view if only 1 GPU detected (first time only)
     autoSwitchSingleGPU(gpuCount, Object.keys(data.gpus));
-};
+}
 
 /**
  * Process all batched updates in a single animation frame
@@ -242,23 +349,31 @@ function updateAllChartDataOnly(gpuId, gpuInfo) {
     }
 }
 
-// Handle connection status
-socket.onopen = function() {
-    console.log('Connected to server');
-    document.getElementById('connection-status').textContent = 'Connected';
-    document.getElementById('connection-status').style.color = '#43e97b';
-};
+// Handle page visibility changes (phone lock/unlock, tab switch)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        // Page became visible (phone unlocked or tab switched back)
+        console.log('Page visible - checking connection');
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            // Connection is closed, reconnect immediately
+            reconnectAttempts = 0;
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+            connectWebSocket();
+        }
+    }
+});
 
-socket.onclose = function() {
-    console.log('Disconnected from server');
-    document.getElementById('connection-status').textContent = 'Disconnected';
-    document.getElementById('connection-status').style.color = '#f5576c';
-};
-
-socket.onerror = function(error) {
-    document.getElementById('connection-status').textContent = 'Connection Error';
-    document.getElementById('connection-status').style.color = '#f5576c';
-};
+// Also handle page focus (additional safety)
+window.addEventListener('focus', () => {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        console.log('Window focused - checking connection');
+        reconnectAttempts = 0;
+        clearInterval(reconnectInterval);
+        reconnectInterval = null;
+        connectWebSocket();
+    }
+});
 
 /**
  * Handle cluster/hub mode data
@@ -278,12 +393,21 @@ function handleClusterData(data) {
         // Still update chart data for continuity
         Object.entries(data.nodes).forEach(([nodeName, nodeData]) => {
             if (nodeData.status === 'online') {
-                Object.keys(nodeData.gpus).forEach(gpuId => {
+                Object.entries(nodeData.gpus).forEach(([gpuId, gpuInfo]) => {
                     const fullGpuId = `${nodeName}-${gpuId}`;
                     if (!chartData[fullGpuId]) {
-                        initGPUData(fullGpuId);
+                        initGPUData(fullGpuId, {
+                            utilization: gpuInfo.utilization,
+                            temperature: gpuInfo.temperature,
+                            memory: (gpuInfo.memory_used / gpuInfo.memory_total) * 100,
+                            power: gpuInfo.power_draw,
+                            fanSpeed: gpuInfo.fan_speed,
+                            clockGraphics: gpuInfo.clock_graphics,
+                            clockSm: gpuInfo.clock_sm,
+                            clockMemory: gpuInfo.clock_memory
+                        });
                     }
-                    updateAllChartDataOnly(fullGpuId, nodeData.gpus[gpuId]);
+                    updateAllChartDataOnly(fullGpuId, gpuInfo);
                 });
             }
         });
@@ -311,9 +435,18 @@ function handleClusterData(data) {
             Object.entries(nodeData.gpus).forEach(([gpuId, gpuInfo]) => {
                 const fullGpuId = `${nodeName}-${gpuId}`;
                 
-                // Initialize chart data
+                // Initialize chart data with current values
                 if (!chartData[fullGpuId]) {
-                    initGPUData(fullGpuId);
+                    initGPUData(fullGpuId, {
+                        utilization: gpuInfo.utilization,
+                        temperature: gpuInfo.temperature,
+                        memory: (gpuInfo.memory_used / gpuInfo.memory_total) * 100,
+                        power: gpuInfo.power_draw,
+                        fanSpeed: gpuInfo.fan_speed,
+                        clockGraphics: gpuInfo.clock_graphics,
+                        clockSm: gpuInfo.clock_sm,
+                        clockMemory: gpuInfo.clock_memory
+                    });
                 }
                 
                 // Queue update
