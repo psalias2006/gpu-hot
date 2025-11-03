@@ -3,11 +3,14 @@
 # GPU Hot
 
 Real-time NVIDIA GPU monitoring dashboard. Web-based, no SSH required.
+**Supports Docker and native installation on Linux & Windows.**
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![NVIDIA](https://img.shields.io/badge/NVIDIA-GPU-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/)
+[![Linux](https://img.shields.io/badge/Linux-Native-FCC624?style=flat-square&logo=linux&logoColor=black)](https://www.kernel.org/)
+[![Windows](https://img.shields.io/badge/Windows-Native-0078D4?style=flat-square&logo=windows&logoColor=white)](https://www.microsoft.com/windows/)
 
 <img src="gpu-hot.png" alt="GPU Hot Dashboard" width="800" />
 
@@ -39,14 +42,44 @@ Open `http://localhost:1312`
 
 **Process monitoring:** Add `--init --pid=host` to see process names. Note: This allows the container to access host process information.
 
-**From source:**
+**From source (Docker):**
 ```bash
 git clone https://github.com/psalias2006/gpu-hot
 cd gpu-hot
 docker-compose up --build
 ```
 
-**Requirements:** Docker + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+**Native installation (Linux/Windows):**
+```bash
+# Linux
+git clone https://github.com/psalias2006/gpu-hot
+cd gpu-hot
+pip3 install -r requirements.txt
+python3 app.py
+```
+
+```cmd
+REM Windows (Command Prompt)
+git clone https://github.com/psalias2006/gpu-hot
+cd gpu-hot
+pip install -r requirements.txt
+python app.py
+```
+
+```powershell
+# Windows (PowerShell)
+git clone https://github.com/psalias2006/gpu-hot
+cd gpu-hot
+pip install -r requirements.txt
+python app.py
+```
+
+**Docker Requirements:** Docker + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+
+**Native Requirements:** 
+- Python 3.8+ with pip
+- NVIDIA GPU drivers (recent version recommended)
+- All Python dependencies will be installed via pip
 
 ---
 
@@ -65,13 +98,34 @@ docker-compose up --build
 
 ## Configuration
 
-**Environment variables:**
+**Environment variables (Docker & Native):**
 ```bash
 NVIDIA_VISIBLE_DEVICES=0,1     # Specific GPUs (default: all)
 NVIDIA_SMI=true                # Force nvidia-smi mode for older GPUs
 GPU_HOT_MODE=hub               # Set to 'hub' for multi-node aggregation (default: single node)
 NODE_NAME=gpu-server-1         # Node display name (default: hostname)
 NODE_URLS=http://host:1312...  # Comma-separated node URLs (required for hub mode)
+```
+
+**Native installation examples:**
+```bash
+# Linux - Single machine with specific GPUs
+export NVIDIA_VISIBLE_DEVICES=0,1
+export NVIDIA_SMI=true
+python3 app.py
+```
+
+```cmd
+REM Windows Command Prompt - Hub mode
+set GPU_HOT_MODE=hub
+set NODE_URLS=http://server1:1312,http://server2:1312
+python app.py
+```
+
+```powershell
+# Windows PowerShell - Force nvidia-smi mode
+$env:NVIDIA_SMI="true"
+python app.py
 ```
 
 **Backend (`core/config.py`):**
@@ -131,14 +185,73 @@ gpu-hot/
 
 **No GPUs detected:**
 ```bash
-nvidia-smi  # Verify drivers work
-docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi  # Test Docker GPU access
+# Test NVIDIA drivers
+nvidia-smi  # Should show GPU list
+
+# Docker-specific test
+docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
+
+# Native installation - force nvidia-smi mode for older GPUs
+export NVIDIA_SMI=true  # Linux
+set NVIDIA_SMI=true     # Windows CMD
+$env:NVIDIA_SMI="true"  # Windows PowerShell
+```
+
+**Python/pip issues (Native installation):**
+```bash
+# Linux - Install missing dependencies
+sudo apt update && sudo apt install python3 python3-pip
+pip3 install -r requirements.txt
+
+# Verify Python version (3.8+ required)
+python3 --version
+```
+
+```cmd
+REM Windows - Install Python from python.org
+python --version
+pip install -r requirements.txt
+
+REM If 'python' not found, try:
+python3 --version
+py --version
+```
+
+**Port 1312 already in use:**
+```bash
+# Linux - Find what's using the port
+sudo lsof -i :1312
+sudo netstat -tulpn | grep :1312
+
+# Kill existing process or change port
+export PORT=1313  # Linux
+set PORT=1313     # Windows
+```
+
+**Permission errors (Windows):**
+```cmd
+REM Run Command Prompt or PowerShell as Administrator
+REM Or install to user directory:
+pip install --user -r requirements.txt
+```
+
+**Import errors:**
+```bash
+# Missing nvidia-ml-py (most common issue)
+pip install nvidia-ml-py
+
+# Missing system packages (Linux)
+sudo apt install build-essential python3-dev
+
+# Verify all dependencies
+python -c "import pynvml, psutil, fastapi; print('Dependencies OK')"
 ```
 
 **Hub can't connect to nodes:**
 ```bash
 curl http://node-ip:1312/api/gpu-data  # Test connectivity
-sudo ufw allow 1312/tcp                # Check firewall
+sudo ufw allow 1312/tcp                # Linux firewall
+netsh advfirewall firewall add rule name="GPU Hot" dir=in action=allow protocol=TCP localport=1312  # Windows firewall
 ```
 
 **Performance issues:** Increase `UPDATE_INTERVAL` in `core/config.py`
