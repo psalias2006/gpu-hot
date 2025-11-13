@@ -145,6 +145,10 @@ sudo ufw allow 1312/tcp                # Check firewall
 
 ---
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=psalias2006/gpu-hot&type=date&legend=top-left)](https://www.star-history.com/#psalias2006/gpu-hot&type=date&legend=top-left)
+
 ## Contributing
 
 PRs welcome. Open an issue for major changes.
@@ -152,4 +156,3 @@ PRs welcome. Open an issue for major changes.
 ## License
 
 MIT - see [LICENSE](LICENSE)
-  
