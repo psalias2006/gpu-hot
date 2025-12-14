@@ -2,6 +2,7 @@
 services:
   gpu-hot:
     build: .
+    container_name: gpu-hot
     ports:
       - "1312:1312"
     environment:
