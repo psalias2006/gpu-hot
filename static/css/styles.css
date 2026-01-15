@@ -210,6 +210,116 @@ body {
     box-shadow: var(--shadow);
 }
 
+/* GitHub star prompt toast */
+.star-toast {
+    position: fixed;
+    right: 1.5rem;
+    top: 1.5rem;
+    width: 320px;
+    background: rgba(12, 12, 28, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 1.25rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1000;
+}
+
+.star-toast.is-hidden {
+    opacity: 0;
+    transform: translateY(-12px);
+    pointer-events: none;
+}
+
+.star-toast-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.star-toast-close:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.star-toast-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    padding-right: 1.5rem;
+}
+
+.star-toast-text {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 1rem;
+}
+
+.star-toast-progress-wrap {
+    margin-bottom: 1rem;
+}
+
+.star-toast-progress-wrap.is-hidden {
+    display: none;
+}
+
+.star-toast-progress-bar {
+    height: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+}
+
+.star-toast-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.star-toast-milestone {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.star-toast-btn {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #4facfe 0%, #00c6fb 100%);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.star-toast-btn svg {
+    flex-shrink: 0;
+}
+
+.star-toast-btn:hover {
+    filter: brightness(1.1);
+}
+
 .status-indicator {
     display: flex;
     align-items: center;
@@ -1313,6 +1423,13 @@ body {
 
     .overview-mini-chart {
         height: 120px;
+    }
+
+    .star-toast {
+        right: 1rem;
+        top: 1rem;
+        width: calc(100% - 2rem);
+        max-width: 320px;
     }
 
     .charts-section {
