@@ -1185,6 +1185,119 @@ body {
     box-shadow: 0 0 0 1px rgba(79, 172, 254, 0.3);
 }
 
+/* Export Controls */
+.export-controls {
+    position: relative;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.export-btn {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.15) 0%, rgba(30, 58, 138, 0.15) 100%);
+    border: 1px solid rgba(79, 172, 254, 0.3);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: 0.3px;
+}
+
+.export-btn:hover {
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.25) 0%, rgba(30, 58, 138, 0.25) 100%);
+    border-color: rgba(79, 172, 254, 0.5);
+    box-shadow: 0 4px 16px rgba(79, 172, 254, 0.2);
+    transform: translateY(-2px);
+}
+
+.export-btn:active {
+    transform: translateY(0);
+}
+
+.export-chevron {
+    font-size: 0.75rem;
+    transition: transform 0.3s ease;
+}
+
+.export-btn.active .export-chevron {
+    transform: rotate(180deg);
+}
+
+.export-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 280px;
+    background: linear-gradient(135deg, rgba(15, 15, 35, 0.98) 0%, rgba(20, 20, 50, 0.98) 100%);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(79, 172, 254, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    padding: 0.5rem;
+    z-index: 1000;
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.export-menu.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+.export-option {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    line-height: 1.4;
+}
+
+.export-option:hover {
+    background: rgba(79, 172, 254, 0.1);
+    color: var(--text-primary);
+    transform: translateX(4px);
+}
+
+.export-option:active {
+    background: rgba(79, 172, 254, 0.15);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .export-controls {
+        justify-content: center;
+    }
+
+    .export-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .export-menu {
+        left: 0;
+        right: 0;
+        min-width: 100%;
+    }
+}
+
 /* Tab Content with smooth transitions */
 .tab-content {
     display: none;

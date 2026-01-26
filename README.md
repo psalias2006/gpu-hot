@@ -61,6 +61,17 @@ docker-compose up --build
 
 **Metrics:** Utilization, temperature, memory, power draw, fan speed, clock speeds, PCIe info, P-State, throttle status, encoder/decoder sessions
 
+### Export Features
+
+**Snapshot exports:**
+- **JSON Export** - Machine-readable metrics + 60s history
+- **HTML Report** - Professional, printable, self-contained report
+- **Chart Images** - High-resolution PNG screenshots
+
+**Use cases:** Bug reports, documentation, capacity planning
+
+**How to use:** Click "📊 Export" button → Select format → Downloads automatically
+
 ---
 
 ## Configuration

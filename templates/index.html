@@ -47,6 +47,24 @@
             <button class="view-option active" data-view="overview" onclick="switchToView('overview')">All GPUs</button>
         </div>
 
+        <!-- Export Controls -->
+        <div class="export-controls">
+            <button class="export-btn" id="export-btn" onclick="toggleExportMenu()">
+                📊 Export <span class="export-chevron">▼</span>
+            </button>
+            <div class="export-menu hidden" id="export-menu">
+                <button class="export-option" onclick="exportAsJSON()">
+                    📄 JSON Export - Machine-readable data
+                </button>
+                <button class="export-option" onclick="exportAsHTML()">
+                    📋 HTML Report - Human-readable report
+                </button>
+                <button class="export-option" onclick="exportChartImages()">
+                    📊 Chart Images - PNG snapshots
+                </button>
+            </div>
+        </div>
+
         <!-- Overview Tab -->
         <div id="tab-overview" class="tab-content active">
             <div id="overview-container" class="overview-grid">
@@ -112,12 +130,13 @@
     </div>
 
     <!-- Application Scripts -->
-    <!-- Load in order: chart-config -> chart-manager -> gpu-cards -> ui -> socket-handlers -> app -->
+    <!-- Load in order: chart-config -> chart-manager -> gpu-cards -> ui -> socket-handlers -> export -> app -->
     <script src="/static/js/chart-config.js"></script>
     <script src="/static/js/chart-manager.js"></script>
     <script src="/static/js/gpu-cards.js"></script>
     <script src="/static/js/ui.js"></script>
     <script src="/static/js/socket-handlers.js"></script>
+    <script src="/static/js/export.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
