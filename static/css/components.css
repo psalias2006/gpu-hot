@@ -13,15 +13,10 @@
     grid-template-columns: 180px 1fr 200px;
     align-items: center;
     gap: var(--space-lg);
-    padding: var(--space-md) 0;
-    border-bottom: 1px solid var(--border-subtle);
+    padding: var(--space-sm) 0;
     cursor: pointer;
     transition: background 0.1s;
     min-width: 0;
-}
-
-.overview-gpu-card:last-child {
-    border-bottom: none;
 }
 
 .overview-gpu-card:hover {
@@ -60,6 +55,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 72px;
 }
 
 .overview-metric-value {
@@ -70,6 +66,7 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.5px;
     line-height: 1;
+    white-space: nowrap;
 }
 
 .overview-metric-label {
@@ -230,6 +227,9 @@
     position: relative;
     height: 120px;
     contain: layout style;
+    border-left: 2px solid transparent;
+    padding-left: var(--space-sm);
+    transition: border-color 0.15s ease;
 }
 
 .sparkline-header {
@@ -753,12 +753,25 @@
 }
 
 /* Make sparklines clickable */
-.sparkline-container {
+.sparkline-container[data-chart-type] {
     cursor: pointer;
 }
 
-.sparkline-container:hover .sparkline-title {
+.sparkline-container[data-chart-type]:hover {
+    border-left-color: rgba(255, 255, 255, 0.15);
+}
+
+.sparkline-container[data-chart-type]:hover .sparkline-title {
     color: var(--text-secondary);
+}
+
+.sparkline-container[data-chart-type]:hover .sparkline-stat-value {
+    color: var(--text-primary);
+}
+
+.sparkline-container[data-chart-type]:hover .sparkline-canvas-wrap {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
 }
 
 /* ============================================
