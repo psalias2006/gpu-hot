@@ -133,7 +133,8 @@ function createGPUCard(gpuId, gpuInfo) {
                     <span class="metric-num" id="mem-util-${gpuId}">${gpuInfo.memory_utilization}</span>
                     <span class="metric-unit">%</span>
                 </div>
-                <span class="metric-label">MEM CTRL</span>
+                <span class="metric-label">MEMORY UTILIZATION</span>
+                <span class="metric-sub">Controller Usage</span>
             </div>`;
     }
 
@@ -144,7 +145,7 @@ function createGPUCard(gpuId, gpuInfo) {
                     <span class="metric-num" id="clock-gr-${gpuId}">${gpuInfo.clock_graphics}</span>
                     <span class="metric-unit">MHz</span>
                 </div>
-                <span class="metric-label">GFX CLOCK</span>
+                <span class="metric-label">GRAPHICS CLOCK</span>
             </div>`;
     }
 
@@ -155,7 +156,7 @@ function createGPUCard(gpuId, gpuInfo) {
                     <span class="metric-num" id="clock-mem-${gpuId}">${gpuInfo.clock_memory}</span>
                     <span class="metric-unit">MHz</span>
                 </div>
-                <span class="metric-label">MEM CLOCK</span>
+                <span class="metric-label">MEMORY CLOCK</span>
             </div>`;
     }
 
@@ -165,7 +166,8 @@ function createGPUCard(gpuId, gpuInfo) {
                 <div class="metric-num-row">
                     <span class="metric-num" id="pstate-${gpuId}">${gpuInfo.performance_state}</span>
                 </div>
-                <span class="metric-label">P-STATE</span>
+                <span class="metric-label">PERFORMANCE STATE</span>
+                <span class="metric-sub">Power Mode</span>
             </div>`;
     }
 
@@ -173,10 +175,10 @@ function createGPUCard(gpuId, gpuInfo) {
         extraMetrics += `
             <div class="metric-cell">
                 <div class="metric-num-row">
-                    <span class="metric-num" id="pcie-${gpuId}">${gpuInfo.pcie_gen}</span>
-                    <span class="metric-unit">x${gpuInfo.pcie_width || '?'}</span>
+                    <span class="metric-num" id="pcie-${gpuId}">Gen ${gpuInfo.pcie_gen}</span>
                 </div>
-                <span class="metric-label">PCIE</span>
+                <span class="metric-label">PCIE LINK</span>
+                <span class="metric-sub">x${gpuInfo.pcie_width || '?'} lanes</span>
             </div>`;
     }
 
@@ -198,6 +200,7 @@ function createGPUCard(gpuId, gpuInfo) {
                     <span class="metric-unit">MHz</span>
                 </div>
                 <span class="metric-label">SM CLOCK</span>
+                <span class="metric-sub" id="clock-sm-max-${gpuId}">MHz / ${gpuInfo.clock_sm_max || '?'} Max</span>
             </div>`;
     }
 
@@ -219,7 +222,8 @@ function createGPUCard(gpuId, gpuInfo) {
                     <span class="metric-num" id="mem-free-${gpuId}">${formatMemory(gpuInfo.memory_free)}</span>
                     <span class="metric-unit">${formatMemoryUnit(gpuInfo.memory_free)}</span>
                 </div>
-                <span class="metric-label">FREE VRAM</span>
+                <span class="metric-label">FREE MEMORY</span>
+                <span class="metric-sub">Available VRAM</span>
             </div>`;
     }
 
@@ -239,7 +243,8 @@ function createGPUCard(gpuId, gpuInfo) {
                 <div class="metric-num-row">
                     <span class="metric-num" id="energy-${gpuId}" style="font-size:20px;">${formatEnergy(gpuInfo.energy_consumption_wh)}</span>
                 </div>
-                <span class="metric-label">ENERGY</span>
+                <span class="metric-label">TOTAL ENERGY</span>
+                <span class="metric-sub">Since driver load</span>
             </div>`;
     }
 
@@ -283,7 +288,7 @@ function createGPUCard(gpuId, gpuInfo) {
                 <div class="metric-num-row">
                     <span class="metric-num" id="brand-${gpuId}" style="font-size:16px;">${gpuInfo.brand || 'N/A'}</span>
                 </div>
-                <span class="metric-label">BRAND / ARCH</span>
+                <span class="metric-label">BRAND / ARCHITECTURE</span>
                 <span class="metric-sub" id="arch-${gpuId}">${gpuInfo.architecture || 'Unknown'}</span>
             </div>`;
     }
@@ -296,7 +301,7 @@ function createGPUCard(gpuId, gpuInfo) {
                 <div class="metric-num-row">
                     <span class="metric-num" id="proc-counts-${gpuId}" style="font-size:16px;">C:${computeProcs} G:${graphicsProcs}</span>
                 </div>
-                <span class="metric-label">PROC COUNTS</span>
+                <span class="metric-label">PROCESS COUNTS</span>
                 <span class="metric-sub">Compute / Graphics</span>
             </div>`;
     }
@@ -306,9 +311,10 @@ function createGPUCard(gpuId, gpuInfo) {
     extraMetrics += `
         <div class="metric-cell">
             <div class="metric-num-row">
-                <span class="metric-num" id="throttle-${gpuId}" style="font-size:16px;${isThrottling ? 'color:var(--warning);' : ''}">${isThrottling ? 'ACTIVE' : 'NONE'}</span>
+                <span class="metric-num" id="throttle-${gpuId}" style="font-size:16px;${isThrottling ? 'color:var(--warning);' : ''}">${isThrottling ? throttle_reasons : 'GPU Idle'}</span>
             </div>
-            <span class="metric-label">THROTTLE</span>
+            <span class="metric-label">THROTTLE STATUS</span>
+            <span class="metric-sub" id="throttle-sub-${gpuId}">${isThrottling ? 'Throttling' : 'Performance'}</span>
         </div>`;
 
     // Build sparkline chart containers
@@ -376,7 +382,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <span class="metric-num" id="util-text-${gpuId}">${utilization}</span>
                         <span class="metric-unit">%</span>
                     </div>
-                    <span class="metric-label">UTILIZATION</span>
+                    <span class="metric-label">GPU UTILIZATION</span>
                     <div class="bullet-bar"><div class="bullet-fill ${bulletClass(utilization, 80, 95)}" id="util-bar-${gpuId}" style="width:${utilization}%"></div></div>
                 </div>
 
@@ -385,7 +391,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <span class="metric-num" id="temp-${gpuId}">${temperature}</span>
                         <span class="metric-unit">°C</span>
                     </div>
-                    <span class="metric-label">CORE TEMP</span>
+                    <span class="metric-label">TEMPERATURE</span>
                     <div class="bullet-bar"><div class="bullet-fill ${bulletClass(temperature, 75, 85)}" id="temp-bar-${gpuId}" style="width:${Math.min(temperature / 100 * 100, 100)}%"></div></div>
                 </div>
 
@@ -394,7 +400,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <span class="metric-num" id="mem-${gpuId}">${formatMemory(memory_used)}</span>
                         <span class="metric-unit">${formatMemoryUnit(memory_used)}</span>
                     </div>
-                    <span class="metric-label">VRAM</span>
+                    <span class="metric-label">MEMORY USAGE</span>
                     <span class="metric-sub" id="mem-total-${gpuId}">of ${formatMemory(memory_total)}${formatMemoryUnit(memory_total)}</span>
                     <div class="bullet-bar"><div class="bullet-fill ${bulletClass(memPercent, 85, 95)}" id="mem-bar-${gpuId}" style="width:${memPercent}%"></div></div>
                 </div>
@@ -404,7 +410,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <span class="metric-num" id="power-${gpuId}">${power_draw.toFixed(0)}</span>
                         <span class="metric-unit">W</span>
                     </div>
-                    <span class="metric-label">POWER</span>
+                    <span class="metric-label">POWER DRAW</span>
                     <span class="metric-sub" id="power-limit-${gpuId}">of ${power_limit.toFixed(0)}W</span>
                     <div class="bullet-bar"><div class="bullet-fill ${bulletClass(powerPercent, 80, 95)}" id="power-bar-${gpuId}" style="width:${powerPercent}%"></div></div>
                 </div>
@@ -593,7 +599,7 @@ function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
         if (clockMemEl) clockMemEl.textContent = `${getMetricValue(gpuInfo, 'clock_memory', 0)}`;
         if (clockSmEl) clockSmEl.textContent = `${getMetricValue(gpuInfo, 'clock_sm', 0)}`;
         if (memUtilEl) memUtilEl.textContent = `${getMetricValue(gpuInfo, 'memory_utilization', 0)}`;
-        if (pcieEl) pcieEl.textContent = `${getMetricValue(gpuInfo, 'pcie_gen', 'N/A')}`;
+        if (pcieEl) pcieEl.textContent = `Gen ${getMetricValue(gpuInfo, 'pcie_gen', 'N/A')}`;
         if (pstateEl) pstateEl.textContent = `${getMetricValue(gpuInfo, 'performance_state', 'N/A')}`;
         if (encoderEl) encoderEl.textContent = `${getMetricValue(gpuInfo, 'encoder_sessions', 0)}`;
 
@@ -629,8 +635,10 @@ function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
         if (throttleEl) {
             const tr = getMetricValue(gpuInfo, 'throttle_reasons', 'None');
             const isT = tr && tr !== 'None' && tr !== 'N/A';
-            throttleEl.textContent = isT ? 'ACTIVE' : 'NONE';
+            throttleEl.textContent = isT ? tr : 'GPU Idle';
             throttleEl.style.color = isT ? 'var(--warning)' : '';
+            const throttleSubEl = document.getElementById(`throttle-sub-${gpuId}`);
+            if (throttleSubEl) throttleSubEl.textContent = isT ? 'Throttling' : 'Performance';
         }
 
         if (hasMetric(gpuInfo, 'energy_consumption_wh')) {
