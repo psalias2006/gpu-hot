@@ -1,52 +1,56 @@
 /**
- * Chart configuration factory - DRY approach for chart configs
+ * Chart configuration factory — GPU Studio
+ * Grayscale sparklines, no fills, no color except alerts
  */
 
-// Base chart options shared across all charts
+// Sparkline palette — monochromatic
+const SPARK = {
+    stroke: 'rgba(255, 255, 255, 0.4)',
+    strokeLight: 'rgba(255, 255, 255, 0.25)',
+    strokeDim: 'rgba(255, 255, 255, 0.15)',
+    grid: 'rgba(255, 255, 255, 0.04)',
+    tick: 'rgba(255, 255, 255, 0.3)',
+    tooltipBg: '#1A1A1A',
+};
+
+// Base chart options — minimal sparkline
 function getBaseChartOptions() {
     return {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false, // Disable all animations globally
+        animation: false,
         interaction: {
             intersect: false,
             mode: 'index'
         },
+        elements: {
+            point: { radius: 0, hitRadius: 8 },
+            line: { borderCapStyle: 'round', borderJoinStyle: 'round' }
+        },
         layout: {
-            padding: { left: 0, right: 0, top: 5, bottom: 10 }
+            padding: { left: 0, right: 0, top: 2, bottom: 0 }
         },
         scales: {
             x: {
-                display: true,
-                offset: true,
-                grid: {
-                    display: false,
-                    drawBorder: false,
-                    offset: true
-                },
-                ticks: {
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    font: { size: 11, weight: '500' },
-                    maxRotation: 0,
-                    autoSkip: true,
-                    maxTicksLimit: 7,
-                    padding: 8,
-                    align: 'center'
-                }
+                display: false
             },
             y: {
                 min: 0,
+                display: true,
+                position: 'right',
                 grid: {
-                    color: 'rgba(255, 255, 255, 0.08)',
-                    borderDash: [2, 3],
+                    color: SPARK.grid,
                     drawBorder: false,
                     lineWidth: 1
                 },
                 ticks: {
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    font: { size: 12, weight: '500' },
-                    padding: 12,
-                    count: 6
+                    color: SPARK.tick,
+                    font: { size: 10, family: "'SF Mono', 'Menlo', 'Consolas', monospace" },
+                    padding: 8,
+                    maxTicksLimit: 3
+                },
+                border: {
+                    display: false
                 }
             }
         },
@@ -55,78 +59,53 @@ function getBaseChartOptions() {
                 display: false
             },
             tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                backgroundColor: SPARK.tooltipBg,
                 titleColor: '#ffffff',
-                bodyColor: '#ffffff',
-                borderWidth: 2,
-                cornerRadius: 12,
-                displayColors: true,
-                padding: 12,
-                titleFont: { size: 14, weight: 'bold' },
-                bodyFont: { size: 13 }
+                bodyColor: 'rgba(255,255,255,0.7)',
+                borderWidth: 0,
+                cornerRadius: 4,
+                displayColors: false,
+                padding: 8,
+                titleFont: { size: 11, weight: '600' },
+                bodyFont: { size: 11 }
             }
         }
     };
 }
 
-// Create a line chart configuration
+// Single-line sparkline config
 function createLineChartConfig(options) {
     const {
         label,
-        borderColor,
-        backgroundColor,
         yMax,
         yStepSize,
         yUnit,
         tooltipTitle,
-        tooltipLabel,  // Optional: custom label for tooltip (defaults to dataset label)
-        tooltipAfterLabel,
-        thresholds = []
+        tooltipLabel,
+        decimals = 1
     } = options;
-
-    const datasets = [{
-        label: label,
-        data: [],
-        borderColor: borderColor,
-        backgroundColor: backgroundColor,
-        borderWidth: 2.5,
-        tension: 0.35,
-        fill: true,
-        pointRadius: 0,
-        pointHitRadius: 12,
-        pointBackgroundColor: borderColor,
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        borderCapStyle: 'round',
-        borderJoinStyle: 'round'
-    }];
-
-    // Add threshold lines
-    thresholds.forEach(threshold => {
-        datasets.push({
-            label: threshold.label,
-            data: [],
-            borderColor: threshold.color,
-            backgroundColor: 'transparent',
-            borderWidth: 1,
-            borderDash: threshold.dash || [5, 5],
-            pointRadius: 0,
-            fill: false
-        });
-    });
 
     const config = {
         type: 'line',
         data: {
             labels: [],
-            datasets: datasets
+            datasets: [{
+                label: label,
+                data: [],
+                borderColor: SPARK.stroke,
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                tension: 0.3,
+                fill: false,
+                pointRadius: 0,
+                pointHitRadius: 8
+            }]
         },
         options: getBaseChartOptions()
     };
 
-    // Customize Y axis
     if (yMax !== undefined) config.options.scales.y.max = yMax;
-    if (yMax === undefined && options.ySuggestedMax) config.options.scales.y.suggestedMax = options.ySuggestedMax;
+    if (options.ySuggestedMax) config.options.scales.y.suggestedMax = options.ySuggestedMax;
     if (yStepSize) config.options.scales.y.ticks.stepSize = yStepSize;
     if (yUnit) {
         config.options.scales.y.ticks.callback = function(value) {
@@ -134,34 +113,19 @@ function createLineChartConfig(options) {
         };
     }
 
-    // Customize tooltip
-    config.options.plugins.tooltip.borderColor = borderColor;
     config.options.plugins.tooltip.callbacks = {
-        title: function(context) {
-            return tooltipTitle;
-        },
+        title: function() { return tooltipTitle; },
         label: function(context) {
-            const datasetLabel = context.dataset.label || '';
+            const displayLabel = tooltipLabel || context.dataset.label || '';
             const value = context.parsed.y;
-            // Skip threshold labels
-            if (thresholds.some(t => datasetLabel.includes(t.label.split('(')[0]))) {
-                return datasetLabel;
-            }
-            const displayLabel = tooltipLabel || datasetLabel;
-            return `${displayLabel}: ${value.toFixed(options.decimals || 1)}${yUnit || ''}`;
-        },
-        afterLabel: tooltipAfterLabel ? function(context) {
-            if (thresholds.some(t => context.dataset.label.includes(t.label.split('(')[0]))) {
-                return null;
-            }
-            return tooltipAfterLabel(context.parsed.y);
-        } : undefined
+            return `${displayLabel}: ${value.toFixed(decimals)}${yUnit || ''}`;
+        }
     };
 
     return config;
 }
 
-// Create multi-line chart (for clocks, pcie, etc)
+// Multi-line sparkline config
 function createMultiLineChartConfig(options) {
     const {
         datasets,
@@ -172,31 +136,28 @@ function createMultiLineChartConfig(options) {
         decimals = 0
     } = options;
 
+    // Grayscale tones for multi-line differentiation
+    const grayTones = [SPARK.stroke, SPARK.strokeLight, SPARK.strokeDim, 'rgba(255,255,255,0.1)'];
+
     const config = {
         type: 'line',
         data: {
             labels: [],
-            datasets: datasets.map(ds => ({
+            datasets: datasets.map((ds, i) => ({
                 label: ds.label,
                 data: [],
-                borderColor: ds.color,
-                backgroundColor: ds.bgColor || `${ds.color}15`,
-                borderWidth: ds.width || 2.5,
-                tension: 0.35,
-                fill: ds.fill !== undefined ? ds.fill : false,
+                borderColor: grayTones[i % grayTones.length],
+                backgroundColor: 'transparent',
+                borderWidth: ds.width || 1.5,
+                tension: 0.3,
+                fill: false,
                 pointRadius: 0,
-                pointHitRadius: 12,
-                pointBackgroundColor: ds.color,
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                borderCapStyle: 'round',
-                borderJoinStyle: 'round'
+                pointHitRadius: 8
             }))
         },
         options: getBaseChartOptions()
     };
 
-    // Y axis customization
     if (ySuggestedMax) config.options.scales.y.suggestedMax = ySuggestedMax;
     if (yUnit) {
         config.options.scales.y.ticks.callback = function(value) {
@@ -204,27 +165,22 @@ function createMultiLineChartConfig(options) {
         };
     }
 
-    // Legend
     if (showLegend) {
         config.options.plugins.legend.display = true;
         config.options.plugins.legend.position = 'top';
         config.options.plugins.legend.align = 'end';
         config.options.plugins.legend.labels = {
-            color: 'rgba(255, 255, 255, 0.8)',
-            font: { size: 11 },
-            boxWidth: 10,
-            boxHeight: 10,
-            padding: 10,
-            usePointStyle: true
+            color: 'rgba(255, 255, 255, 0.4)',
+            font: { size: 10 },
+            boxWidth: 8,
+            boxHeight: 2,
+            padding: 8,
+            usePointStyle: false
         };
     }
 
-    // Tooltip
-    config.options.plugins.tooltip.borderColor = datasets[0].color;
     config.options.plugins.tooltip.callbacks = {
-        title: function(context) {
-            return tooltipTitle;
-        },
+        title: function() { return tooltipTitle; },
         label: function(context) {
             const label = context.dataset.label || '';
             const value = context.parsed.y;
@@ -235,106 +191,61 @@ function createMultiLineChartConfig(options) {
     return config;
 }
 
-// Chart configurations using factory functions
+// ============================================
+// Chart Configs — all grayscale sparklines
+// ============================================
+
 const chartConfigs = {
     utilization: createLineChartConfig({
-        label: 'GPU Utilization',
-        borderColor: '#4facfe',
-        backgroundColor: 'rgba(79, 172, 254, 0.15)',
+        label: 'Utilization',
         yMax: 100,
-        yStepSize: 20,
+        yStepSize: 50,
         yUnit: '%',
         tooltipTitle: 'GPU Utilization',
-        thresholds: [
-            { label: 'High Load (80%)', color: 'rgba(250, 112, 154, 0.5)', dash: [5, 5] }
-        ],
-        tooltipAfterLabel: (value) => {
-            if (value > 90) return '🔥 Very High';
-            if (value > 80) return '⚡ High';
-            if (value > 50) return '✓ Active';
-            return '💤 Low';
-        }
+        tooltipLabel: 'Util'
     }),
 
     temperature: createLineChartConfig({
-        label: 'GPU Temperature',
-        borderColor: '#f5576c',
-        backgroundColor: 'rgba(245, 87, 108, 0.15)',
+        label: 'Temperature',
         ySuggestedMax: 90,
-        yStepSize: 15,
+        yStepSize: 30,
         yUnit: '°C',
-        tooltipTitle: 'GPU Temperature',
-        thresholds: [
-            { label: 'Warning (75°C)', color: 'rgba(254, 202, 87, 0.6)', dash: [5, 5] },
-            { label: 'Danger (85°C)', color: 'rgba(250, 112, 154, 0.8)', dash: [10, 5] }
-        ],
-        tooltipAfterLabel: (value) => {
-            if (value > 85) return '🚨 DANGER';
-            if (value > 75) return '⚠️ Warning';
-            if (value > 60) return '🌡️ Normal';
-            return '❄️ Cool';
-        }
+        tooltipTitle: 'Temperature',
+        tooltipLabel: 'Temp'
     }),
 
     memory: createLineChartConfig({
-        label: 'Memory Usage',
-        borderColor: '#4facfe',
-        backgroundColor: 'rgba(79, 172, 254, 0.15)',
+        label: 'Memory',
         yMax: 100,
-        yStepSize: 20,
+        yStepSize: 50,
         yUnit: '%',
         tooltipTitle: 'VRAM Usage',
-        thresholds: [
-            { label: 'High Usage (90%)', color: 'rgba(250, 112, 154, 0.6)', dash: [5, 5] }
-        ],
-        tooltipAfterLabel: (value) => {
-            if (value > 95) return '🚨 Critical';
-            if (value > 90) return '⚠️ Very High';
-            if (value > 75) return '📊 High';
-            return '✓ Normal';
-        }
+        tooltipLabel: 'Mem'
     }),
 
     power: createLineChartConfig({
-        label: 'Power Draw',
-        borderColor: '#43e97b',
-        backgroundColor: 'rgba(67, 233, 123, 0.15)',
+        label: 'Power',
         ySuggestedMax: 200,
-        yStepSize: 50,
-        yUnit: ' W',
+        yStepSize: 100,
+        yUnit: 'W',
         tooltipTitle: 'Power Draw',
-        tooltipLabel: 'Power',  // Shortened label for tooltip
-        tooltipAfterLabel: (value) => {
-            if (value > 200) return '⚡ Maximum Performance';
-            if (value > 150) return '🔥 High Performance';
-            if (value > 100) return '💪 Active';
-            if (value > 50) return '✓ Moderate';
-            return '💤 Idle';
-        }
+        tooltipLabel: 'Power'
     }),
 
     fanSpeed: createLineChartConfig({
-        label: 'Fan Speed',
-        borderColor: '#38bdf8',
-        backgroundColor: 'rgba(56, 189, 248, 0.15)',
+        label: 'Fan',
         yMax: 100,
-        yStepSize: 20,
+        yStepSize: 50,
         yUnit: '%',
         tooltipTitle: 'Fan Speed',
-        tooltipAfterLabel: (value) => {
-            if (value > 90) return '🌪️ Maximum';
-            if (value > 70) return '💨 High';
-            if (value > 40) return '🌬️ Active';
-            if (value > 10) return '✓ Low';
-            return '⏸️ Idle';
-        }
+        tooltipLabel: 'Fan'
     }),
 
     clocks: createMultiLineChartConfig({
         datasets: [
-            { label: 'Graphics Clock', color: '#a78bfa', bgColor: 'rgba(167, 139, 250, 0.1)' },
-            { label: 'SM Clock', color: '#fb923c', bgColor: 'rgba(251, 146, 60, 0.1)' },
-            { label: 'Memory Clock', color: '#34d399', bgColor: 'rgba(52, 211, 153, 0.1)' }
+            { label: 'Graphics' },
+            { label: 'SM' },
+            { label: 'Memory' }
         ],
         yUnit: ' MHz',
         tooltipTitle: 'Clock Speeds',
@@ -343,26 +254,17 @@ const chartConfigs = {
     }),
 
     efficiency: createLineChartConfig({
-        label: 'Power Efficiency',
-        borderColor: '#fbbf24',
-        backgroundColor: 'rgba(251, 191, 36, 0.15)',
+        label: 'Efficiency',
         yUnit: ' %/W',
         tooltipTitle: 'Power Efficiency',
-        tooltipLabel: 'Efficiency',  // Shortened label for tooltip
-        decimals: 2,
-        tooltipAfterLabel: (value) => {
-            if (value > 0.8) return '⭐ Excellent';
-            if (value > 0.5) return '✓ Good';
-            if (value > 0.3) return '📊 Fair';
-            if (value > 0.1) return '⚡ Active';
-            return '💤 Idle';
-        }
+        tooltipLabel: 'Eff',
+        decimals: 2
     }),
 
     pcie: createMultiLineChartConfig({
         datasets: [
-            { label: 'RX Throughput', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', width: 3, fill: true },
-            { label: 'TX Throughput', color: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.15)', width: 3, fill: true }
+            { label: 'RX' },
+            { label: 'TX' }
         ],
         yUnit: ' KB/s',
         tooltipTitle: 'PCIe Throughput',
@@ -372,15 +274,14 @@ const chartConfigs = {
 
     appclocks: createMultiLineChartConfig({
         datasets: [
-            { label: 'Graphics Clock', color: '#4facfe', backgroundColor: 'rgba(79, 172, 254, 0.15)', width: 2, fill: true },
-            { label: 'Memory Clock', color: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)', width: 2, fill: true },
-            { label: 'SM Clock', color: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.15)', width: 2, fill: true },
-            { label: 'Video Clock', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', width: 2, fill: true }
+            { label: 'Graphics' },
+            { label: 'Memory' },
+            { label: 'SM' },
+            { label: 'Video' }
         ],
         yUnit: ' MHz',
-        tooltipTitle: 'Application Clocks',
+        tooltipTitle: 'App Clocks',
         showLegend: true,
         decimals: 0
     })
 };
-

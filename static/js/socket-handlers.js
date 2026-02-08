@@ -42,7 +42,9 @@ function handleSocketOpen() {
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
         statusEl.textContent = 'Connected';
-        statusEl.style.color = '#43e97b';
+        statusEl.style.color = 'rgba(255,255,255,0.5)';
+        const dot = document.getElementById('status-dot');
+        if (dot) dot.classList.add('connected');
     }
 }
 
@@ -52,7 +54,9 @@ function handleSocketClose() {
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
         statusEl.textContent = 'Reconnecting...';
-        statusEl.style.color = '#ffc107';
+        statusEl.style.color = '#FF6200';
+        const dot = document.getElementById('status-dot');
+        if (dot) dot.classList.remove('connected');
     }
     
     // Attempt to reconnect
@@ -63,8 +67,8 @@ function handleSocketError(error) {
     console.error('WebSocket error:', error);
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
-        statusEl.textContent = 'Connection Error';
-        statusEl.style.color = '#f5576c';
+        statusEl.textContent = 'Error';
+        statusEl.style.color = '#FF2D2D';
     }
 }
 
@@ -77,8 +81,8 @@ function attemptReconnect() {
             reconnectInterval = null;
             const statusEl = document.getElementById('connection-status');
             if (statusEl) {
-                statusEl.textContent = 'Disconnected - Tap to Reload';
-                statusEl.style.color = '#f5576c';
+                statusEl.textContent = 'Disconnected';
+                statusEl.style.color = '#FF2D2D';
                 statusEl.style.cursor = 'pointer';
                 statusEl.onclick = () => location.reload();
             }
@@ -117,10 +121,10 @@ function setupScrollDetection() {
         // Listen to window scroll (primary scroll container)
         window.addEventListener('scroll', handleScroll, { passive: true });
         
-        // Also listen to .container as fallback
-        const container = document.querySelector('.container');
-        if (container) {
-            container.addEventListener('scroll', handleScroll, { passive: true });
+        // Also listen to .main as fallback
+        const main = document.querySelector('.main');
+        if (main) {
+            main.addEventListener('scroll', handleScroll, { passive: true });
         }
     }, 500);
 }
@@ -516,43 +520,31 @@ function createClusterGPUCard(nodeName, gpuId, gpuInfo) {
     const memPercent = (memory_used / memory_total) * 100;
 
     return `
-        <div class="overview-gpu-card" data-gpu-id="${fullGpuId}" onclick="switchToView('gpu-${fullGpuId}')" style="pointer-events: auto;">
-            <div class="overview-header">
-                <div>
-                    <h2 style="font-size: 1.5rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">
-                        GPU ${gpuId}
-                    </h2>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem;">${getMetricValue(gpuInfo, 'name', 'Unknown GPU')}</p>
-                </div>
-                <div class="gpu-status-badge">
-                    <span class="status-dot"></span>
-                    <span class="status-text">ONLINE</span>
-                </div>
+        <div class="overview-gpu-card" data-gpu-id="${fullGpuId}" onclick="switchToView('gpu-${fullGpuId}')">
+            <div class="overview-gpu-name">
+                <h2>GPU ${gpuId}</h2>
+                <p>${getMetricValue(gpuInfo, 'name', 'Unknown GPU')}</p>
             </div>
-
             <div class="overview-metrics">
                 <div class="overview-metric">
                     <div class="overview-metric-value" id="overview-util-${fullGpuId}">${getMetricValue(gpuInfo, 'utilization', 0)}%</div>
-                    <div class="overview-metric-label">GPU Usage</div>
+                    <div class="overview-metric-label">UTIL</div>
                 </div>
                 <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-temp-${fullGpuId}">${getMetricValue(gpuInfo, 'temperature', 0)}°C</div>
-                    <div class="overview-metric-label">Temperature</div>
+                    <div class="overview-metric-value" id="overview-temp-${fullGpuId}">${getMetricValue(gpuInfo, 'temperature', 0)}°</div>
+                    <div class="overview-metric-label">TEMP</div>
                 </div>
                 <div class="overview-metric">
                     <div class="overview-metric-value" id="overview-mem-${fullGpuId}">${Math.round(memPercent)}%</div>
-                    <div class="overview-metric-label">Memory</div>
+                    <div class="overview-metric-label">MEM</div>
                 </div>
                 <div class="overview-metric">
                     <div class="overview-metric-value" id="overview-power-${fullGpuId}">${getMetricValue(gpuInfo, 'power_draw', 0).toFixed(0)}W</div>
-                    <div class="overview-metric-label">Power Draw</div>
+                    <div class="overview-metric-label">POWER</div>
                 </div>
             </div>
-
-            <div class="overview-chart-section">
-                <div class="overview-mini-chart">
-                    <canvas id="overview-chart-${fullGpuId}"></canvas>
-                </div>
+            <div class="overview-mini-chart">
+                <canvas id="overview-chart-${fullGpuId}"></canvas>
             </div>
         </div>
     `;

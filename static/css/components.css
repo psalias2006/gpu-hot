@@ -1,0 +1,684 @@
+/* ============================================
+   GPU Studio — Components
+   Metric cells, bullet bars, sparklines,
+   process table, system info, toast
+   ============================================ */
+
+/* ============================================
+   Overview Card (All GPUs view)
+   ============================================ */
+
+.overview-gpu-card {
+    display: grid;
+    grid-template-columns: 180px 1fr 200px;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: background 0.1s;
+    min-width: 0;
+}
+
+.overview-gpu-card:last-child {
+    border-bottom: none;
+}
+
+.overview-gpu-card:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.overview-gpu-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.overview-gpu-name h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+}
+
+.overview-gpu-name p {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.overview-metrics {
+    display: flex;
+    gap: var(--space-xl);
+    flex-wrap: nowrap;
+    min-width: 0;
+}
+
+.overview-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.overview-metric-value {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+    line-height: 1;
+}
+
+.overview-metric-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-tertiary);
+}
+
+.overview-mini-chart {
+    height: 48px;
+    max-height: 48px;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.overview-mini-chart canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 48px !important;
+    max-height: 48px !important;
+}
+
+/* ============================================
+   Detailed GPU Card — Three Tiers
+   ============================================ */
+
+.gpu-card {
+    contain: layout style;
+}
+
+/* GPU Header (detail view) */
+.gpu-detail-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xs);
+}
+
+.gpu-detail-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.gpu-detail-name {
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.gpu-detail-specs {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.spec-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+/* ---- TOP TIER: Raw metric numbers ---- */
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--space-md) var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+.metric-cell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.metric-num-row {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.metric-num {
+    font-family: var(--font-mono);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.metric-unit {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+}
+
+.metric-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+}
+
+.metric-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+/* ---- Bullet bar (horizontal progress) ---- */
+
+.bullet-bar {
+    height: 3px;
+    background: var(--bar-track);
+    border-radius: 1.5px;
+    overflow: hidden;
+    margin-top: var(--space-xs);
+}
+
+.bullet-fill {
+    height: 100%;
+    background: var(--bar-fill);
+    border-radius: 1.5px;
+    /* No transition — instant updates */
+}
+
+.bullet-fill.warning {
+    background: var(--bar-fill-warning);
+}
+
+.bullet-fill.danger {
+    background: var(--bar-fill-danger);
+}
+
+/* ---- MID TIER: Sparkline charts ---- */
+
+.sparklines-section {
+    margin-bottom: var(--space-xl);
+}
+
+.sparklines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-lg);
+}
+
+.sparkline-container {
+    position: relative;
+    height: 120px;
+    contain: layout style;
+}
+
+.sparkline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--space-sm);
+}
+
+.sparkline-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+}
+
+.sparkline-stats {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.sparkline-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+}
+
+.sparkline-stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+}
+
+.sparkline-stat-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.sparkline-canvas-wrap {
+    height: 80px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sparkline-canvas-wrap canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* ============================================
+   Process Table — Bottom Tier
+   ============================================ */
+
+.processes-section {
+    margin-top: var(--space-xl);
+}
+
+.processes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.processes-header:hover .processes-title,
+.processes-header:hover .processes-toggle {
+    color: var(--text-secondary);
+}
+
+.processes-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    transition: color 0.1s;
+}
+
+.processes-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    transition: color 0.1s;
+}
+
+.toggle-icon {
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.toggle-icon.expanded {
+    transform: rotate(180deg);
+}
+
+.processes-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.processes-content.expanded {
+    max-height: 600px;
+}
+
+.processes-inner {
+    padding: var(--space-md) 0;
+}
+
+/* Process table rows */
+.process-table-header {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.process-table-header span {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-tertiary);
+}
+
+.process-item {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.process-item:last-child {
+    border-bottom: none;
+}
+
+.process-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.process-pid {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+.process-memory {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-xl) 0;
+}
+
+.empty-state-text {
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.empty-state-subtext {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    margin-top: var(--space-xs);
+}
+
+/* ============================================
+   System Info (sidebar sparklines)
+   ============================================ */
+
+.system-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    width: 100%;
+    padding: 0 var(--space-sm);
+}
+
+.system-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    max-height: 60px;
+    overflow: hidden;
+}
+
+.system-metric-chart {
+    width: 36px !important;
+    height: 20px !important;
+    max-width: 36px;
+    max-height: 20px;
+    display: block;
+}
+
+.system-metric-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.system-metric-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+}
+
+/* ============================================
+   Star Toast — Minimal Restyle
+   ============================================ */
+
+.star-toast {
+    position: fixed;
+    right: var(--space-lg);
+    top: var(--space-lg);
+    width: 280px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: var(--space-md);
+    z-index: 1000;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.star-toast.is-hidden {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+}
+
+.star-toast-close {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.star-toast-close:hover {
+    color: var(--text-secondary);
+}
+
+.star-toast-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    padding-right: var(--space-lg);
+}
+
+.star-toast-text {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-md);
+}
+
+.star-toast-progress-wrap {
+    margin-bottom: var(--space-md);
+}
+
+.star-toast-progress-wrap.is-hidden {
+    display: none;
+}
+
+.star-toast-progress-bar {
+    height: 3px;
+    background: var(--bar-track);
+    border-radius: 1.5px;
+    overflow: hidden;
+    margin-bottom: var(--space-xs);
+}
+
+.star-toast-progress-fill {
+    height: 100%;
+    background: var(--text-tertiary);
+    border-radius: 1.5px;
+    transition: width 0.5s ease;
+}
+
+.star-toast-milestone {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.star-toast-btn {
+    width: 100%;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: var(--space-sm) var(--space-md);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    transition: background 0.1s, color 0.1s;
+}
+
+.star-toast-btn svg {
+    flex-shrink: 0;
+}
+
+.star-toast-btn:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Responsive — Components
+   ============================================ */
+
+@media (max-width: 1200px) {
+    .overview-gpu-card {
+        grid-template-columns: 140px 1fr 160px;
+    }
+
+    .sparklines-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .overview-gpu-card {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+        padding: var(--space-md) 0;
+    }
+
+    .overview-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-md);
+    }
+
+    .overview-mini-chart {
+        height: 40px;
+    }
+
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-md);
+    }
+
+    .metric-num {
+        font-size: 24px;
+    }
+
+    .sparklines-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sparkline-container {
+        height: 100px;
+    }
+
+    .sparkline-canvas-wrap {
+        height: 60px;
+    }
+
+    .sparkline-stats {
+        display: none;
+    }
+
+    .process-table-header,
+    .process-item {
+        grid-template-columns: 1fr 80px 80px;
+    }
+
+    .system-info {
+        flex-direction: row;
+        justify-content: center;
+        gap: var(--space-lg);
+    }
+
+    .system-metric {
+        width: auto;
+    }
+
+    .star-toast {
+        right: var(--space-md);
+        top: var(--space-md);
+        width: calc(100% - 2 * var(--space-md));
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .overview-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .metric-num {
+        font-size: 20px;
+    }
+
+    .gpu-detail-title {
+        font-size: 18px;
+    }
+
+    .process-table-header,
+    .process-item {
+        grid-template-columns: 1fr 80px;
+    }
+
+    .process-pid {
+        display: none;
+    }
+}
