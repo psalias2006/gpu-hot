@@ -578,6 +578,188 @@
 }
 
 /* ============================================
+   Chart Drawer — Slide-out detail panel
+   ============================================ */
+
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 520px;
+    max-width: calc(100vw - var(--sidebar-width) - var(--space-lg));
+    background: var(--bg-surface);
+    z-index: 201;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border-subtle);
+}
+
+.drawer.open {
+    transform: translateX(0);
+}
+
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-lg) var(--space-lg) var(--space-md);
+    flex-shrink: 0;
+}
+
+.drawer-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+
+.drawer-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    font-size: 18px;
+    cursor: pointer;
+    transition: color 0.1s, background 0.1s;
+}
+
+.drawer-close:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 var(--space-lg) var(--space-lg);
+    min-height: 0;
+}
+
+/* Large chart in drawer */
+.drawer-chart-wrap {
+    height: 280px;
+    position: relative;
+    margin-bottom: var(--space-lg);
+    overflow: hidden;
+}
+
+.drawer-chart-wrap canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Stats row in drawer */
+.drawer-stats {
+    display: flex;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.drawer-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.drawer-stat-value {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.drawer-stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-tertiary);
+}
+
+/* Related metrics in drawer */
+.drawer-related {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.drawer-related-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xs);
+}
+
+.drawer-related-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md) var(--space-xl);
+}
+
+.drawer-related-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.drawer-related-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.drawer-related-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-tertiary);
+}
+
+/* Make sparklines clickable */
+.sparkline-container {
+    cursor: pointer;
+}
+
+.sparkline-container:hover .sparkline-title {
+    color: var(--text-secondary);
+}
+
+/* ============================================
    Responsive — Components
    ============================================ */
 
@@ -592,6 +774,11 @@
 }
 
 @media (max-width: 768px) {
+    .drawer {
+        width: 100%;
+        max-width: 100vw;
+    }
+
     .overview-gpu-card {
         grid-template-columns: 1fr;
         gap: var(--space-md);

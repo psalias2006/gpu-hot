@@ -257,7 +257,7 @@ function createGPUCard(gpuId, gpuInfo) {
     let pcieChart = '';
     if (hasMetric(gpuInfo, 'pcie_rx_throughput') || hasMetric(gpuInfo, 'pcie_tx_throughput')) {
         pcieChart = `
-            <div class="sparkline-container">
+            <div class="sparkline-container" data-chart-type="pcie" data-gpu-id="${gpuId}">
                 <div class="sparkline-header">
                     <span class="sparkline-title">PCIe</span>
                     <div class="sparkline-stats">
@@ -278,7 +278,7 @@ function createGPUCard(gpuId, gpuInfo) {
     let appClocksChart = '';
     if (hasMetric(gpuInfo, 'clock_graphics_app') || hasMetric(gpuInfo, 'clock_memory_app')) {
         appClocksChart = `
-            <div class="sparkline-container">
+            <div class="sparkline-container" data-chart-type="appclocks" data-gpu-id="${gpuId}">
                 <div class="sparkline-header">
                     <span class="sparkline-title">App Clocks</span>
                     <div class="sparkline-stats">
@@ -366,7 +366,7 @@ function createGPUCard(gpuId, gpuInfo) {
             <!-- MID TIER: Sparklines -->
             <div class="sparklines-section">
                 <div class="sparklines-grid">
-                    <div class="sparkline-container">
+                    <div class="sparkline-container" data-chart-type="utilization" data-gpu-id="${gpuId}">
                         <div class="sparkline-header">
                             <span class="sparkline-title">Utilization</span>
                             <div class="sparkline-stats">
@@ -379,7 +379,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <div class="sparkline-canvas-wrap"><canvas id="chart-utilization-${gpuId}"></canvas></div>
                     </div>
 
-                    <div class="sparkline-container">
+                    <div class="sparkline-container" data-chart-type="temperature" data-gpu-id="${gpuId}">
                         <div class="sparkline-header">
                             <span class="sparkline-title">Temperature</span>
                             <div class="sparkline-stats">
@@ -392,7 +392,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <div class="sparkline-canvas-wrap"><canvas id="chart-temperature-${gpuId}"></canvas></div>
                     </div>
 
-                    <div class="sparkline-container">
+                    <div class="sparkline-container" data-chart-type="memory" data-gpu-id="${gpuId}">
                         <div class="sparkline-header">
                             <span class="sparkline-title">Memory</span>
                             <div class="sparkline-stats">
@@ -405,7 +405,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <div class="sparkline-canvas-wrap"><canvas id="chart-memory-${gpuId}"></canvas></div>
                     </div>
 
-                    <div class="sparkline-container">
+                    <div class="sparkline-container" data-chart-type="power" data-gpu-id="${gpuId}">
                         <div class="sparkline-header">
                             <span class="sparkline-title">Power</span>
                             <div class="sparkline-stats">
@@ -418,7 +418,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <div class="sparkline-canvas-wrap"><canvas id="chart-power-${gpuId}"></canvas></div>
                     </div>
 
-                    <div class="sparkline-container">
+                    <div class="sparkline-container" data-chart-type="fanSpeed" data-gpu-id="${gpuId}">
                         <div class="sparkline-header">
                             <span class="sparkline-title">Fan Speed</span>
                             <div class="sparkline-stats">
@@ -431,7 +431,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <div class="sparkline-canvas-wrap"><canvas id="chart-fanSpeed-${gpuId}"></canvas></div>
                     </div>
 
-                    <div class="sparkline-container">
+                    <div class="sparkline-container" data-chart-type="clocks" data-gpu-id="${gpuId}">
                         <div class="sparkline-header">
                             <span class="sparkline-title">Clocks</span>
                             <div class="sparkline-stats">
@@ -444,7 +444,7 @@ function createGPUCard(gpuId, gpuInfo) {
                         <div class="sparkline-canvas-wrap"><canvas id="chart-clocks-${gpuId}"></canvas></div>
                     </div>
 
-                    <div class="sparkline-container">
+                    <div class="sparkline-container" data-chart-type="efficiency" data-gpu-id="${gpuId}">
                         <div class="sparkline-header">
                             <span class="sparkline-title">Efficiency</span>
                             <div class="sparkline-stats">

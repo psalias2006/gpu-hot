@@ -99,6 +99,22 @@
         </main>
     </div>
 
+    <!-- Chart detail drawer -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <div class="drawer" id="chart-drawer">
+        <div class="drawer-header">
+            <span class="drawer-title" id="drawer-title">Chart</span>
+            <button class="drawer-close" id="drawer-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <div class="drawer-chart-wrap">
+                <canvas id="drawer-chart-canvas"></canvas>
+            </div>
+            <div class="drawer-stats" id="drawer-stats"></div>
+            <div class="drawer-related" id="drawer-related"></div>
+        </div>
+    </div>
+
     <!-- Star toast -->
     <div class="star-toast is-hidden" id="star-toast" role="status" aria-live="polite">
         <button class="star-toast-close" type="button" data-action="dismiss" aria-label="Close">&times;</button>
@@ -122,6 +138,7 @@
     <script src="/static/js/gpu-cards.js"></script>
     <script src="/static/js/ui.js"></script>
     <script src="/static/js/socket-handlers.js"></script>
+    <script src="/static/js/chart-drawer.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
