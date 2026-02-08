@@ -185,8 +185,12 @@ function openChartDrawer(gpuId, chartType) {
     drawerGpuId = gpuId;
     drawerChartType = chartType;
 
-    // Set title
+    // Set title and unit
     document.getElementById('drawer-title').textContent = meta.title;
+    document.getElementById('drawer-hero-unit').textContent = meta.unit;
+
+    // Set hero value
+    updateDrawerHero(gpuId, chartType);
 
     // Build the enlarged chart
     createDrawerChart(gpuId, chartType);
@@ -206,6 +210,7 @@ function openChartDrawer(gpuId, chartType) {
     drawerUpdateInterval = setInterval(() => {
         if (!drawerOpen) return;
         updateDrawerChartData(gpuId, chartType);
+        updateDrawerHero(gpuId, chartType);
         updateDrawerStats(gpuId, chartType);
         updateDrawerRelated(gpuId, chartType);
     }, 500);
@@ -255,28 +260,46 @@ function createDrawerChart(gpuId, chartType) {
     // Link data arrays
     linkDrawerData(config, gpuId, chartType, data);
 
-    // Make the drawer chart more detailed than sparkline
+    // Refined enlarged chart styling
     config.options.scales.y.display = true;
     config.options.scales.y.position = 'right';
-    config.options.scales.y.grid.color = 'rgba(255, 255, 255, 0.06)';
-    config.options.scales.y.ticks.color = 'rgba(255, 255, 255, 0.4)';
-    config.options.scales.y.ticks.font = { size: 11, family: "'SF Mono', 'Menlo', monospace" };
-    config.options.scales.y.ticks.maxTicksLimit = 6;
+    config.options.scales.y.grid.color = 'rgba(255, 255, 255, 0.04)';
+    config.options.scales.y.ticks.color = 'rgba(255, 255, 255, 0.25)';
+    config.options.scales.y.ticks.font = { size: 10, family: "'SF Mono', 'Menlo', monospace" };
+    config.options.scales.y.ticks.maxTicksLimit = 5;
+    config.options.scales.y.ticks.padding = 12;
+    config.options.scales.y.border = { display: false };
     config.options.scales.x.display = true;
     config.options.scales.x.grid = { display: false };
+    config.options.scales.x.border = { display: false };
     config.options.scales.x.ticks = {
-        color: 'rgba(255, 255, 255, 0.2)',
-        font: { size: 10 },
-        maxTicksLimit: 8,
-        maxRotation: 0
+        color: 'rgba(255, 255, 255, 0.15)',
+        font: { size: 9, family: "'SF Mono', 'Menlo', monospace" },
+        maxTicksLimit: 6,
+        maxRotation: 0,
+        padding: 8
     };
+    config.options.layout = { padding: { left: 0, right: 0, top: 8, bottom: 0 } };
 
-    // Slightly thicker line for the enlarged view
+    // Thicker line + subtle fill for the enlarged view
     config.data.datasets[0].borderWidth = 2;
+    config.data.datasets[0].borderColor = 'rgba(255, 255, 255, 0.6)';
+    config.data.datasets[0].backgroundColor = 'rgba(255, 255, 255, 0.04)';
+    config.data.datasets[0].fill = true;
 
-    // Enable tooltips
+    // Enable tooltips — refined
     config.options.plugins.tooltip.enabled = true;
+    config.options.plugins.tooltip.backgroundColor = '#222222';
+    config.options.plugins.tooltip.borderWidth = 0;
+    config.options.plugins.tooltip.padding = 10;
+    config.options.plugins.tooltip.cornerRadius = 4;
+    config.options.plugins.tooltip.titleFont = { size: 10, weight: '600' };
+    config.options.plugins.tooltip.bodyFont = { size: 12, weight: '600', family: "'SF Mono', 'Menlo', monospace" };
+    config.options.plugins.tooltip.displayColors = false;
     config.options.interaction = { intersect: false, mode: 'index' };
+
+    // Crosshair-style hover line
+    config.options.plugins.tooltip.callbacks = config.options.plugins.tooltip.callbacks || {};
 
     // Show legend for multi-line charts
     if (['clocks', 'pcie', 'appclocks'].includes(chartType)) {
@@ -284,13 +307,21 @@ function createDrawerChart(gpuId, chartType) {
         config.options.plugins.legend.position = 'top';
         config.options.plugins.legend.align = 'end';
         config.options.plugins.legend.labels = {
-            color: 'rgba(255, 255, 255, 0.5)',
-            font: { size: 11 },
-            boxWidth: 10,
+            color: 'rgba(255, 255, 255, 0.35)',
+            font: { size: 10 },
+            boxWidth: 8,
             boxHeight: 2,
-            padding: 12,
+            padding: 10,
             usePointStyle: false
         };
+        // Multi-line: different opacities, primary line gets fill
+        config.data.datasets[0].borderColor = 'rgba(255, 255, 255, 0.6)';
+        config.data.datasets[0].backgroundColor = 'rgba(255, 255, 255, 0.04)';
+        config.data.datasets[0].fill = true;
+        for (let i = 1; i < config.data.datasets.length; i++) {
+            config.data.datasets[i].borderWidth = 1.5;
+            config.data.datasets[i].fill = false;
+        }
     }
 
     drawerChart = new Chart(canvas, config);
@@ -328,7 +359,35 @@ function updateDrawerChartData(gpuId, chartType) {
 }
 
 // ============================================
-// Update stats row
+// Update hero current value
+// ============================================
+
+function updateDrawerHero(gpuId, chartType) {
+    const meta = chartMeta[chartType];
+    if (!meta) return;
+
+    const heroEl = document.getElementById('drawer-hero-value');
+    if (!heroEl) return;
+
+    // Try to get current value from chart data (cleanest — pure number)
+    const data = chartData[gpuId] && chartData[gpuId][chartType];
+    if (data) {
+        let arr = data.data;
+        if (chartType === 'clocks') arr = data.graphicsData;
+        else if (chartType === 'pcie') arr = data.dataRX;
+        else if (chartType === 'appclocks') arr = data.dataGr;
+        if (arr && arr.length > 0) {
+            const val = arr[arr.length - 1];
+            heroEl.textContent = meta.decimals > 0 ? val.toFixed(meta.decimals) : Math.round(val);
+            return;
+        }
+    }
+
+    heroEl.textContent = '--';
+}
+
+// ============================================
+// Update stats strip
 // ============================================
 
 function updateDrawerStats(gpuId, chartType) {
@@ -347,10 +406,13 @@ function updateDrawerStats(gpuId, chartType) {
         };
     });
 
-    container.innerHTML = statValues.map(s => `
+    // Skip CURRENT (shown in hero), show MIN/MAX/AVG
+    const filtered = statValues.filter(s => s.label !== 'CURRENT');
+
+    container.innerHTML = filtered.map(s => `
         <div class="drawer-stat">
-            <div class="drawer-stat-value">${s.value}</div>
             <div class="drawer-stat-label">${s.label}</div>
+            <div class="drawer-stat-value">${s.value}</div>
         </div>
     `).join('');
 }

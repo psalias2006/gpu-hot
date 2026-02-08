@@ -103,14 +103,20 @@
     <div class="drawer-overlay" id="drawer-overlay"></div>
     <div class="drawer" id="chart-drawer">
         <div class="drawer-header">
-            <span class="drawer-title" id="drawer-title">Chart</span>
+            <div class="drawer-header-left">
+                <span class="drawer-title" id="drawer-title">Chart</span>
+                <div class="drawer-hero" id="drawer-hero">
+                    <span class="drawer-hero-value" id="drawer-hero-value">--</span>
+                    <span class="drawer-hero-unit" id="drawer-hero-unit"></span>
+                </div>
+            </div>
             <button class="drawer-close" id="drawer-close" aria-label="Close">&times;</button>
         </div>
         <div class="drawer-body">
             <div class="drawer-chart-wrap">
                 <canvas id="drawer-chart-canvas"></canvas>
             </div>
-            <div class="drawer-stats" id="drawer-stats"></div>
+            <div class="drawer-stats-bar" id="drawer-stats"></div>
             <div class="drawer-related" id="drawer-related"></div>
         </div>
     </div>

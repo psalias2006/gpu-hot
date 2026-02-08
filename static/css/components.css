@@ -621,37 +621,66 @@
 .drawer-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: var(--space-lg) var(--space-lg) var(--space-md);
     flex-shrink: 0;
 }
 
+.drawer-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
 .drawer-title {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
+}
+
+.drawer-hero {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.drawer-hero-value {
+    font-family: var(--font-mono);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.drawer-hero-unit {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-tertiary);
 }
 
 .drawer-close {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: transparent;
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     color: var(--text-tertiary);
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
-    transition: color 0.1s, background 0.1s;
+    transition: color 0.1s;
+    margin-top: 2px;
 }
 
 .drawer-close:hover {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.04);
 }
 
 .drawer-body {
@@ -663,10 +692,13 @@
 
 /* Large chart in drawer */
 .drawer-chart-wrap {
-    height: 280px;
+    height: 240px;
     position: relative;
     margin-bottom: var(--space-lg);
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.015);
+    border-radius: 6px;
+    padding: var(--space-sm);
 }
 
 .drawer-chart-wrap canvas {
@@ -675,36 +707,44 @@
     height: 100% !important;
 }
 
-/* Stats row in drawer */
-.drawer-stats {
+/* Stats strip — compact horizontal bar */
+.drawer-stats-bar {
     display: flex;
-    gap: var(--space-xl);
-    margin-bottom: var(--space-xl);
-    padding-bottom: var(--space-lg);
+    gap: 0;
+    margin-bottom: var(--space-lg);
+    border-top: 1px solid var(--border-subtle);
     border-bottom: 1px solid var(--border-subtle);
 }
 
 .drawer-stat {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    padding: var(--space-sm) var(--space-md);
+    border-right: 1px solid var(--border-subtle);
 }
 
-.drawer-stat-value {
-    font-family: var(--font-mono);
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
+.drawer-stat:last-child {
+    border-right: none;
 }
 
 .drawer-stat-label {
     font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
     color: var(--text-tertiary);
+    order: -1;
+}
+
+.drawer-stat-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
 }
 
 /* Related metrics in drawer */
@@ -715,17 +755,16 @@
 }
 
 .drawer-related-title {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-tertiary);
-    margin-bottom: var(--space-xs);
 }
 
 .drawer-related-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: var(--space-md) var(--space-xl);
 }
 
@@ -737,9 +776,9 @@
 
 .drawer-related-value {
     font-family: var(--font-mono);
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
     line-height: 1;
 }
@@ -748,7 +787,7 @@
     font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
     color: var(--text-tertiary);
 }
 
