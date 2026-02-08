@@ -525,6 +525,87 @@ function createGPUCard(gpuId, gpuInfo) {
                     ${appClocksChart}
                 </div>
             </div>
+
+            <!-- System Metrics -->
+            <div class="system-sparklines-section">
+                <div class="system-sparklines-label">System</div>
+                <div class="sparklines-grid">
+                    <div class="sparkline-container" data-chart-type="systemCpu" data-gpu-id="${gpuId}">
+                        <div class="sparkline-header">
+                            <span class="sparkline-title">CPU</span>
+                            <div class="sparkline-stats">
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Cur</span><span class="sparkline-stat-value" id="stat-systemCpu-current-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Min</span><span class="sparkline-stat-value" id="stat-systemCpu-min-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Max</span><span class="sparkline-stat-value" id="stat-systemCpu-max-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Avg</span><span class="sparkline-stat-value" id="stat-systemCpu-avg-${gpuId}">0%</span></div>
+                            </div>
+                        </div>
+                        <div class="sparkline-canvas-wrap"><canvas id="chart-systemCpu-${gpuId}"></canvas></div>
+                    </div>
+
+                    <div class="sparkline-container" data-chart-type="systemMemory" data-gpu-id="${gpuId}">
+                        <div class="sparkline-header">
+                            <span class="sparkline-title">RAM</span>
+                            <div class="sparkline-stats">
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Cur</span><span class="sparkline-stat-value" id="stat-systemMemory-current-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Min</span><span class="sparkline-stat-value" id="stat-systemMemory-min-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Max</span><span class="sparkline-stat-value" id="stat-systemMemory-max-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Avg</span><span class="sparkline-stat-value" id="stat-systemMemory-avg-${gpuId}">0%</span></div>
+                            </div>
+                        </div>
+                        <div class="sparkline-canvas-wrap"><canvas id="chart-systemMemory-${gpuId}"></canvas></div>
+                        <div class="sparkline-sub" id="sys-mem-sub-${gpuId}"></div>
+                    </div>
+
+                    <div class="sparkline-container" id="sys-swap-${gpuId}" data-chart-type="systemSwap" data-gpu-id="${gpuId}" style="display:none">
+                        <div class="sparkline-header">
+                            <span class="sparkline-title">Swap</span>
+                            <div class="sparkline-stats">
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Cur</span><span class="sparkline-stat-value" id="stat-systemSwap-current-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Min</span><span class="sparkline-stat-value" id="stat-systemSwap-min-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Max</span><span class="sparkline-stat-value" id="stat-systemSwap-max-${gpuId}">0%</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Avg</span><span class="sparkline-stat-value" id="stat-systemSwap-avg-${gpuId}">0%</span></div>
+                            </div>
+                        </div>
+                        <div class="sparkline-canvas-wrap"><canvas id="chart-systemSwap-${gpuId}"></canvas></div>
+                    </div>
+
+                    <div class="sparkline-container" id="sys-net-${gpuId}" data-chart-type="systemNetIo" data-gpu-id="${gpuId}" style="display:none">
+                        <div class="sparkline-header">
+                            <span class="sparkline-title">Network</span>
+                            <div class="sparkline-stats">
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">RX</span><span class="sparkline-stat-value" id="stat-systemNetIo-rx-current-${gpuId}">0 KB/s</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">TX</span><span class="sparkline-stat-value" id="stat-systemNetIo-tx-current-${gpuId}">0 KB/s</span></div>
+                            </div>
+                        </div>
+                        <div class="sparkline-canvas-wrap"><canvas id="chart-systemNetIo-${gpuId}"></canvas></div>
+                    </div>
+
+                    <div class="sparkline-container" id="sys-disk-${gpuId}" data-chart-type="systemDiskIo" data-gpu-id="${gpuId}" style="display:none">
+                        <div class="sparkline-header">
+                            <span class="sparkline-title">Disk</span>
+                            <div class="sparkline-stats">
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Read</span><span class="sparkline-stat-value" id="stat-systemDiskIo-read-current-${gpuId}">0 KB/s</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Write</span><span class="sparkline-stat-value" id="stat-systemDiskIo-write-current-${gpuId}">0 KB/s</span></div>
+                            </div>
+                        </div>
+                        <div class="sparkline-canvas-wrap"><canvas id="chart-systemDiskIo-${gpuId}"></canvas></div>
+                    </div>
+
+                    <div class="sparkline-container" id="sys-load-${gpuId}" data-chart-type="systemLoadAvg" data-gpu-id="${gpuId}" style="display:none">
+                        <div class="sparkline-header">
+                            <span class="sparkline-title">Load Average</span>
+                            <div class="sparkline-stats">
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Cur</span><span class="sparkline-stat-value" id="stat-systemLoadAvg-current-${gpuId}">0</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Min</span><span class="sparkline-stat-value" id="stat-systemLoadAvg-min-${gpuId}">0</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Max</span><span class="sparkline-stat-value" id="stat-systemLoadAvg-max-${gpuId}">0</span></div>
+                                <div class="sparkline-stat"><span class="sparkline-stat-label">Avg</span><span class="sparkline-stat-value" id="stat-systemLoadAvg-avg-${gpuId}">0</span></div>
+                            </div>
+                        </div>
+                        <div class="sparkline-canvas-wrap"><canvas id="chart-systemLoadAvg-${gpuId}"></canvas></div>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 }

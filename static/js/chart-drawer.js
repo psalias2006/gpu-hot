@@ -171,6 +171,118 @@ const chartMeta = {
         decimals: 0,
         related: () => [],
         context: () => []
+    },
+
+    // ============================================
+    // System chart metadata
+    // ============================================
+
+    systemCpu: {
+        title: 'CPU Usage',
+        unit: '%',
+        decimals: 1,
+        related: (id) => [
+            { key: 'stat-systemCpu-current-', label: 'CURRENT', id },
+            { key: 'stat-systemCpu-min-', label: 'MINIMUM', id },
+            { key: 'stat-systemCpu-max-', label: 'MAXIMUM', id },
+            { key: 'stat-systemCpu-avg-', label: 'AVERAGE', id },
+        ],
+        context: (gpuId) => {
+            const memEl = document.getElementById(`stat-systemMemory-current-${gpuId}`);
+            const swapEl = document.getElementById(`stat-systemSwap-current-${gpuId}`);
+            const loadEl = document.getElementById(`stat-systemLoadAvg-current-${gpuId}`);
+            return [
+                { label: 'RAM', value: memEl ? memEl.textContent : 'N/A' },
+                { label: 'SWAP', value: swapEl ? swapEl.textContent : 'N/A' },
+                { label: 'LOAD 1M', value: loadEl ? loadEl.textContent : 'N/A' },
+            ];
+        }
+    },
+    systemMemory: {
+        title: 'RAM Usage',
+        unit: '%',
+        decimals: 1,
+        related: (id) => [
+            { key: 'stat-systemMemory-current-', label: 'CURRENT', id },
+            { key: 'stat-systemMemory-min-', label: 'MINIMUM', id },
+            { key: 'stat-systemMemory-max-', label: 'MAXIMUM', id },
+            { key: 'stat-systemMemory-avg-', label: 'AVERAGE', id },
+        ],
+        context: (gpuId) => {
+            const sub = document.getElementById(`sys-mem-sub-${gpuId}`);
+            const cpuEl = document.getElementById(`stat-systemCpu-current-${gpuId}`);
+            const swapEl = document.getElementById(`stat-systemSwap-current-${gpuId}`);
+            return [
+                { label: 'USED / TOTAL', value: sub ? sub.textContent : 'N/A' },
+                { label: 'CPU', value: cpuEl ? cpuEl.textContent : 'N/A' },
+                { label: 'SWAP', value: swapEl ? swapEl.textContent : 'N/A' },
+            ];
+        }
+    },
+    systemSwap: {
+        title: 'Swap Usage',
+        unit: '%',
+        decimals: 1,
+        related: (id) => [
+            { key: 'stat-systemSwap-current-', label: 'CURRENT', id },
+            { key: 'stat-systemSwap-min-', label: 'MINIMUM', id },
+            { key: 'stat-systemSwap-max-', label: 'MAXIMUM', id },
+            { key: 'stat-systemSwap-avg-', label: 'AVERAGE', id },
+        ],
+        context: (gpuId) => {
+            const memEl = document.getElementById(`stat-systemMemory-current-${gpuId}`);
+            return [
+                { label: 'RAM', value: memEl ? memEl.textContent : 'N/A' },
+            ];
+        }
+    },
+    systemNetIo: {
+        title: 'Network I/O',
+        unit: ' KB/s',
+        decimals: 1,
+        multiLine: true,
+        related: () => [],
+        context: (gpuId) => {
+            const rxEl = document.getElementById(`stat-systemNetIo-rx-current-${gpuId}`);
+            const txEl = document.getElementById(`stat-systemNetIo-tx-current-${gpuId}`);
+            return [
+                { label: 'RX', value: rxEl ? rxEl.textContent : 'N/A' },
+                { label: 'TX', value: txEl ? txEl.textContent : 'N/A' },
+            ];
+        }
+    },
+    systemDiskIo: {
+        title: 'Disk I/O',
+        unit: ' KB/s',
+        decimals: 1,
+        multiLine: true,
+        related: () => [],
+        context: (gpuId) => {
+            const readEl = document.getElementById(`stat-systemDiskIo-read-current-${gpuId}`);
+            const writeEl = document.getElementById(`stat-systemDiskIo-write-current-${gpuId}`);
+            return [
+                { label: 'READ', value: readEl ? readEl.textContent : 'N/A' },
+                { label: 'WRITE', value: writeEl ? writeEl.textContent : 'N/A' },
+            ];
+        }
+    },
+    systemLoadAvg: {
+        title: 'Load Average',
+        unit: '',
+        decimals: 2,
+        multiLine: true,
+        related: (id) => [
+            { key: 'stat-systemLoadAvg-current-', label: 'CURRENT', id },
+            { key: 'stat-systemLoadAvg-min-', label: 'MINIMUM', id },
+            { key: 'stat-systemLoadAvg-max-', label: 'MAXIMUM', id },
+            { key: 'stat-systemLoadAvg-avg-', label: 'AVERAGE', id },
+        ],
+        context: (gpuId) => {
+            const cpuEl = document.getElementById(`stat-systemCpu-current-${gpuId}`);
+            return [
+                { label: 'CPU', value: cpuEl ? cpuEl.textContent : 'N/A' },
+            ];
+        }
     }
 };
 
@@ -251,7 +363,7 @@ function createDrawerChart(gpuId, chartType) {
         drawerChart = null;
     }
 
-    const data = chartData[gpuId][chartType];
+    const data = chartData[gpuId] && chartData[gpuId][chartType];
     if (!data) return;
 
     // Deep clone the config for this chart type
@@ -301,8 +413,12 @@ function createDrawerChart(gpuId, chartType) {
     // Crosshair-style hover line
     config.options.plugins.tooltip.callbacks = config.options.plugins.tooltip.callbacks || {};
 
+    // Determine if multi-line chart
+    const meta = chartMeta[chartType];
+    const isMultiLine = ['clocks', 'pcie', 'appclocks'].includes(chartType) || (meta && meta.multiLine);
+
     // Show legend for multi-line charts
-    if (['clocks', 'pcie', 'appclocks'].includes(chartType)) {
+    if (isMultiLine) {
         config.options.plugins.legend.display = true;
         config.options.plugins.legend.position = 'top';
         config.options.plugins.legend.align = 'end';
@@ -327,7 +443,7 @@ function createDrawerChart(gpuId, chartType) {
     drawerChart = new Chart(canvas, config);
 }
 
-// Link data arrays from chartData to the drawer config
+// Link data arrays from chartData/systemData to the drawer config
 function linkDrawerData(config, gpuId, chartType, data) {
     config.data.labels = data.labels;
 
@@ -343,6 +459,16 @@ function linkDrawerData(config, gpuId, chartType, data) {
         if (config.data.datasets[1]) config.data.datasets[1].data = data.dataMem;
         if (config.data.datasets[2]) config.data.datasets[2].data = data.dataSM;
         if (config.data.datasets[3]) config.data.datasets[3].data = data.dataVideo;
+    } else if (chartType === 'systemNetIo') {
+        config.data.datasets[0].data = data.dataRX;
+        if (config.data.datasets[1]) config.data.datasets[1].data = data.dataTX;
+    } else if (chartType === 'systemDiskIo') {
+        config.data.datasets[0].data = data.dataRead;
+        if (config.data.datasets[1]) config.data.datasets[1].data = data.dataWrite;
+    } else if (chartType === 'systemLoadAvg') {
+        config.data.datasets[0].data = data.data1m;
+        if (config.data.datasets[1]) config.data.datasets[1].data = data.data5m;
+        if (config.data.datasets[2]) config.data.datasets[2].data = data.data15m;
     } else {
         config.data.datasets[0].data = data.data;
     }
@@ -369,13 +495,15 @@ function updateDrawerHero(gpuId, chartType) {
     const heroEl = document.getElementById('drawer-hero-value');
     if (!heroEl) return;
 
-    // Try to get current value from chart data (cleanest — pure number)
     const data = chartData[gpuId] && chartData[gpuId][chartType];
     if (data) {
         let arr = data.data;
         if (chartType === 'clocks') arr = data.graphicsData;
         else if (chartType === 'pcie') arr = data.dataRX;
         else if (chartType === 'appclocks') arr = data.dataGr;
+        else if (chartType === 'systemNetIo') arr = data.dataRX;
+        else if (chartType === 'systemDiskIo') arr = data.dataRead;
+        else if (chartType === 'systemLoadAvg') arr = data.data1m;
         if (arr && arr.length > 0) {
             const val = arr[arr.length - 1];
             heroEl.textContent = meta.decimals > 0 ? val.toFixed(meta.decimals) : Math.round(val);

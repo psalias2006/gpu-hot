@@ -469,6 +469,33 @@
 }
 
 /* ============================================
+   System Sparklines Section (GPU detail page)
+   ============================================ */
+
+.system-sparklines-section {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.system-sparklines-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-lg);
+}
+
+.sparkline-sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    padding-left: var(--space-sm);
+}
+
+/* ============================================
    Star Toast — Minimal Restyle
    ============================================ */
 

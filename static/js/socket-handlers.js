@@ -179,6 +179,10 @@ function handleSocketMessage(event) {
                 });
             }
             updateAllChartDataOnly(gpuId, gpuInfo);
+            // Also update system chart data during scroll
+            if (data.system) {
+                updateGPUSystemCharts(gpuId, data.system, '_local', false);
+            }
         });
         return; // Exit early - zero DOM work during scroll = smooth 60 FPS
     }
@@ -207,6 +211,8 @@ function handleSocketMessage(event) {
         // Queue this GPU's update instead of executing immediately
         pendingUpdates.set(gpuId, {
             gpuInfo,
+            systemInfo: data.system,
+            sourceKey: '_local',
             shouldUpdateDOM,
             now
         });
@@ -259,7 +265,7 @@ function processBatchedUpdates() {
             lastDOMUpdate.system = update.now;
         } else {
             // GPU updates
-            const { gpuInfo, shouldUpdateDOM, now } = update;
+            const { gpuInfo, systemInfo, sourceKey, shouldUpdateDOM, now } = update;
             
             // Update overview card (always for charts, conditionally for text)
             updateOverviewCard(gpuId, gpuInfo, shouldUpdateDOM);
@@ -272,6 +278,11 @@ function processBatchedUpdates() {
             const isDetailTabVisible = currentTab === `gpu-${gpuId}`;
             if (isDetailTabVisible || !registeredGPUs.has(gpuId)) {
                 ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM && isDetailTabVisible);
+            }
+            
+            // Update per-GPU system charts
+            if (systemInfo) {
+                updateGPUSystemCharts(gpuId, systemInfo, sourceKey || '_local', shouldUpdateDOM && isDetailTabVisible);
             }
         }
     });
@@ -412,6 +423,10 @@ function handleClusterData(data) {
                         });
                     }
                     updateAllChartDataOnly(fullGpuId, gpuInfo);
+                    // Also update system chart data during scroll (per-node)
+                    if (nodeData.system) {
+                        updateGPUSystemCharts(fullGpuId, nodeData.system, nodeName, false);
+                    }
                 });
             }
         });
@@ -457,6 +472,8 @@ function handleClusterData(data) {
                 const shouldUpdateDOM = !lastDOMUpdate[fullGpuId] || (now - lastDOMUpdate[fullGpuId]) >= DOM_UPDATE_INTERVAL;
                 pendingUpdates.set(fullGpuId, {
                     gpuInfo,
+                    systemInfo: nodeData.system || {},
+                    sourceKey: nodeName,
                     shouldUpdateDOM,
                     now,
                     nodeName

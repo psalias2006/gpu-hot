@@ -283,5 +283,71 @@ const chartConfigs = {
         tooltipTitle: 'App Clocks',
         showLegend: true,
         decimals: 0
+    }),
+
+    // ============================================
+    // System Charts
+    // ============================================
+
+    systemCpu: createLineChartConfig({
+        label: 'CPU',
+        yMax: 100,
+        yStepSize: 50,
+        yUnit: '%',
+        tooltipTitle: 'CPU Usage',
+        tooltipLabel: 'CPU'
+    }),
+
+    systemMemory: createLineChartConfig({
+        label: 'RAM',
+        yMax: 100,
+        yStepSize: 50,
+        yUnit: '%',
+        tooltipTitle: 'RAM Usage',
+        tooltipLabel: 'RAM'
+    }),
+
+    systemSwap: createLineChartConfig({
+        label: 'Swap',
+        yMax: 100,
+        yStepSize: 50,
+        yUnit: '%',
+        tooltipTitle: 'Swap Usage',
+        tooltipLabel: 'Swap'
+    }),
+
+    systemNetIo: createMultiLineChartConfig({
+        datasets: [
+            { label: 'RX' },
+            { label: 'TX' }
+        ],
+        yUnit: ' KB/s',
+        tooltipTitle: 'Network I/O',
+        showLegend: true,
+        decimals: 1
+    }),
+
+    systemDiskIo: createMultiLineChartConfig({
+        datasets: [
+            { label: 'Read' },
+            { label: 'Write' }
+        ],
+        yUnit: ' KB/s',
+        tooltipTitle: 'Disk I/O',
+        showLegend: true,
+        decimals: 1
+    }),
+
+    systemLoadAvg: createMultiLineChartConfig({
+        datasets: [
+            { label: '1m' },
+            { label: '5m' },
+            { label: '15m' }
+        ],
+        yUnit: '',
+        tooltipTitle: 'Load Average',
+        showLegend: true,
+        ySuggestedMax: 4,
+        decimals: 2
     })
 };
