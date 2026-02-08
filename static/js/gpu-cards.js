@@ -243,6 +243,64 @@ function createGPUCard(gpuId, gpuInfo) {
             </div>`;
     }
 
+    if (hasMetric(gpuInfo, 'clock_video')) {
+        extraMetrics += `
+            <div class="metric-cell">
+                <div class="metric-num-row">
+                    <span class="metric-num" id="clock-video-${gpuId}">${gpuInfo.clock_video}</span>
+                    <span class="metric-unit">MHz</span>
+                </div>
+                <span class="metric-label">VIDEO CLOCK</span>
+            </div>`;
+    }
+
+    if (hasMetric(gpuInfo, 'pcie_gen_max')) {
+        extraMetrics += `
+            <div class="metric-cell">
+                <div class="metric-num-row">
+                    <span class="metric-num" id="pcie-max-${gpuId}">Gen ${gpuInfo.pcie_gen_max}</span>
+                </div>
+                <span class="metric-label">MAX PCIE</span>
+                <span class="metric-sub" id="pcie-max-width-${gpuId}">x${gpuInfo.pcie_width_max || '?'} Max</span>
+            </div>`;
+    }
+
+    if (hasMetric(gpuInfo, 'bar1_memory_used')) {
+        extraMetrics += `
+            <div class="metric-cell">
+                <div class="metric-num-row">
+                    <span class="metric-num" id="bar1-mem-${gpuId}">${formatMemory(gpuInfo.bar1_memory_used)}</span>
+                    <span class="metric-unit">${formatMemoryUnit(gpuInfo.bar1_memory_used)}</span>
+                </div>
+                <span class="metric-label">BAR1 MEMORY</span>
+                <span class="metric-sub" id="bar1-mem-total-${gpuId}">of ${formatMemory(gpuInfo.bar1_memory_total || 0)}${formatMemoryUnit(gpuInfo.bar1_memory_total || 0)}</span>
+            </div>`;
+    }
+
+    if (hasMetric(gpuInfo, 'brand') || hasMetric(gpuInfo, 'architecture')) {
+        extraMetrics += `
+            <div class="metric-cell">
+                <div class="metric-num-row">
+                    <span class="metric-num" id="brand-${gpuId}" style="font-size:16px;">${gpuInfo.brand || 'N/A'}</span>
+                </div>
+                <span class="metric-label">BRAND / ARCH</span>
+                <span class="metric-sub" id="arch-${gpuId}">${gpuInfo.architecture || 'Unknown'}</span>
+            </div>`;
+    }
+
+    if (hasMetric(gpuInfo, 'graphics_processes_count')) {
+        const computeProcs = getMetricValue(gpuInfo, 'compute_processes_count', 0);
+        const graphicsProcs = getMetricValue(gpuInfo, 'graphics_processes_count', 0);
+        extraMetrics += `
+            <div class="metric-cell">
+                <div class="metric-num-row">
+                    <span class="metric-num" id="proc-counts-${gpuId}" style="font-size:16px;">C:${computeProcs} G:${graphicsProcs}</span>
+                </div>
+                <span class="metric-label">PROC COUNTS</span>
+                <span class="metric-sub">Compute / Graphics</span>
+            </div>`;
+    }
+
     const throttle_reasons = getMetricValue(gpuInfo, 'throttle_reasons', 'None');
     const isThrottling = throttle_reasons && throttle_reasons !== 'None' && throttle_reasons !== 'N/A';
     extraMetrics += `
@@ -578,6 +636,37 @@ function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
         if (hasMetric(gpuInfo, 'energy_consumption_wh')) {
             const energyEl = document.getElementById(`energy-${gpuId}`);
             if (energyEl) energyEl.textContent = formatEnergy(gpuInfo.energy_consumption_wh);
+        }
+
+        // Video clock
+        const clockVideoEl = document.getElementById(`clock-video-${gpuId}`);
+        if (clockVideoEl) clockVideoEl.textContent = `${getMetricValue(gpuInfo, 'clock_video', 0)}`;
+
+        // Max PCIe
+        const pcieMaxEl = document.getElementById(`pcie-max-${gpuId}`);
+        if (pcieMaxEl) pcieMaxEl.textContent = `Gen ${getMetricValue(gpuInfo, 'pcie_gen_max', 'N/A')}`;
+
+        // BAR1 memory
+        const bar1MemEl = document.getElementById(`bar1-mem-${gpuId}`);
+        if (bar1MemEl) bar1MemEl.textContent = formatMemory(getMetricValue(gpuInfo, 'bar1_memory_used', 0));
+        const bar1TotalEl = document.getElementById(`bar1-mem-total-${gpuId}`);
+        if (bar1TotalEl) {
+            const bar1Total = getMetricValue(gpuInfo, 'bar1_memory_total', 0);
+            bar1TotalEl.textContent = `of ${formatMemory(bar1Total)}${formatMemoryUnit(bar1Total)}`;
+        }
+
+        // Brand / Architecture
+        const brandEl = document.getElementById(`brand-${gpuId}`);
+        if (brandEl) brandEl.textContent = `${getMetricValue(gpuInfo, 'brand', 'N/A')}`;
+        const archEl = document.getElementById(`arch-${gpuId}`);
+        if (archEl) archEl.textContent = `${getMetricValue(gpuInfo, 'architecture', 'Unknown')}`;
+
+        // Process counts
+        const procCountsEl = document.getElementById(`proc-counts-${gpuId}`);
+        if (procCountsEl) {
+            const computeProcs = getMetricValue(gpuInfo, 'compute_processes_count', 0);
+            const graphicsProcs = getMetricValue(gpuInfo, 'graphics_processes_count', 0);
+            procCountsEl.textContent = `C:${computeProcs} G:${graphicsProcs}`;
         }
     }
 
