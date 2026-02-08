@@ -142,12 +142,14 @@
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: var(--space-md) var(--space-xl);
     margin-bottom: var(--space-xl);
+    align-items: stretch;
 }
 
 .metric-cell {
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
+    min-height: 0;
 }
 
 .metric-num-row {
@@ -194,7 +196,7 @@
     background: var(--bar-track);
     border-radius: 1.5px;
     overflow: hidden;
-    margin-top: var(--space-xs);
+    margin-top: auto;
 }
 
 .bullet-fill {
