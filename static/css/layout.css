@@ -6,7 +6,8 @@
 /* Studio shell — sidebar + main */
 .studio {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 /* ============================================
@@ -146,10 +147,12 @@
 
 .main {
     flex: 1;
+    min-height: 0;
     margin-left: var(--sidebar-width);
     padding: var(--space-xl) var(--space-xl) var(--space-2xl);
     max-width: 1600px;
     overflow-y: auto;
+    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
 }
