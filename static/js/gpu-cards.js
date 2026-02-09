@@ -220,7 +220,7 @@ function createGPUCard(gpuId, gpuInfo) {
             <div class="metric-cell">
                 <div class="metric-num-row">
                     <span class="metric-num" id="mem-free-${gpuId}">${formatMemory(gpuInfo.memory_free)}</span>
-                    <span class="metric-unit">${formatMemoryUnit(gpuInfo.memory_free)}</span>
+                    <span class="metric-unit" id="mem-free-unit-${gpuId}">${formatMemoryUnit(gpuInfo.memory_free)}</span>
                 </div>
                 <span class="metric-label">FREE MEMORY</span>
                 <span class="metric-sub">Available VRAM</span>
@@ -275,7 +275,7 @@ function createGPUCard(gpuId, gpuInfo) {
             <div class="metric-cell">
                 <div class="metric-num-row">
                     <span class="metric-num" id="bar1-mem-${gpuId}">${formatMemory(gpuInfo.bar1_memory_used)}</span>
-                    <span class="metric-unit">${formatMemoryUnit(gpuInfo.bar1_memory_used)}</span>
+                    <span class="metric-unit" id="bar1-mem-unit-${gpuId}">${formatMemoryUnit(gpuInfo.bar1_memory_used)}</span>
                 </div>
                 <span class="metric-label">BAR1 MEMORY</span>
                 <span class="metric-sub" id="bar1-mem-total-${gpuId}">of ${formatMemory(gpuInfo.bar1_memory_total || 0)}${formatMemoryUnit(gpuInfo.bar1_memory_total || 0)}</span>
@@ -398,7 +398,7 @@ function createGPUCard(gpuId, gpuInfo) {
                 <div class="metric-cell">
                     <div class="metric-num-row">
                         <span class="metric-num" id="mem-${gpuId}">${formatMemory(memory_used)}</span>
-                        <span class="metric-unit">${formatMemoryUnit(memory_used)}</span>
+                        <span class="metric-unit" id="mem-unit-${gpuId}">${formatMemoryUnit(memory_used)}</span>
                     </div>
                     <span class="metric-label">MEMORY USAGE</span>
                     <span class="metric-sub" id="mem-total-${gpuId}">of ${formatMemory(memory_total)}${formatMemoryUnit(memory_total)}</span>
@@ -635,6 +635,8 @@ function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
         if (utilEl) utilEl.textContent = `${utilization}`;
         if (tempEl) tempEl.textContent = `${temperature}`;
         if (memEl) memEl.textContent = formatMemory(memory_used);
+        const memUnitEl = document.getElementById(`mem-unit-${gpuId}`);
+        if (memUnitEl) memUnitEl.textContent = formatMemoryUnit(memory_used);
         if (powerEl) powerEl.textContent = `${power_draw.toFixed(0)}`;
         if (fanEl) fanEl.textContent = `Fan ${fan_speed}%`;
         if (fanValEl) fanValEl.textContent = `${fan_speed}`;
@@ -708,7 +710,12 @@ function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
             const tempMem = getMetricValue(gpuInfo, 'temperature_memory', null);
             tempMemEl.textContent = tempMem !== null ? `${tempMem}` : 'N/A';
         }
-        if (memFreeEl) memFreeEl.textContent = formatMemory(getMetricValue(gpuInfo, 'memory_free', 0));
+        if (memFreeEl) {
+            const memFreeVal = getMetricValue(gpuInfo, 'memory_free', 0);
+            memFreeEl.textContent = formatMemory(memFreeVal);
+            const memFreeUnitEl = document.getElementById(`mem-free-unit-${gpuId}`);
+            if (memFreeUnitEl) memFreeUnitEl.textContent = formatMemoryUnit(memFreeVal);
+        }
         if (decoderEl) {
             const ds = getMetricValue(gpuInfo, 'decoder_sessions', null);
             decoderEl.textContent = ds !== null ? `${ds}` : 'N/A';
@@ -737,7 +744,12 @@ function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
 
         // BAR1 memory
         const bar1MemEl = document.getElementById(`bar1-mem-${gpuId}`);
-        if (bar1MemEl) bar1MemEl.textContent = formatMemory(getMetricValue(gpuInfo, 'bar1_memory_used', 0));
+        if (bar1MemEl) {
+            const bar1MemVal = getMetricValue(gpuInfo, 'bar1_memory_used', 0);
+            bar1MemEl.textContent = formatMemory(bar1MemVal);
+            const bar1MemUnitEl = document.getElementById(`bar1-mem-unit-${gpuId}`);
+            if (bar1MemUnitEl) bar1MemUnitEl.textContent = formatMemoryUnit(bar1MemVal);
+        }
         const bar1TotalEl = document.getElementById(`bar1-mem-total-${gpuId}`);
         if (bar1TotalEl) {
             const bar1Total = getMetricValue(gpuInfo, 'bar1_memory_total', 0);
