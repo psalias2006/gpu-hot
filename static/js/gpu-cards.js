@@ -42,6 +42,9 @@ function bulletClass(value, warnThreshold, dangerThreshold) {
     return '';
 }
 
+// Track enhanced overview mode
+let isEnhancedOverview = false;
+
 // ============================================
 // Overview Card (All GPUs view) — flat row
 // ============================================
@@ -84,6 +87,12 @@ function createOverviewCard(gpuId, gpuInfo) {
 
 // Update overview card
 function updateOverviewCard(gpuId, gpuInfo, shouldUpdateDOM = true) {
+    // Delegate to enhanced updater if enhanced overview is active
+    if (isEnhancedOverview) {
+        updateEnhancedOverviewCard(gpuId, gpuInfo, shouldUpdateDOM);
+        return;
+    }
+
     const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
     const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
     const memPercent = (memory_used / memory_total) * 100;
@@ -102,6 +111,217 @@ function updateOverviewCard(gpuId, gpuInfo, shouldUpdateDOM = true) {
 
     // Always update chart data
     updateChart(gpuId, 'utilization', Number(getMetricValue(gpuInfo, 'utilization', 0)));
+
+    if (charts[gpuId] && charts[gpuId].overviewMini) {
+        charts[gpuId].overviewMini.update('none');
+    }
+}
+
+// ============================================
+// Single GPU Overview — Enhanced Dashboard
+// ============================================
+
+function createEnhancedOverviewCard(gpuId, gpuInfo) {
+    isEnhancedOverview = true;
+
+    const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
+    const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
+    const power_draw = getMetricValue(gpuInfo, 'power_draw', 0);
+    const power_limit = getMetricValue(gpuInfo, 'power_limit', 1);
+    const memPercent = (memory_used / memory_total) * 100;
+    const powerPercent = (power_draw / power_limit) * 100;
+    const utilization = getMetricValue(gpuInfo, 'utilization', 0);
+    const fan_speed = getMetricValue(gpuInfo, 'fan_speed', 0);
+    const temperature = getMetricValue(gpuInfo, 'temperature', 0);
+
+    // Build secondary info items
+    let secondaryItems = '';
+
+    if (hasMetric(gpuInfo, 'clock_graphics')) {
+        secondaryItems += `
+            <div class="sgo-info-item">
+                <span class="sgo-info-value" id="sgo-clock-gr-${gpuId}">${gpuInfo.clock_graphics} MHz</span>
+                <span class="sgo-info-label">GFX CLOCK</span>
+            </div>`;
+    }
+    if (hasMetric(gpuInfo, 'clock_memory')) {
+        secondaryItems += `
+            <div class="sgo-info-item">
+                <span class="sgo-info-value" id="sgo-clock-mem-${gpuId}">${gpuInfo.clock_memory} MHz</span>
+                <span class="sgo-info-label">MEM CLOCK</span>
+            </div>`;
+    }
+    if (hasMetric(gpuInfo, 'performance_state')) {
+        secondaryItems += `
+            <div class="sgo-info-item">
+                <span class="sgo-info-value" id="sgo-pstate-${gpuId}">${gpuInfo.performance_state}</span>
+                <span class="sgo-info-label">P-STATE</span>
+            </div>`;
+    }
+    if (hasMetric(gpuInfo, 'memory_utilization')) {
+        secondaryItems += `
+            <div class="sgo-info-item">
+                <span class="sgo-info-value" id="sgo-mem-util-${gpuId}">${gpuInfo.memory_utilization}%</span>
+                <span class="sgo-info-label">MEM CTRL</span>
+            </div>`;
+    }
+    if (hasMetric(gpuInfo, 'pcie_gen')) {
+        secondaryItems += `
+            <div class="sgo-info-item">
+                <span class="sgo-info-value" id="sgo-pcie-${gpuId}">Gen${gpuInfo.pcie_gen} x${gpuInfo.pcie_width || '?'}</span>
+                <span class="sgo-info-label">PCIE</span>
+            </div>`;
+    }
+    if (hasMetric(gpuInfo, 'energy_consumption_wh')) {
+        secondaryItems += `
+            <div class="sgo-info-item">
+                <span class="sgo-info-value" id="sgo-energy-${gpuId}">${formatEnergy(gpuInfo.energy_consumption_wh)}</span>
+                <span class="sgo-info-label">ENERGY</span>
+            </div>`;
+    }
+
+    return `
+        <div class="single-gpu-overview" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')">
+            <div class="sgo-header">
+                <div class="gpu-detail-header">
+                    <span class="gpu-detail-title">GPU ${gpuId}</span>
+                    <span class="gpu-detail-name">${gpuInfo.name || 'Unknown'}</span>
+                </div>
+                <div class="gpu-detail-specs">
+                    <span class="spec-tag" id="sgo-fan-badge-${gpuId}">Fan ${fan_speed}%</span>
+                    <span class="spec-tag" id="sgo-pstate-badge-${gpuId}">${gpuInfo.performance_state || ''}</span>
+                    <span class="spec-tag">${gpuInfo.driver_version || ''}</span>
+                    ${hasMetric(gpuInfo, 'architecture') ? `<span class="spec-tag">${gpuInfo.architecture}</span>` : ''}
+                    <span class="spec-tag">${gpuInfo._fallback_mode ? 'smi' : 'NVML'}</span>
+                </div>
+            </div>
+
+            <div class="sgo-metrics-row">
+                <div class="metrics-grid sgo-metrics-grid">
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num" id="sgo-util-${gpuId}">${utilization}</span>
+                            <span class="metric-unit">%</span>
+                        </div>
+                        <span class="metric-label">UTILIZATION</span>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(utilization, 80, 95)}" id="sgo-util-bar-${gpuId}" style="width:${utilization}%"></div></div>
+                    </div>
+
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num" id="sgo-temp-${gpuId}">${temperature}</span>
+                            <span class="metric-unit">°C</span>
+                        </div>
+                        <span class="metric-label">TEMPERATURE</span>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(temperature, 75, 85)}" id="sgo-temp-bar-${gpuId}" style="width:${Math.min(temperature / 100 * 100, 100)}%"></div></div>
+                    </div>
+
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num" id="sgo-mem-${gpuId}">${formatMemory(memory_used)}</span>
+                            <span class="metric-unit" id="sgo-mem-unit-${gpuId}">${formatMemoryUnit(memory_used)}</span>
+                        </div>
+                        <span class="metric-label">VRAM</span>
+                        <span class="metric-sub" id="sgo-mem-total-${gpuId}">of ${formatMemory(memory_total)}${formatMemoryUnit(memory_total)}</span>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(memPercent, 85, 95)}" id="sgo-mem-bar-${gpuId}" style="width:${memPercent}%"></div></div>
+                    </div>
+
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num" id="sgo-power-${gpuId}">${power_draw.toFixed(0)}</span>
+                            <span class="metric-unit">W</span>
+                        </div>
+                        <span class="metric-label">POWER</span>
+                        <span class="metric-sub" id="sgo-power-limit-${gpuId}">of ${power_limit.toFixed(0)}W</span>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(powerPercent, 80, 95)}" id="sgo-power-bar-${gpuId}" style="width:${powerPercent}%"></div></div>
+                    </div>
+
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num" id="sgo-fan-${gpuId}">${fan_speed}</span>
+                            <span class="metric-unit">%</span>
+                        </div>
+                        <span class="metric-label">FAN</span>
+                        <div class="bullet-bar"><div class="bullet-fill" id="sgo-fan-bar-${gpuId}" style="width:${fan_speed}%"></div></div>
+                    </div>
+                </div>
+
+                <div class="sgo-mini-chart">
+                    <canvas id="overview-chart-${gpuId}"></canvas>
+                </div>
+            </div>
+
+            ${secondaryItems ? `<div class="sgo-info-strip">${secondaryItems}</div>` : ''}
+        </div>
+    `;
+}
+
+// Update enhanced overview card
+function updateEnhancedOverviewCard(gpuId, gpuInfo, shouldUpdateDOM = true) {
+    const utilization = getMetricValue(gpuInfo, 'utilization', 0);
+    const temperature = getMetricValue(gpuInfo, 'temperature', 0);
+    const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
+    const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
+    const power_draw = getMetricValue(gpuInfo, 'power_draw', 0);
+    const power_limit = getMetricValue(gpuInfo, 'power_limit', 1);
+    const fan_speed = getMetricValue(gpuInfo, 'fan_speed', 0);
+    const memPercent = (memory_used / memory_total) * 100;
+    const powerPercent = (power_draw / power_limit) * 100;
+
+    if (shouldUpdateDOM) {
+        // Hero metrics
+        const utilEl = document.getElementById(`sgo-util-${gpuId}`);
+        const tempEl = document.getElementById(`sgo-temp-${gpuId}`);
+        const memEl = document.getElementById(`sgo-mem-${gpuId}`);
+        const powerEl = document.getElementById(`sgo-power-${gpuId}`);
+        const fanEl = document.getElementById(`sgo-fan-${gpuId}`);
+
+        if (utilEl) utilEl.textContent = utilization;
+        if (tempEl) tempEl.textContent = temperature;
+        if (memEl) memEl.textContent = formatMemory(memory_used);
+        if (powerEl) powerEl.textContent = power_draw.toFixed(0);
+        if (fanEl) fanEl.textContent = fan_speed;
+
+        const memUnitEl = document.getElementById(`sgo-mem-unit-${gpuId}`);
+        if (memUnitEl) memUnitEl.textContent = formatMemoryUnit(memory_used);
+
+        // Bullet bars
+        const utilBar = document.getElementById(`sgo-util-bar-${gpuId}`);
+        const tempBar = document.getElementById(`sgo-temp-bar-${gpuId}`);
+        const memBar = document.getElementById(`sgo-mem-bar-${gpuId}`);
+        const powerBar = document.getElementById(`sgo-power-bar-${gpuId}`);
+        const fanBar = document.getElementById(`sgo-fan-bar-${gpuId}`);
+
+        if (utilBar) { utilBar.style.width = `${utilization}%`; utilBar.className = `bullet-fill ${bulletClass(utilization, 80, 95)}`; }
+        if (tempBar) { tempBar.style.width = `${Math.min(temperature / 100 * 100, 100)}%`; tempBar.className = `bullet-fill ${bulletClass(temperature, 75, 85)}`; }
+        if (memBar) { memBar.style.width = `${memPercent}%`; memBar.className = `bullet-fill ${bulletClass(memPercent, 85, 95)}`; }
+        if (powerBar) { powerBar.style.width = `${powerPercent}%`; powerBar.className = `bullet-fill ${bulletClass(powerPercent, 80, 95)}`; }
+        if (fanBar) fanBar.style.width = `${fan_speed}%`;
+
+        // Header badges
+        const fanBadgeEl = document.getElementById(`sgo-fan-badge-${gpuId}`);
+        if (fanBadgeEl) fanBadgeEl.textContent = `Fan ${fan_speed}%`;
+        const pstateBadgeEl = document.getElementById(`sgo-pstate-badge-${gpuId}`);
+        if (pstateBadgeEl) pstateBadgeEl.textContent = getMetricValue(gpuInfo, 'performance_state', '');
+
+        // Secondary metrics
+        const clockGrEl = document.getElementById(`sgo-clock-gr-${gpuId}`);
+        const clockMemEl = document.getElementById(`sgo-clock-mem-${gpuId}`);
+        const pstateEl = document.getElementById(`sgo-pstate-${gpuId}`);
+        const memUtilEl = document.getElementById(`sgo-mem-util-${gpuId}`);
+        const pcieEl = document.getElementById(`sgo-pcie-${gpuId}`);
+        const energyEl = document.getElementById(`sgo-energy-${gpuId}`);
+
+        if (clockGrEl) clockGrEl.textContent = `${getMetricValue(gpuInfo, 'clock_graphics', 0)} MHz`;
+        if (clockMemEl) clockMemEl.textContent = `${getMetricValue(gpuInfo, 'clock_memory', 0)} MHz`;
+        if (pstateEl) pstateEl.textContent = getMetricValue(gpuInfo, 'performance_state', 'N/A');
+        if (memUtilEl) memUtilEl.textContent = `${getMetricValue(gpuInfo, 'memory_utilization', 0)}%`;
+        if (pcieEl) pcieEl.textContent = `Gen${getMetricValue(gpuInfo, 'pcie_gen', '?')} x${getMetricValue(gpuInfo, 'pcie_width', '?')}`;
+        if (energyEl && hasMetric(gpuInfo, 'energy_consumption_wh')) energyEl.textContent = formatEnergy(gpuInfo.energy_consumption_wh);
+    }
+
+    // Always update chart data
+    updateChart(gpuId, 'utilization', Number(utilization));
 
     if (charts[gpuId] && charts[gpuId].overviewMini) {
         charts[gpuId].overviewMini.update('none');

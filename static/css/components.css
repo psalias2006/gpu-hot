@@ -93,6 +93,81 @@
 }
 
 /* ============================================
+   Enhanced Overview Card
+   ============================================ */
+
+.single-gpu-overview {
+    cursor: pointer;
+    padding: var(--space-md) 0;
+    transition: background 0.1s;
+}
+
+.single-gpu-overview:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.sgo-header {
+    margin-bottom: var(--space-xs);
+}
+
+.sgo-metrics-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-md);
+}
+
+.sgo-metrics-grid {
+    flex: 1;
+    margin-bottom: 0 !important;
+}
+
+.sgo-mini-chart {
+    width: 200px;
+    height: 64px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.sgo-mini-chart canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 64px !important;
+    max-height: 64px !important;
+}
+
+.sgo-info-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+    padding: var(--space-sm) 0;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.sgo-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sgo-info-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.sgo-info-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+}
+
+/* ============================================
    Detailed GPU Card — Three Tiers
    ============================================ */
 
@@ -858,6 +933,25 @@
     .drawer {
         width: 100%;
         max-width: 100vw;
+    }
+
+    .sgo-metrics-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sgo-mini-chart {
+        width: 100%;
+        height: 48px;
+    }
+
+    .sgo-mini-chart canvas {
+        height: 48px !important;
+        max-height: 48px !important;
+    }
+
+    .sgo-info-strip {
+        gap: var(--space-md);
     }
 
     .overview-gpu-card {
