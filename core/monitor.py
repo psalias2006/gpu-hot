@@ -6,7 +6,7 @@ import psutil
 import logging
 from .metrics import MetricsCollector
 from .nvidia_smi_fallback import parse_nvidia_smi
-from .config import NVIDIA_SMI
+from .config import NVIDIA_SMI, PLATFORM
 
 logger = logging.getLogger(__name__)
 
@@ -206,14 +206,28 @@ class GPUMonitor:
             return []
 
     def _get_process_name(self, pid):
-        """Extract readable process name from PID with improved logic"""
+        """Extract readable process name from PID with improved cross-platform logic"""
         try:
             p = psutil.Process(pid)
+
+            # Define platform-specific process filters
+            if PLATFORM == 'Windows':
+                # Windows-specific interpreters and shells to skip
+                skip_processes = ['python.exe', 'python3.exe', 'cmd.exe', 'powershell.exe', 
+                                'pwsh.exe', 'conhost.exe', 'wscript.exe', 'cscript.exe']
+                skip_names = ['python', 'python3', 'cmd', 'powershell', 'pwsh', 'conhost']
+            else:
+                # Unix-like systems
+                skip_processes = ['python', 'python3', 'sh', 'bash', 'zsh', 'fish', 'dash']
+                skip_names = ['python', 'python3', 'sh', 'bash', 'zsh', 'fish', 'dash']
 
             # First try to get the process name
             try:
                 process_name = p.name()
-                if process_name and process_name not in ['python', 'python3', 'sh', 'bash']:
+                if process_name and process_name.lower() not in [s.lower() for s in skip_processes]:
+                    # Remove .exe extension on Windows for cleaner display
+                    if PLATFORM == 'Windows' and process_name.lower().endswith('.exe'):
+                        return process_name[:-4]
                     return process_name
             except (psutil.AccessDenied, psutil.NoSuchProcess, psutil.ZombieProcess):
                 pass
@@ -227,24 +241,26 @@ class GPUMonitor:
                         if not arg or arg.startswith('-'):
                             continue
 
-                        # Skip common interpreters and shells
-                        if arg in ['python', 'python3', 'node', 'java', 'sh', 'bash', 'zsh']:
-                            continue
-
-                        # Extract filename from path
-                        filename = arg.split('/')[-1].split('\\')[-1]
-
-                        # Skip if it's still a generic name
-                        if filename in ['python', 'python3', 'node', 'java', 'sh', 'bash']:
-                            continue
-
-                        # Found a meaningful name
-                        if filename:
-                            return filename
+                        # Extract filename from path (handle both / and \ separators)
+                        filename = arg.replace('\\', '/').split('/')[-1]
+                        
+                        # Remove file extensions on Windows for cleaner display
+                        if PLATFORM == 'Windows' and '.' in filename:
+                            name_without_ext = filename.rsplit('.', 1)[0]
+                            # Skip if it's still a generic name
+                            if name_without_ext.lower() not in [s.lower() for s in skip_names]:
+                                return name_without_ext
+                        else:
+                            # Skip common interpreters and shells
+                            if filename.lower() not in [s.lower() for s in skip_names]:
+                                return filename
 
                     # Fallback to first argument if nothing else worked
                     if cmdline[0]:
-                        return cmdline[0].split('/')[-1].split('\\')[-1]
+                        filename = cmdline[0].replace('\\', '/').split('/')[-1]
+                        if PLATFORM == 'Windows' and filename.lower().endswith('.exe'):
+                            filename = filename[:-4]
+                        return filename
 
             except (psutil.AccessDenied, psutil.NoSuchProcess, psutil.ZombieProcess):
                 pass

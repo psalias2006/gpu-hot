@@ -6,6 +6,7 @@ Based on the original working implementation
 import subprocess
 import logging
 from datetime import datetime
+from .config import get_nvidia_smi_command, is_windows
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +14,9 @@ logger = logging.getLogger(__name__)
 def parse_nvidia_smi():
     """Parse nvidia-smi output and extract comprehensive GPU information"""
     try:
+        nvidia_smi_cmd = get_nvidia_smi_command()
         result = subprocess.run([
-            'nvidia-smi', 
+            nvidia_smi_cmd, 
             '--query-gpu=index,name,uuid,driver_version,vbios_version,'
             'temperature.gpu,utilization.gpu,utilization.memory,'
             'memory.used,memory.total,memory.free,power.draw,power.limit,'
@@ -24,7 +26,7 @@ def parse_nvidia_smi():
             'encoder.stats.sessionCount,encoder.stats.averageFps,encoder.stats.averageLatency,'
             'pstate,compute_mode',
             '--format=csv,noheader,nounits'
-        ], capture_output=True, text=True, timeout=10)
+        ], capture_output=True, text=True, timeout=10, shell=is_windows())
         
         if result.returncode != 0:
             logger.warning(f"nvidia-smi comprehensive query failed (code {result.returncode}), trying basic query")
@@ -95,13 +97,14 @@ def parse_nvidia_smi_fallback():
     """Fallback parser with minimal, widely-supported fields"""
     try:
         logger.info("Using basic nvidia-smi query (minimal fields)")
+        nvidia_smi_cmd = get_nvidia_smi_command()
         result = subprocess.run([
-            'nvidia-smi', 
+            nvidia_smi_cmd, 
             '--query-gpu=index,name,temperature.gpu,utilization.gpu,utilization.memory,'
             'memory.used,memory.total,power.draw,power.limit,fan.speed,'
             'clocks.gr,clocks.sm,clocks.mem,pstate',
             '--format=csv,noheader,nounits'
-        ], capture_output=True, text=True, timeout=10)
+        ], capture_output=True, text=True, timeout=10, shell=is_windows())
         
         if result.returncode != 0:
             logger.error(f"Basic nvidia-smi query also failed (code {result.returncode})")
