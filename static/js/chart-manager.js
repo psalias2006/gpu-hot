@@ -55,7 +55,9 @@ function initGPUData(gpuId, initialValues = {}) {
         systemSwap: { labels: [...labels], data: fill(0) },
         systemNetIo: { labels: [...labels], dataRX: fill(0), dataTX: fill(0) },
         systemDiskIo: { labels: [...labels], dataRead: fill(0), dataWrite: fill(0) },
-        systemLoadAvg: { labels: [...labels], data1m: fill(0), data5m: fill(0), data15m: fill(0) }
+        systemLoadAvg: { labels: [...labels], data1m: fill(0), data5m: fill(0), data15m: fill(0) },
+        // Power limit for dynamic threshold (set by caller)
+        _powerLimit: initialValues.powerLimit || 0
     };
 }
 
@@ -215,6 +217,21 @@ function initGPUCharts(gpuId) {
         const config = JSON.parse(JSON.stringify(chartConfigs[type]));
         const typeData = chartData[gpuId][type];
 
+        // Threshold-based segment coloring (orange above threshold)
+        let threshold;
+        if (SPARK_THRESHOLDS[type] !== undefined) {
+            threshold = SPARK_THRESHOLDS[type];
+        } else if (type === 'power' && chartData[gpuId]._powerLimit > 0) {
+            threshold = chartData[gpuId]._powerLimit * 0.8;
+        }
+        if (threshold !== undefined) {
+            config.data.datasets[0].segment = {
+                borderColor: (ctx) =>
+                    (ctx.p0.parsed.y >= threshold || ctx.p1.parsed.y >= threshold)
+                        ? SPARK.warning : undefined
+            };
+        }
+
         // Link data
         if (type === 'clocks') {
             config.data.datasets[0].data = typeData.graphicsData;
@@ -278,6 +295,7 @@ function initOverviewMiniChart(gpuId, currentValue) {
         initGPUData(gpuId, { utilization: currentValue });
     }
 
+    const utilThreshold = SPARK_THRESHOLDS.utilization;
     const config = {
         type: 'line',
         data: {
@@ -289,7 +307,12 @@ function initOverviewMiniChart(gpuId, currentValue) {
                 borderWidth: 1.5,
                 tension: 0.3,
                 fill: false,
-                pointRadius: 0
+                pointRadius: 0,
+                segment: {
+                    borderColor: (ctx) =>
+                        (ctx.p0.parsed.y >= utilThreshold || ctx.p1.parsed.y >= utilThreshold)
+                            ? SPARK.warning : undefined
+                }
             }]
         },
         options: {

@@ -11,6 +11,14 @@ const SPARK = {
     grid: 'rgba(255, 255, 255, 0.04)',
     tick: 'rgba(255, 255, 255, 0.3)',
     tooltipBg: '#1A1A1A',
+    warning: '#FF9500',
+};
+
+// Sparkline warning thresholds — line turns orange above these values
+const SPARK_THRESHOLDS = {
+    utilization: 80,
+    temperature: 75,
+    memory: 85,
 };
 
 // Base chart options — minimal sparkline

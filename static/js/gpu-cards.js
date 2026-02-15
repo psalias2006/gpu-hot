@@ -53,6 +53,11 @@ function createOverviewCard(gpuId, gpuInfo) {
     const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
     const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
     const memPercent = (memory_used / memory_total) * 100;
+    const utilization = getMetricValue(gpuInfo, 'utilization', 0);
+    const temperature = getMetricValue(gpuInfo, 'temperature', 0);
+    const power_draw = getMetricValue(gpuInfo, 'power_draw', 0);
+    const power_limit = getMetricValue(gpuInfo, 'power_limit', 1);
+    const powerPercent = (power_draw / power_limit) * 100;
 
     return `
         <div class="overview-gpu-card" data-gpu-id="${gpuId}" onclick="switchToView('gpu-${gpuId}')">
@@ -62,19 +67,19 @@ function createOverviewCard(gpuId, gpuInfo) {
             </div>
             <div class="overview-metrics">
                 <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-util-${gpuId}">${getMetricValue(gpuInfo, 'utilization', 0)}%</div>
+                    <div class="overview-metric-value ${bulletClass(utilization, 80, 95)}" id="overview-util-${gpuId}">${utilization}%</div>
                     <div class="overview-metric-label">UTIL</div>
                 </div>
                 <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-temp-${gpuId}">${getMetricValue(gpuInfo, 'temperature', 0)}°</div>
+                    <div class="overview-metric-value ${bulletClass(temperature, 75, 85)}" id="overview-temp-${gpuId}">${temperature}°</div>
                     <div class="overview-metric-label">TEMP</div>
                 </div>
                 <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-mem-${gpuId}">${Math.round(memPercent)}%</div>
+                    <div class="overview-metric-value ${bulletClass(memPercent, 85, 95)}" id="overview-mem-${gpuId}">${Math.round(memPercent)}%</div>
                     <div class="overview-metric-label">MEM</div>
                 </div>
                 <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-power-${gpuId}">${getMetricValue(gpuInfo, 'power_draw', 0).toFixed(0)}W</div>
+                    <div class="overview-metric-value ${bulletClass(powerPercent, 80, 95)}" id="overview-power-${gpuId}">${power_draw.toFixed(0)}W</div>
                     <div class="overview-metric-label">POWER</div>
                 </div>
             </div>
@@ -93,9 +98,14 @@ function updateOverviewCard(gpuId, gpuInfo, shouldUpdateDOM = true) {
         return;
     }
 
+    const utilization = getMetricValue(gpuInfo, 'utilization', 0);
+    const temperature = getMetricValue(gpuInfo, 'temperature', 0);
     const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
     const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
+    const power_draw = getMetricValue(gpuInfo, 'power_draw', 0);
+    const power_limit = getMetricValue(gpuInfo, 'power_limit', 1);
     const memPercent = (memory_used / memory_total) * 100;
+    const powerPercent = (power_draw / power_limit) * 100;
 
     if (shouldUpdateDOM) {
         const utilEl = document.getElementById(`overview-util-${gpuId}`);
@@ -103,10 +113,10 @@ function updateOverviewCard(gpuId, gpuInfo, shouldUpdateDOM = true) {
         const memEl = document.getElementById(`overview-mem-${gpuId}`);
         const powerEl = document.getElementById(`overview-power-${gpuId}`);
 
-        if (utilEl) utilEl.textContent = `${getMetricValue(gpuInfo, 'utilization', 0)}%`;
-        if (tempEl) tempEl.textContent = `${getMetricValue(gpuInfo, 'temperature', 0)}°`;
-        if (memEl) memEl.textContent = `${Math.round(memPercent)}%`;
-        if (powerEl) powerEl.textContent = `${getMetricValue(gpuInfo, 'power_draw', 0).toFixed(0)}W`;
+        if (utilEl) { utilEl.textContent = `${utilization}%`; utilEl.className = `overview-metric-value ${bulletClass(utilization, 80, 95)}`; }
+        if (tempEl) { tempEl.textContent = `${temperature}°`; tempEl.className = `overview-metric-value ${bulletClass(temperature, 75, 85)}`; }
+        if (memEl) { memEl.textContent = `${Math.round(memPercent)}%`; memEl.className = `overview-metric-value ${bulletClass(memPercent, 85, 95)}`; }
+        if (powerEl) { powerEl.textContent = `${power_draw.toFixed(0)}W`; powerEl.className = `overview-metric-value ${bulletClass(powerPercent, 80, 95)}`; }
     }
 
     // Always update chart data
@@ -200,7 +210,7 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
                 <div class="metrics-grid sgo-metrics-grid">
                     <div class="metric-cell">
                         <div class="metric-num-row">
-                            <span class="metric-num" id="sgo-util-${gpuId}">${utilization}</span>
+                            <span class="metric-num ${bulletClass(utilization, 80, 95)}" id="sgo-util-${gpuId}">${utilization}</span>
                             <span class="metric-unit">%</span>
                         </div>
                         <span class="metric-label">UTILIZATION</span>
@@ -209,7 +219,7 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
 
                     <div class="metric-cell">
                         <div class="metric-num-row">
-                            <span class="metric-num" id="sgo-temp-${gpuId}">${temperature}</span>
+                            <span class="metric-num ${bulletClass(temperature, 75, 85)}" id="sgo-temp-${gpuId}">${temperature}</span>
                             <span class="metric-unit">°C</span>
                         </div>
                         <span class="metric-label">TEMPERATURE</span>
@@ -218,7 +228,7 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
 
                     <div class="metric-cell">
                         <div class="metric-num-row">
-                            <span class="metric-num" id="sgo-mem-${gpuId}">${formatMemory(memory_used)}</span>
+                            <span class="metric-num ${bulletClass(memPercent, 85, 95)}" id="sgo-mem-${gpuId}">${formatMemory(memory_used)}</span>
                             <span class="metric-unit" id="sgo-mem-unit-${gpuId}">${formatMemoryUnit(memory_used)}</span>
                         </div>
                         <span class="metric-label">VRAM</span>
@@ -228,7 +238,7 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
 
                     <div class="metric-cell">
                         <div class="metric-num-row">
-                            <span class="metric-num" id="sgo-power-${gpuId}">${power_draw.toFixed(0)}</span>
+                            <span class="metric-num ${bulletClass(powerPercent, 80, 95)}" id="sgo-power-${gpuId}">${power_draw.toFixed(0)}</span>
                             <span class="metric-unit">W</span>
                         </div>
                         <span class="metric-label">POWER</span>
@@ -276,10 +286,10 @@ function updateEnhancedOverviewCard(gpuId, gpuInfo, shouldUpdateDOM = true) {
         const powerEl = document.getElementById(`sgo-power-${gpuId}`);
         const fanEl = document.getElementById(`sgo-fan-${gpuId}`);
 
-        if (utilEl) utilEl.textContent = utilization;
-        if (tempEl) tempEl.textContent = temperature;
-        if (memEl) memEl.textContent = formatMemory(memory_used);
-        if (powerEl) powerEl.textContent = power_draw.toFixed(0);
+        if (utilEl) { utilEl.textContent = utilization; utilEl.className = `metric-num ${bulletClass(utilization, 80, 95)}`; }
+        if (tempEl) { tempEl.textContent = temperature; tempEl.className = `metric-num ${bulletClass(temperature, 75, 85)}`; }
+        if (memEl) { memEl.textContent = formatMemory(memory_used); memEl.className = `metric-num ${bulletClass(memPercent, 85, 95)}`; }
+        if (powerEl) { powerEl.textContent = power_draw.toFixed(0); powerEl.className = `metric-num ${bulletClass(powerPercent, 80, 95)}`; }
         if (fanEl) fanEl.textContent = fan_speed;
 
         const memUnitEl = document.getElementById(`sgo-mem-unit-${gpuId}`);
@@ -599,7 +609,7 @@ function createGPUCard(gpuId, gpuInfo) {
             <div class="metrics-grid">
                 <div class="metric-cell">
                     <div class="metric-num-row">
-                        <span class="metric-num" id="util-text-${gpuId}">${utilization}</span>
+                        <span class="metric-num ${bulletClass(utilization, 80, 95)}" id="util-text-${gpuId}">${utilization}</span>
                         <span class="metric-unit">%</span>
                     </div>
                     <span class="metric-label">GPU UTILIZATION</span>
@@ -608,7 +618,7 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-cell">
                     <div class="metric-num-row">
-                        <span class="metric-num" id="temp-${gpuId}">${temperature}</span>
+                        <span class="metric-num ${bulletClass(temperature, 75, 85)}" id="temp-${gpuId}">${temperature}</span>
                         <span class="metric-unit">°C</span>
                     </div>
                     <span class="metric-label">TEMPERATURE</span>
@@ -617,7 +627,7 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-cell">
                     <div class="metric-num-row">
-                        <span class="metric-num" id="mem-${gpuId}">${formatMemory(memory_used)}</span>
+                        <span class="metric-num ${bulletClass(memPercent, 85, 95)}" id="mem-${gpuId}">${formatMemory(memory_used)}</span>
                         <span class="metric-unit" id="mem-unit-${gpuId}">${formatMemoryUnit(memory_used)}</span>
                     </div>
                     <span class="metric-label">MEMORY USAGE</span>
@@ -627,7 +637,7 @@ function createGPUCard(gpuId, gpuInfo) {
 
                 <div class="metric-cell">
                     <div class="metric-num-row">
-                        <span class="metric-num" id="power-${gpuId}">${power_draw.toFixed(0)}</span>
+                        <span class="metric-num ${bulletClass(powerPercent, 80, 95)}" id="power-${gpuId}">${power_draw.toFixed(0)}</span>
                         <span class="metric-unit">W</span>
                     </div>
                     <span class="metric-label">POWER DRAW</span>
@@ -852,18 +862,18 @@ function updateGPUDisplay(gpuId, gpuInfo, shouldUpdateDOM = true) {
         const fanEl = document.getElementById(`fan-${gpuId}`);
         const fanValEl = document.getElementById(`fan-val-${gpuId}`);
 
-        if (utilEl) utilEl.textContent = `${utilization}`;
-        if (tempEl) tempEl.textContent = `${temperature}`;
-        if (memEl) memEl.textContent = formatMemory(memory_used);
-        const memUnitEl = document.getElementById(`mem-unit-${gpuId}`);
-        if (memUnitEl) memUnitEl.textContent = formatMemoryUnit(memory_used);
-        if (powerEl) powerEl.textContent = `${power_draw.toFixed(0)}`;
-        if (fanEl) fanEl.textContent = `Fan ${fan_speed}%`;
-        if (fanValEl) fanValEl.textContent = `${fan_speed}`;
-
         // Bullet bars
         const memPercent = (memory_used / memory_total) * 100;
         const powerPercent = (power_draw / power_limit) * 100;
+
+        if (utilEl) { utilEl.textContent = `${utilization}`; utilEl.className = `metric-num ${bulletClass(utilization, 80, 95)}`; }
+        if (tempEl) { tempEl.textContent = `${temperature}`; tempEl.className = `metric-num ${bulletClass(temperature, 75, 85)}`; }
+        if (memEl) { memEl.textContent = formatMemory(memory_used); memEl.className = `metric-num ${bulletClass(memPercent, 85, 95)}`; }
+        const memUnitEl = document.getElementById(`mem-unit-${gpuId}`);
+        if (memUnitEl) memUnitEl.textContent = formatMemoryUnit(memory_used);
+        if (powerEl) { powerEl.textContent = `${power_draw.toFixed(0)}`; powerEl.className = `metric-num ${bulletClass(powerPercent, 80, 95)}`; }
+        if (fanEl) fanEl.textContent = `Fan ${fan_speed}%`;
+        if (fanValEl) fanValEl.textContent = `${fan_speed}`;
 
         const utilBar = document.getElementById(`util-bar-${gpuId}`);
         const tempBar = document.getElementById(`temp-bar-${gpuId}`);

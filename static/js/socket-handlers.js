@@ -54,7 +54,7 @@ function handleSocketClose() {
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
         statusEl.textContent = 'Reconnecting...';
-        statusEl.style.color = '#FF6200';
+        statusEl.style.color = '#FF9500';
         const dot = document.getElementById('status-dot');
         if (dot) dot.classList.remove('connected');
     }
@@ -175,7 +175,8 @@ function handleSocketMessage(event) {
                     fanSpeed: gpuInfo.fan_speed,
                     clockGraphics: gpuInfo.clock_graphics,
                     clockSm: gpuInfo.clock_sm,
-                    clockMemory: gpuInfo.clock_memory
+                    clockMemory: gpuInfo.clock_memory,
+                    powerLimit: gpuInfo.power_limit
                 });
             }
             updateAllChartDataOnly(gpuId, gpuInfo);
@@ -201,7 +202,8 @@ function handleSocketMessage(event) {
                 fanSpeed: gpuInfo.fan_speed,
                 clockGraphics: gpuInfo.clock_graphics,
                 clockSm: gpuInfo.clock_sm,
-                clockMemory: gpuInfo.clock_memory
+                clockMemory: gpuInfo.clock_memory,
+                powerLimit: gpuInfo.power_limit
             });
         }
 
@@ -432,7 +434,8 @@ function handleClusterData(data) {
                             fanSpeed: gpuInfo.fan_speed,
                             clockGraphics: gpuInfo.clock_graphics,
                             clockSm: gpuInfo.clock_sm,
-                            clockMemory: gpuInfo.clock_memory
+                            clockMemory: gpuInfo.clock_memory,
+                            powerLimit: gpuInfo.power_limit
                         });
                     }
                     updateAllChartDataOnly(fullGpuId, gpuInfo);
@@ -477,7 +480,8 @@ function handleClusterData(data) {
                         fanSpeed: gpuInfo.fan_speed,
                         clockGraphics: gpuInfo.clock_graphics,
                         clockSm: gpuInfo.clock_sm,
-                        clockMemory: gpuInfo.clock_memory
+                        clockMemory: gpuInfo.clock_memory,
+                        powerLimit: gpuInfo.power_limit
                     });
                 }
                 
