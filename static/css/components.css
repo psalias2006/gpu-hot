@@ -802,9 +802,9 @@
 
 /* Large chart in drawer */
 .drawer-chart-wrap {
-    height: 240px;
+    height: 300px;
     position: relative;
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-md);
     overflow: hidden;
     background: rgba(255, 255, 255, 0.015);
     border-radius: 6px;
@@ -817,13 +817,83 @@
     height: 100% !important;
 }
 
-/* Stats strip — compact horizontal bar */
+/* Companion selector chips */
+.drawer-companions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    padding: 0 0 var(--space-lg);
+}
+
+.drawer-companions-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    margin-right: var(--space-xs);
+    white-space: nowrap;
+}
+
+.drawer-companion-chip {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.drawer-companion-chip:hover {
+    color: var(--text-secondary);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.drawer-companion-chip.active {
+    color: rgba(255, 170, 50, 0.80);
+    background: rgba(255, 170, 50, 0.12);
+    border-color: rgba(255, 170, 50, 0.35);
+}
+
+/* Dual-metric stats bar */
 .drawer-stats-bar {
     display: flex;
+    flex-direction: column;
     gap: 0;
-    margin-bottom: var(--space-lg);
+}
+
+.drawer-stats-group {
     border-top: 1px solid var(--border-subtle);
+    padding: var(--space-sm) 0;
+}
+
+.drawer-stats-group:last-child {
     border-bottom: 1px solid var(--border-subtle);
+}
+
+.drawer-stats-group-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    padding: 0 var(--space-md) var(--space-xs);
+}
+
+.drawer-stats-group.companion .drawer-stats-group-label {
+    color: rgba(255, 170, 50, 0.50);
+}
+
+.drawer-stats-row {
+    display: flex;
+    gap: 0;
 }
 
 .drawer-stat {
@@ -831,7 +901,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-xs) var(--space-md);
     border-right: 1px solid var(--border-subtle);
 }
 
@@ -857,48 +927,8 @@
     line-height: 1;
 }
 
-/* Related metrics in drawer */
-.drawer-related {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-}
-
-.drawer-related-title {
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-tertiary);
-}
-
-.drawer-related-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: var(--space-md) var(--space-xl);
-}
-
-.drawer-related-item {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.drawer-related-value {
-    font-family: var(--font-mono);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-}
-
-.drawer-related-label {
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-tertiary);
+.drawer-stats-group.companion .drawer-stat-value {
+    color: rgba(255, 170, 50, 0.65);
 }
 
 /* Make sparklines clickable */
