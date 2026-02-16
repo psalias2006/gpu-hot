@@ -386,40 +386,8 @@
 
 .sparkline-container {
     position: relative;
-    height: 160px;
     contain: layout style;
-    border-left: 2px solid rgba(255, 255, 255, 0.06);
-    padding-left: var(--space-sm);
-    transition: border-color 0.15s ease;
-}
-
-/* Metric-identity sparkline left borders */
-.sparkline-container[data-chart-type="utilization"] {
-    border-left-color: rgba(var(--metric-util), 0.15);
-}
-.sparkline-container[data-chart-type="temperature"] {
-    border-left-color: rgba(var(--metric-temp), 0.15);
-}
-.sparkline-container[data-chart-type="memory"] {
-    border-left-color: rgba(var(--metric-mem), 0.15);
-}
-.sparkline-container[data-chart-type="power"] {
-    border-left-color: rgba(var(--metric-power), 0.15);
-}
-.sparkline-container[data-chart-type="fanSpeed"] {
-    border-left-color: rgba(var(--metric-fan), 0.15);
-}
-.sparkline-container[data-chart-type="clocks"] {
-    border-left-color: rgba(var(--metric-clocks), 0.15);
-}
-.sparkline-container[data-chart-type="efficiency"] {
-    border-left-color: rgba(var(--metric-efficiency), 0.15);
-}
-.sparkline-container[data-chart-type="pcie"] {
-    border-left-color: rgba(var(--metric-pcie), 0.15);
-}
-.sparkline-container[data-chart-type="appclocks"] {
-    border-left-color: rgba(var(--metric-clocks), 0.12);
+    padding: 0;
 }
 
 .sparkline-header {
@@ -465,7 +433,7 @@
 }
 
 .sparkline-canvas-wrap {
-    height: 120px;
+    height: 90px;
     position: relative;
     overflow: hidden;
 }
@@ -1044,36 +1012,8 @@
 }
 
 .sparkline-container[data-chart-type]:hover {
-    border-left-color: rgba(255, 255, 255, 0.25);
-}
-
-/* Metric-identity hover borders */
-.sparkline-container[data-chart-type="utilization"]:hover {
-    border-left-color: rgba(var(--metric-util), 0.4);
-}
-.sparkline-container[data-chart-type="temperature"]:hover {
-    border-left-color: rgba(var(--metric-temp), 0.4);
-}
-.sparkline-container[data-chart-type="memory"]:hover {
-    border-left-color: rgba(var(--metric-mem), 0.4);
-}
-.sparkline-container[data-chart-type="power"]:hover {
-    border-left-color: rgba(var(--metric-power), 0.4);
-}
-.sparkline-container[data-chart-type="fanSpeed"]:hover {
-    border-left-color: rgba(var(--metric-fan), 0.4);
-}
-.sparkline-container[data-chart-type="clocks"]:hover {
-    border-left-color: rgba(var(--metric-clocks), 0.4);
-}
-.sparkline-container[data-chart-type="efficiency"]:hover {
-    border-left-color: rgba(var(--metric-efficiency), 0.4);
-}
-.sparkline-container[data-chart-type="pcie"]:hover {
-    border-left-color: rgba(var(--metric-pcie), 0.4);
-}
-.sparkline-container[data-chart-type="appclocks"]:hover {
-    border-left-color: rgba(var(--metric-clocks), 0.4);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
 }
 
 .sparkline-container[data-chart-type]:hover .sparkline-title {
@@ -1082,11 +1022,6 @@
 
 .sparkline-container[data-chart-type]:hover .sparkline-stat-value {
     color: var(--text-primary);
-}
-
-.sparkline-container[data-chart-type]:hover .sparkline-canvas-wrap {
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 4px;
 }
 
 /* ============================================
