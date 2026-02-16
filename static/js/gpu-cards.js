@@ -207,14 +207,14 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
             </div>
 
             <div class="sgo-metrics-row">
-                <div class="metrics-grid sgo-metrics-grid">
+                <div class="metrics-grid--primary sgo-metrics-grid">
                     <div class="metric-cell">
                         <div class="metric-num-row">
                             <span class="metric-num ${bulletClass(utilization, 80, 95)}" id="sgo-util-${gpuId}">${utilization}</span>
                             <span class="metric-unit">%</span>
                         </div>
                         <span class="metric-label">UTILIZATION</span>
-                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(utilization, 80, 95)}" id="sgo-util-bar-${gpuId}" style="width:${utilization}%"></div></div>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(utilization, 80, 95)}" data-metric="utilization" id="sgo-util-bar-${gpuId}" style="width:${utilization}%"></div></div>
                     </div>
 
                     <div class="metric-cell">
@@ -223,7 +223,7 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
                             <span class="metric-unit">°C</span>
                         </div>
                         <span class="metric-label">TEMPERATURE</span>
-                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(temperature, 75, 85)}" id="sgo-temp-bar-${gpuId}" style="width:${Math.min(temperature / 100 * 100, 100)}%"></div></div>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(temperature, 75, 85)}" data-metric="temperature" id="sgo-temp-bar-${gpuId}" style="width:${Math.min(temperature / 100 * 100, 100)}%"></div></div>
                     </div>
 
                     <div class="metric-cell">
@@ -233,7 +233,7 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
                         </div>
                         <span class="metric-label">VRAM</span>
                         <span class="metric-sub" id="sgo-mem-total-${gpuId}">of ${formatMemory(memory_total)}${formatMemoryUnit(memory_total)}</span>
-                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(memPercent, 85, 95)}" id="sgo-mem-bar-${gpuId}" style="width:${memPercent}%"></div></div>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(memPercent, 85, 95)}" data-metric="memory" id="sgo-mem-bar-${gpuId}" style="width:${memPercent}%"></div></div>
                     </div>
 
                     <div class="metric-cell">
@@ -243,7 +243,7 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
                         </div>
                         <span class="metric-label">POWER</span>
                         <span class="metric-sub" id="sgo-power-limit-${gpuId}">of ${power_limit.toFixed(0)}W</span>
-                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(powerPercent, 80, 95)}" id="sgo-power-bar-${gpuId}" style="width:${powerPercent}%"></div></div>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(powerPercent, 80, 95)}" data-metric="power" id="sgo-power-bar-${gpuId}" style="width:${powerPercent}%"></div></div>
                     </div>
 
                     <div class="metric-cell">
@@ -252,7 +252,7 @@ function createEnhancedOverviewCard(gpuId, gpuInfo) {
                             <span class="metric-unit">%</span>
                         </div>
                         <span class="metric-label">FAN</span>
-                        <div class="bullet-bar"><div class="bullet-fill" id="sgo-fan-bar-${gpuId}" style="width:${fan_speed}%"></div></div>
+                        <div class="bullet-bar"><div class="bullet-fill" data-metric="fan" id="sgo-fan-bar-${gpuId}" style="width:${fan_speed}%"></div></div>
                     </div>
                 </div>
 
@@ -471,7 +471,7 @@ function createGPUCard(gpuId, gpuInfo) {
         extraMetrics += `
             <div class="metric-cell">
                 <div class="metric-num-row">
-                    <span class="metric-num" id="energy-${gpuId}" style="font-size:20px;">${formatEnergy(gpuInfo.energy_consumption_wh)}</span>
+                    <span class="metric-num" id="energy-${gpuId}">${formatEnergy(gpuInfo.energy_consumption_wh)}</span>
                 </div>
                 <span class="metric-label">TOTAL ENERGY</span>
                 <span class="metric-sub">Since driver load</span>
@@ -516,7 +516,7 @@ function createGPUCard(gpuId, gpuInfo) {
         extraMetrics += `
             <div class="metric-cell">
                 <div class="metric-num-row">
-                    <span class="metric-num" id="brand-${gpuId}" style="font-size:16px;">${gpuInfo.brand || 'N/A'}</span>
+                    <span class="metric-num" id="brand-${gpuId}">${gpuInfo.brand || 'N/A'}</span>
                 </div>
                 <span class="metric-label">BRAND / ARCHITECTURE</span>
                 <span class="metric-sub" id="arch-${gpuId}">${gpuInfo.architecture || 'Unknown'}</span>
@@ -529,7 +529,7 @@ function createGPUCard(gpuId, gpuInfo) {
         extraMetrics += `
             <div class="metric-cell">
                 <div class="metric-num-row">
-                    <span class="metric-num" id="proc-counts-${gpuId}" style="font-size:16px;">C:${computeProcs} G:${graphicsProcs}</span>
+                    <span class="metric-num" id="proc-counts-${gpuId}">C:${computeProcs} G:${graphicsProcs}</span>
                 </div>
                 <span class="metric-label">PROCESS COUNTS</span>
                 <span class="metric-sub">Compute / Graphics</span>
@@ -541,7 +541,7 @@ function createGPUCard(gpuId, gpuInfo) {
     extraMetrics += `
         <div class="metric-cell">
             <div class="metric-num-row">
-                <span class="metric-num" id="throttle-${gpuId}" style="font-size:16px;${isThrottling ? 'color:var(--warning);' : ''}">${isThrottling ? throttle_reasons : 'GPU Idle'}</span>
+                <span class="metric-num" id="throttle-${gpuId}"${isThrottling ? ' style="color:var(--warning);"' : ''}>${isThrottling ? throttle_reasons : 'GPU Idle'}</span>
             </div>
             <span class="metric-label">THROTTLE STATUS</span>
             <span class="metric-sub" id="throttle-sub-${gpuId}">${isThrottling ? 'Throttling' : 'Performance'}</span>
@@ -605,57 +605,60 @@ function createGPUCard(gpuId, gpuInfo) {
                 <span class="spec-tag">${gpuInfo._fallback_mode ? 'smi' : 'NVML'}</span>
             </div>
 
-            <!-- TOP TIER: Raw numbers + bullet bars -->
-            <div class="metrics-grid">
-                <div class="metric-cell">
-                    <div class="metric-num-row">
-                        <span class="metric-num ${bulletClass(utilization, 80, 95)}" id="util-text-${gpuId}">${utilization}</span>
-                        <span class="metric-unit">%</span>
+            <!-- PRIMARY TIER: Hero metrics with identity-colored bars -->
+            <div class="metrics-panel">
+                <div class="metrics-grid--primary">
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num ${bulletClass(utilization, 80, 95)}" id="util-text-${gpuId}">${utilization}</span>
+                            <span class="metric-unit">%</span>
+                        </div>
+                        <span class="metric-label">GPU UTILIZATION</span>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(utilization, 80, 95)}" data-metric="utilization" id="util-bar-${gpuId}" style="width:${utilization}%"></div></div>
                     </div>
-                    <span class="metric-label">GPU UTILIZATION</span>
-                    <div class="bullet-bar"><div class="bullet-fill ${bulletClass(utilization, 80, 95)}" id="util-bar-${gpuId}" style="width:${utilization}%"></div></div>
-                </div>
 
-                <div class="metric-cell">
-                    <div class="metric-num-row">
-                        <span class="metric-num ${bulletClass(temperature, 75, 85)}" id="temp-${gpuId}">${temperature}</span>
-                        <span class="metric-unit">°C</span>
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num ${bulletClass(temperature, 75, 85)}" id="temp-${gpuId}">${temperature}</span>
+                            <span class="metric-unit">°C</span>
+                        </div>
+                        <span class="metric-label">TEMPERATURE</span>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(temperature, 75, 85)}" data-metric="temperature" id="temp-bar-${gpuId}" style="width:${Math.min(temperature / 100 * 100, 100)}%"></div></div>
                     </div>
-                    <span class="metric-label">TEMPERATURE</span>
-                    <div class="bullet-bar"><div class="bullet-fill ${bulletClass(temperature, 75, 85)}" id="temp-bar-${gpuId}" style="width:${Math.min(temperature / 100 * 100, 100)}%"></div></div>
-                </div>
 
-                <div class="metric-cell">
-                    <div class="metric-num-row">
-                        <span class="metric-num ${bulletClass(memPercent, 85, 95)}" id="mem-${gpuId}">${formatMemory(memory_used)}</span>
-                        <span class="metric-unit" id="mem-unit-${gpuId}">${formatMemoryUnit(memory_used)}</span>
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num ${bulletClass(memPercent, 85, 95)}" id="mem-${gpuId}">${formatMemory(memory_used)}</span>
+                            <span class="metric-unit" id="mem-unit-${gpuId}">${formatMemoryUnit(memory_used)}</span>
+                        </div>
+                        <span class="metric-label">MEMORY USAGE</span>
+                        <span class="metric-sub" id="mem-total-${gpuId}">of ${formatMemory(memory_total)}${formatMemoryUnit(memory_total)}</span>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(memPercent, 85, 95)}" data-metric="memory" id="mem-bar-${gpuId}" style="width:${memPercent}%"></div></div>
                     </div>
-                    <span class="metric-label">MEMORY USAGE</span>
-                    <span class="metric-sub" id="mem-total-${gpuId}">of ${formatMemory(memory_total)}${formatMemoryUnit(memory_total)}</span>
-                    <div class="bullet-bar"><div class="bullet-fill ${bulletClass(memPercent, 85, 95)}" id="mem-bar-${gpuId}" style="width:${memPercent}%"></div></div>
-                </div>
 
-                <div class="metric-cell">
-                    <div class="metric-num-row">
-                        <span class="metric-num ${bulletClass(powerPercent, 80, 95)}" id="power-${gpuId}">${power_draw.toFixed(0)}</span>
-                        <span class="metric-unit">W</span>
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num ${bulletClass(powerPercent, 80, 95)}" id="power-${gpuId}">${power_draw.toFixed(0)}</span>
+                            <span class="metric-unit">W</span>
+                        </div>
+                        <span class="metric-label">POWER DRAW</span>
+                        <span class="metric-sub" id="power-limit-${gpuId}">of ${power_limit.toFixed(0)}W</span>
+                        <div class="bullet-bar"><div class="bullet-fill ${bulletClass(powerPercent, 80, 95)}" data-metric="power" id="power-bar-${gpuId}" style="width:${powerPercent}%"></div></div>
                     </div>
-                    <span class="metric-label">POWER DRAW</span>
-                    <span class="metric-sub" id="power-limit-${gpuId}">of ${power_limit.toFixed(0)}W</span>
-                    <div class="bullet-bar"><div class="bullet-fill ${bulletClass(powerPercent, 80, 95)}" id="power-bar-${gpuId}" style="width:${powerPercent}%"></div></div>
-                </div>
 
-                <div class="metric-cell">
-                    <div class="metric-num-row">
-                        <span class="metric-num" id="fan-val-${gpuId}">${fan_speed}</span>
-                        <span class="metric-unit">%</span>
+                    <div class="metric-cell">
+                        <div class="metric-num-row">
+                            <span class="metric-num" id="fan-val-${gpuId}">${fan_speed}</span>
+                            <span class="metric-unit">%</span>
+                        </div>
+                        <span class="metric-label">FAN</span>
+                        <div class="bullet-bar"><div class="bullet-fill" data-metric="fan" id="fan-bar-${gpuId}" style="width:${fan_speed}%"></div></div>
                     </div>
-                    <span class="metric-label">FAN</span>
-                    <div class="bullet-bar"><div class="bullet-fill" id="fan-bar-${gpuId}" style="width:${fan_speed}%"></div></div>
                 </div>
-
-                ${extraMetrics}
             </div>
+
+            <!-- SECONDARY TIER: Reference data -->
+            ${extraMetrics ? `<div class="metrics-grid--secondary">${extraMetrics}</div>` : ''}
 
             <!-- MID TIER: Sparklines -->
             <div class="sparklines-section">

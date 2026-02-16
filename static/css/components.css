@@ -98,7 +98,7 @@
 
 .single-gpu-overview {
     cursor: pointer;
-    padding: var(--space-md) 0;
+    padding: 0 0 var(--space-md) 0;
     transition: background 0.1s;
 }
 
@@ -207,6 +207,15 @@
     color: var(--text-tertiary);
 }
 
+/* ---- Metrics Panel — subtle grouping container ---- */
+
+.metrics-panel {
+    background: rgba(255, 255, 255, 0.015);
+    border-radius: 8px;
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
 /* ---- TOP TIER: Raw metric numbers ---- */
 
 .metrics-grid {
@@ -215,6 +224,59 @@
     gap: var(--space-md) var(--space-xl);
     margin-bottom: var(--space-xl);
     align-items: stretch;
+}
+
+/* Primary tier — hero metrics (util, temp, mem, power, fan) */
+.metrics-grid--primary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-lg) var(--space-2xl);
+    margin-bottom: 0;
+    align-items: stretch;
+}
+
+.metrics-grid--primary .metric-num {
+    font-size: 36px;
+    letter-spacing: -1.5px;
+}
+
+.metrics-grid--primary .metric-unit {
+    font-size: 15px;
+}
+
+/* Secondary tier — reference data (clocks, PCIe, brand, etc.) */
+.metrics-grid--secondary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: var(--space-sm) var(--space-lg);
+    margin-bottom: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-subtle);
+    align-items: stretch;
+}
+
+.metrics-grid--secondary .metric-num {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.metrics-grid--secondary .metric-unit {
+    font-size: 11px;
+}
+
+.metrics-grid--secondary .metric-label {
+    font-size: 9px;
+    letter-spacing: 0.8px;
+}
+
+.metrics-grid--secondary .metric-sub {
+    font-size: 10px;
+}
+
+.metrics-grid--secondary .metric-cell {
+    gap: 3px;
 }
 
 .metric-cell {
@@ -264,9 +326,9 @@
 /* ---- Bullet bar (horizontal progress) ---- */
 
 .bullet-bar {
-    height: 3px;
+    height: 4px;
     background: var(--bar-track);
-    border-radius: 1.5px;
+    border-radius: 2px;
     overflow: hidden;
     margin-top: auto;
 }
@@ -274,16 +336,32 @@
 .bullet-fill {
     height: 100%;
     background: var(--bar-fill);
-    border-radius: 1.5px;
-    /* No transition — instant updates */
+    border-radius: 2px;
+}
+
+/* Metric-identity colored bullet fills */
+.bullet-fill[data-metric="utilization"] {
+    background: rgba(var(--metric-util), 0.35);
+}
+.bullet-fill[data-metric="temperature"] {
+    background: rgba(var(--metric-temp), 0.30);
+}
+.bullet-fill[data-metric="memory"] {
+    background: rgba(var(--metric-mem), 0.35);
+}
+.bullet-fill[data-metric="power"] {
+    background: rgba(var(--metric-power), 0.30);
+}
+.bullet-fill[data-metric="fan"] {
+    background: rgba(var(--metric-fan), 0.30);
 }
 
 .bullet-fill.warning {
-    background: var(--bar-fill-warning);
+    background: var(--bar-fill-warning) !important;
 }
 
 .bullet-fill.danger {
-    background: var(--bar-fill-warning);
+    background: var(--bar-fill-warning) !important;
 }
 
 /* Metric value warning/danger text colors */
@@ -310,9 +388,38 @@
     position: relative;
     height: 160px;
     contain: layout style;
-    border-left: 2px solid transparent;
+    border-left: 2px solid rgba(255, 255, 255, 0.06);
     padding-left: var(--space-sm);
     transition: border-color 0.15s ease;
+}
+
+/* Metric-identity sparkline left borders */
+.sparkline-container[data-chart-type="utilization"] {
+    border-left-color: rgba(var(--metric-util), 0.15);
+}
+.sparkline-container[data-chart-type="temperature"] {
+    border-left-color: rgba(var(--metric-temp), 0.15);
+}
+.sparkline-container[data-chart-type="memory"] {
+    border-left-color: rgba(var(--metric-mem), 0.15);
+}
+.sparkline-container[data-chart-type="power"] {
+    border-left-color: rgba(var(--metric-power), 0.15);
+}
+.sparkline-container[data-chart-type="fanSpeed"] {
+    border-left-color: rgba(var(--metric-fan), 0.15);
+}
+.sparkline-container[data-chart-type="clocks"] {
+    border-left-color: rgba(var(--metric-clocks), 0.15);
+}
+.sparkline-container[data-chart-type="efficiency"] {
+    border-left-color: rgba(var(--metric-efficiency), 0.15);
+}
+.sparkline-container[data-chart-type="pcie"] {
+    border-left-color: rgba(var(--metric-pcie), 0.15);
+}
+.sparkline-container[data-chart-type="appclocks"] {
+    border-left-color: rgba(var(--metric-clocks), 0.12);
 }
 
 .sparkline-header {
@@ -937,7 +1044,36 @@
 }
 
 .sparkline-container[data-chart-type]:hover {
-    border-left-color: rgba(255, 255, 255, 0.15);
+    border-left-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Metric-identity hover borders */
+.sparkline-container[data-chart-type="utilization"]:hover {
+    border-left-color: rgba(var(--metric-util), 0.4);
+}
+.sparkline-container[data-chart-type="temperature"]:hover {
+    border-left-color: rgba(var(--metric-temp), 0.4);
+}
+.sparkline-container[data-chart-type="memory"]:hover {
+    border-left-color: rgba(var(--metric-mem), 0.4);
+}
+.sparkline-container[data-chart-type="power"]:hover {
+    border-left-color: rgba(var(--metric-power), 0.4);
+}
+.sparkline-container[data-chart-type="fanSpeed"]:hover {
+    border-left-color: rgba(var(--metric-fan), 0.4);
+}
+.sparkline-container[data-chart-type="clocks"]:hover {
+    border-left-color: rgba(var(--metric-clocks), 0.4);
+}
+.sparkline-container[data-chart-type="efficiency"]:hover {
+    border-left-color: rgba(var(--metric-efficiency), 0.4);
+}
+.sparkline-container[data-chart-type="pcie"]:hover {
+    border-left-color: rgba(var(--metric-pcie), 0.4);
+}
+.sparkline-container[data-chart-type="appclocks"]:hover {
+    border-left-color: rgba(var(--metric-clocks), 0.4);
 }
 
 .sparkline-container[data-chart-type]:hover .sparkline-title {
@@ -1008,9 +1144,22 @@
         height: 40px;
     }
 
-    .metrics-grid {
+    .metrics-grid,
+    .metrics-grid--primary {
         grid-template-columns: repeat(2, 1fr);
         gap: var(--space-md);
+    }
+
+    .metrics-grid--primary .metric-num {
+        font-size: 28px;
+    }
+
+    .metrics-grid--secondary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .metrics-panel {
+        padding: var(--space-sm) var(--space-md);
     }
 
     .metric-num {
@@ -1061,8 +1210,17 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .metrics-grid {
+    .metrics-grid,
+    .metrics-grid--primary {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .metrics-grid--primary .metric-num {
+        font-size: 24px;
+    }
+
+    .metrics-grid--secondary {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .metric-num {

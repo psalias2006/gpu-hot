@@ -81,6 +81,25 @@ function getBaseChartOptions() {
     };
 }
 
+// Metric identity RGB values for gradient fills
+const METRIC_FILL_COLORS = {
+    utilization: '130, 177, 255',
+    temperature: '255, 183, 77',
+    memory:      '100, 210, 255',
+    power:       '134, 239, 172',
+    fanSpeed:    '186, 147, 216',
+    clocks:      '255, 213, 130',
+    efficiency:  '168, 216, 185',
+    pcie:        '176, 190, 210',
+    appclocks:   '255, 213, 130',
+    systemCpu:   '255, 255, 255',
+    systemMemory:'255, 255, 255',
+    systemSwap:  '255, 255, 255',
+    systemNetIo: '255, 255, 255',
+    systemDiskIo:'255, 255, 255',
+    systemLoadAvg:'255, 255, 255',
+};
+
 // Single-line sparkline config
 function createLineChartConfig(options) {
     const {
@@ -104,7 +123,7 @@ function createLineChartConfig(options) {
                 backgroundColor: 'transparent',
                 borderWidth: 1.5,
                 tension: 0.3,
-                fill: false,
+                fill: true,
                 pointRadius: 0,
                 pointHitRadius: 8
             }]

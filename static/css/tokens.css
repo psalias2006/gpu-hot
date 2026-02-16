@@ -11,8 +11,8 @@
 
     /* Text */
     --text-primary: #FFFFFF;
-    --text-secondary: rgba(255, 255, 255, 0.5);
-    --text-tertiary: rgba(255, 255, 255, 0.3);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-tertiary: rgba(255, 255, 255, 0.4);
 
     /* Accent — Steel Blue at 20% opacity, for selection/active only */
     --accent: rgba(66, 133, 244, 0.20);
@@ -23,12 +23,22 @@
     --danger: #FF2D2D;
     --ok: rgba(255, 255, 255, 0.5);
 
+    /* Metric Identity Colors (RGB channels for flexible opacity) */
+    --metric-util: 130, 177, 255;
+    --metric-temp: 255, 183, 77;
+    --metric-mem: 100, 210, 255;
+    --metric-power: 134, 239, 172;
+    --metric-fan: 186, 147, 216;
+    --metric-clocks: 255, 213, 130;
+    --metric-efficiency: 168, 216, 185;
+    --metric-pcie: 176, 190, 210;
+
     /* Sparkline */
     --spark-stroke: rgba(255, 255, 255, 0.4);
     --spark-stroke-secondary: rgba(255, 255, 255, 0.2);
 
     /* Bullet bar */
-    --bar-track: rgba(255, 255, 255, 0.06);
+    --bar-track: rgba(255, 255, 255, 0.08);
     --bar-fill: rgba(255, 255, 255, 0.25);
     --bar-fill-warning: var(--warning);
     --bar-fill-danger: var(--danger);
