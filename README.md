@@ -15,7 +15,7 @@ Real-time NVIDIA GPU monitoring dashboard. Lightweight, web-based, and self-host
 </a>
 </p>
 
-<img src="gpu-hot.png" alt="GPU Hot Dashboard" width="800" />
+<img src="gpu-hot.jpg" alt="GPU Hot Dashboard" width="800" />
 
 </div>
 
