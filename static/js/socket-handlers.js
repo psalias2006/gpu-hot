@@ -42,7 +42,9 @@ function handleSocketOpen() {
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
         statusEl.textContent = 'Connected';
-        statusEl.style.color = '#43e97b';
+        statusEl.style.color = 'rgba(255,255,255,0.5)';
+        const dot = document.getElementById('status-dot');
+        if (dot) dot.classList.add('connected');
     }
 }
 
@@ -52,7 +54,9 @@ function handleSocketClose() {
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
         statusEl.textContent = 'Reconnecting...';
-        statusEl.style.color = '#ffc107';
+        statusEl.style.color = '#FF9500';
+        const dot = document.getElementById('status-dot');
+        if (dot) dot.classList.remove('connected');
     }
     
     // Attempt to reconnect
@@ -63,8 +67,8 @@ function handleSocketError(error) {
     console.error('WebSocket error:', error);
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
-        statusEl.textContent = 'Connection Error';
-        statusEl.style.color = '#f5576c';
+        statusEl.textContent = 'Error';
+        statusEl.style.color = '#FF2D2D';
     }
 }
 
@@ -77,8 +81,8 @@ function attemptReconnect() {
             reconnectInterval = null;
             const statusEl = document.getElementById('connection-status');
             if (statusEl) {
-                statusEl.textContent = 'Disconnected - Tap to Reload';
-                statusEl.style.color = '#f5576c';
+                statusEl.textContent = 'Disconnected';
+                statusEl.style.color = '#FF2D2D';
                 statusEl.style.cursor = 'pointer';
                 statusEl.onclick = () => location.reload();
             }
@@ -117,10 +121,10 @@ function setupScrollDetection() {
         // Listen to window scroll (primary scroll container)
         window.addEventListener('scroll', handleScroll, { passive: true });
         
-        // Also listen to .container as fallback
-        const container = document.querySelector('.container');
-        if (container) {
-            container.addEventListener('scroll', handleScroll, { passive: true });
+        // Also listen to .main as fallback
+        const main = document.querySelector('.main');
+        if (main) {
+            main.addEventListener('scroll', handleScroll, { passive: true });
         }
     }, 500);
 }
@@ -171,10 +175,15 @@ function handleSocketMessage(event) {
                     fanSpeed: gpuInfo.fan_speed,
                     clockGraphics: gpuInfo.clock_graphics,
                     clockSm: gpuInfo.clock_sm,
-                    clockMemory: gpuInfo.clock_memory
+                    clockMemory: gpuInfo.clock_memory,
+                    powerLimit: gpuInfo.power_limit
                 });
             }
             updateAllChartDataOnly(gpuId, gpuInfo);
+            // Also update system chart data during scroll
+            if (data.system) {
+                updateGPUSystemCharts(gpuId, data.system, '_local', false);
+            }
         });
         return; // Exit early - zero DOM work during scroll = smooth 60 FPS
     }
@@ -193,7 +202,8 @@ function handleSocketMessage(event) {
                 fanSpeed: gpuInfo.fan_speed,
                 clockGraphics: gpuInfo.clock_graphics,
                 clockSm: gpuInfo.clock_sm,
-                clockMemory: gpuInfo.clock_memory
+                clockMemory: gpuInfo.clock_memory,
+                powerLimit: gpuInfo.power_limit
             });
         }
 
@@ -203,6 +213,8 @@ function handleSocketMessage(event) {
         // Queue this GPU's update instead of executing immediately
         pendingUpdates.set(gpuId, {
             gpuInfo,
+            systemInfo: data.system,
+            sourceKey: '_local',
             shouldUpdateDOM,
             now
         });
@@ -210,8 +222,21 @@ function handleSocketMessage(event) {
         // Handle initial card creation (can't be batched since we need the DOM element)
         const existingOverview = overviewContainer.querySelector(`[data-gpu-id="${gpuId}"]`);
         if (!existingOverview) {
-            overviewContainer.insertAdjacentHTML('beforeend', createOverviewCard(gpuId, gpuInfo));
+            overviewContainer.insertAdjacentHTML('beforeend', createEnhancedOverviewCard(gpuId, gpuInfo));
             initOverviewMiniChart(gpuId, gpuInfo.utilization);
+            // Auto-expand processes for single GPU
+            if (gpuCount === 1) {
+                setTimeout(() => {
+                    const content = document.getElementById('processes-content');
+                    const header = document.querySelector('.processes-header');
+                    const icon = document.querySelector('.toggle-icon');
+                    if (content && !content.classList.contains('expanded')) {
+                        content.classList.add('expanded');
+                        if (header) header.classList.add('expanded');
+                        if (icon) icon.classList.add('expanded');
+                    }
+                }, 100);
+            }
             lastDOMUpdate[gpuId] = now;
         }
     });
@@ -255,7 +280,7 @@ function processBatchedUpdates() {
             lastDOMUpdate.system = update.now;
         } else {
             // GPU updates
-            const { gpuInfo, shouldUpdateDOM, now } = update;
+            const { gpuInfo, systemInfo, sourceKey, shouldUpdateDOM, now } = update;
             
             // Update overview card (always for charts, conditionally for text)
             updateOverviewCard(gpuId, gpuInfo, shouldUpdateDOM);
@@ -268,6 +293,11 @@ function processBatchedUpdates() {
             const isDetailTabVisible = currentTab === `gpu-${gpuId}`;
             if (isDetailTabVisible || !registeredGPUs.has(gpuId)) {
                 ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM && isDetailTabVisible);
+            }
+            
+            // Update per-GPU system charts
+            if (systemInfo) {
+                updateGPUSystemCharts(gpuId, systemInfo, sourceKey || '_local', shouldUpdateDOM && isDetailTabVisible);
             }
         }
     });
@@ -404,10 +434,15 @@ function handleClusterData(data) {
                             fanSpeed: gpuInfo.fan_speed,
                             clockGraphics: gpuInfo.clock_graphics,
                             clockSm: gpuInfo.clock_sm,
-                            clockMemory: gpuInfo.clock_memory
+                            clockMemory: gpuInfo.clock_memory,
+                            powerLimit: gpuInfo.power_limit
                         });
                     }
                     updateAllChartDataOnly(fullGpuId, gpuInfo);
+                    // Also update system chart data during scroll (per-node)
+                    if (nodeData.system) {
+                        updateGPUSystemCharts(fullGpuId, nodeData.system, nodeName, false);
+                    }
                 });
             }
         });
@@ -445,7 +480,8 @@ function handleClusterData(data) {
                         fanSpeed: gpuInfo.fan_speed,
                         clockGraphics: gpuInfo.clock_graphics,
                         clockSm: gpuInfo.clock_sm,
-                        clockMemory: gpuInfo.clock_memory
+                        clockMemory: gpuInfo.clock_memory,
+                        powerLimit: gpuInfo.power_limit
                     });
                 }
                 
@@ -453,6 +489,8 @@ function handleClusterData(data) {
                 const shouldUpdateDOM = !lastDOMUpdate[fullGpuId] || (now - lastDOMUpdate[fullGpuId]) >= DOM_UPDATE_INTERVAL;
                 pendingUpdates.set(fullGpuId, {
                     gpuInfo,
+                    systemInfo: nodeData.system || {},
+                    sourceKey: nodeName,
                     shouldUpdateDOM,
                     now,
                     nodeName
@@ -516,43 +554,31 @@ function createClusterGPUCard(nodeName, gpuId, gpuInfo) {
     const memPercent = (memory_used / memory_total) * 100;
 
     return `
-        <div class="overview-gpu-card" data-gpu-id="${fullGpuId}" onclick="switchToView('gpu-${fullGpuId}')" style="pointer-events: auto;">
-            <div class="overview-header">
-                <div>
-                    <h2 style="font-size: 1.5rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">
-                        GPU ${gpuId}
-                    </h2>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem;">${getMetricValue(gpuInfo, 'name', 'Unknown GPU')}</p>
-                </div>
-                <div class="gpu-status-badge">
-                    <span class="status-dot"></span>
-                    <span class="status-text">ONLINE</span>
-                </div>
+        <div class="overview-gpu-card" data-gpu-id="${fullGpuId}" onclick="switchToView('gpu-${fullGpuId}')">
+            <div class="overview-gpu-name">
+                <h2>GPU ${gpuId}</h2>
+                <p>${getMetricValue(gpuInfo, 'name', 'Unknown GPU')}</p>
             </div>
-
             <div class="overview-metrics">
                 <div class="overview-metric">
                     <div class="overview-metric-value" id="overview-util-${fullGpuId}">${getMetricValue(gpuInfo, 'utilization', 0)}%</div>
-                    <div class="overview-metric-label">GPU Usage</div>
+                    <div class="overview-metric-label">UTIL</div>
                 </div>
                 <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-temp-${fullGpuId}">${getMetricValue(gpuInfo, 'temperature', 0)}°C</div>
-                    <div class="overview-metric-label">Temperature</div>
+                    <div class="overview-metric-value" id="overview-temp-${fullGpuId}">${getMetricValue(gpuInfo, 'temperature', 0)}°</div>
+                    <div class="overview-metric-label">TEMP</div>
                 </div>
                 <div class="overview-metric">
                     <div class="overview-metric-value" id="overview-mem-${fullGpuId}">${Math.round(memPercent)}%</div>
-                    <div class="overview-metric-label">Memory</div>
+                    <div class="overview-metric-label">MEM</div>
                 </div>
                 <div class="overview-metric">
                     <div class="overview-metric-value" id="overview-power-${fullGpuId}">${getMetricValue(gpuInfo, 'power_draw', 0).toFixed(0)}W</div>
-                    <div class="overview-metric-label">Power Draw</div>
+                    <div class="overview-metric-label">POWER</div>
                 </div>
             </div>
-
-            <div class="overview-chart-section">
-                <div class="overview-mini-chart">
-                    <canvas id="overview-chart-${fullGpuId}"></canvas>
-                </div>
+            <div class="overview-mini-chart">
+                <canvas id="overview-chart-${fullGpuId}"></canvas>
             </div>
         </div>
     `;

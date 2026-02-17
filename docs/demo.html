@@ -9,95 +9,134 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Embed the exact CSS from the real application via CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/css/styles.css?v=1.6.0">
+    <!-- Application Styles (modular, from CDN) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/css/tokens.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/css/layout.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/css/components.css">
 
     <style>
-    /* Demo-specific notice banner */
+    /* Demo-specific notice */
     .demo-notice {
-        background: rgba(255, 193, 7, 0.15);
-        border: 1px solid rgba(255, 193, 7, 0.3);
-        border-radius: 12px;
-        padding: 1rem 1.5rem;
-        margin-bottom: 2rem;
-        text-align: center;
-        color: #ffc107;
-        font-size: 0.9rem;
+        position: fixed;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 193, 7, 0.12);
+        border: 1px solid rgba(255, 193, 7, 0.25);
+        border-radius: 6px;
+        padding: 6px 16px;
+        color: rgba(255, 193, 7, 0.85);
+        font-size: 11px;
         font-weight: 600;
+        letter-spacing: 0.5px;
+        z-index: 1000;
+        pointer-events: none;
     }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔥 GPU Hot</h1>
-            <p>Real-time NVIDIA GPU monitoring dashboard</p>
-        </div>
+    <div class="demo-notice">INTERACTIVE DEMO — SIMULATED DATA</div>
 
-        <div class="demo-notice">
-            ⚠️ Interactive Demo - Simulated Data
-        </div>
+    <div class="studio">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">GPU</div>
 
-        <div class="status-bar">
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                <span>Live Monitoring (Demo)</span>
-            </div>
-            <div id="connection-status">Running Demo</div>
-        </div>
+            <nav class="sidebar-nav" id="view-selector">
+                <button class="sidebar-btn active" data-view="overview" onclick="switchToView('overview')" title="All GPUs">All</button>
+            </nav>
 
-        <!-- View Selector -->
-        <div class="view-selector" id="view-selector">
-            <button class="view-option active" data-view="overview" onclick="switchToView('overview'); if (typeof gtag !== 'undefined') gtag('event', 'view_switch', {'event_category': 'Demo Interaction', 'event_label': 'Overview'});">All GPUs</button>
-        </div>
-
-        <!-- Overview Tab -->
-        <div id="tab-overview" class="tab-content active">
-            <div id="overview-container" class="overview-grid">
-            </div>
-        </div>
-
-        <!-- Individual GPU Tabs (dynamically created) -->
-
-        <div class="processes-section">
-            <div class="processes-header" onclick="toggleProcesses(); if (typeof gtag !== 'undefined') gtag('event', 'toggle_processes', {'event_category': 'Demo Interaction', 'event_label': 'Process Section'});">
-                <div class="processes-title">
-                    Active GPU Processes
+            <div class="sidebar-bottom">
+                <div class="system-info">
+                    <div class="system-metric">
+                        <canvas class="system-metric-chart" id="cpu-chart"></canvas>
+                        <div class="system-metric-value" id="cpu-usage">0%</div>
+                        <div class="system-metric-label">CPU</div>
+                    </div>
+                    <div class="system-metric">
+                        <canvas class="system-metric-chart" id="memory-chart"></canvas>
+                        <div class="system-metric-value" id="memory-usage">0%</div>
+                        <div class="system-metric-label">RAM</div>
+                    </div>
                 </div>
-                <div class="processes-toggle">
-                    <span id="process-count">0 processes</span>
-                    <span class="toggle-icon">▼</span>
-                </div>
-            </div>
-            <div class="processes-content" id="processes-content">
-                <div class="processes-inner" id="processes-container">
-                </div>
-            </div>
-        </div>
 
-        <div class="system-info">
-            <div class="system-metric">
-                <canvas class="system-metric-chart" id="cpu-chart"></canvas>
-                <div class="system-metric-value" id="cpu-usage">0%</div>
-                <div class="system-metric-label">System CPU</div>
-                <div class="metric-sublabel">Host Processor</div>
+                <a href="https://github.com/psalias2006/gpu-hot" target="_blank" rel="noopener noreferrer" class="sidebar-link" title="GitHub">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                </a>
             </div>
-            <div class="system-metric">
-                <canvas class="system-metric-chart" id="memory-chart"></canvas>
-                <div class="system-metric-value" id="memory-usage">0%</div>
-                <div class="system-metric-label">System RAM</div>
-                <div class="metric-sublabel">Host Memory</div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="header">
+                <div class="header-row">
+                    <div class="header-status">
+                        <div class="status-dot connected" id="status-dot"></div>
+                        <span id="connection-status">Demo Mode</span>
+                    </div>
+                    <div class="version-info" id="version-info">
+                        <span id="version-current">demo</span>
+                    </div>
+                </div>
             </div>
+
+            <!-- Overview Tab -->
+            <div id="tab-overview" class="tab-content active">
+                <div id="overview-container" class="overview-grid">
+                </div>
+            </div>
+
+            <!-- Individual GPU Tabs (dynamically created) -->
+
+            <!-- Processes -->
+            <div class="processes-section">
+                <div class="processes-header" onclick="toggleProcesses()">
+                    <div class="processes-title">Processes</div>
+                    <div class="processes-toggle">
+                        <span id="process-count">0</span>
+                        <span class="toggle-icon">&#9660;</span>
+                    </div>
+                </div>
+                <div class="processes-content" id="processes-content">
+                    <div class="processes-inner" id="processes-container">
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Chart detail drawer -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <div class="drawer" id="chart-drawer">
+        <div class="drawer-header">
+            <div class="drawer-header-left">
+                <span class="drawer-title" id="drawer-title">Chart</span>
+                <div class="drawer-hero" id="drawer-hero">
+                    <span class="drawer-hero-value" id="drawer-hero-value">--</span>
+                    <span class="drawer-hero-unit" id="drawer-hero-unit"></span>
+                </div>
+            </div>
+            <button class="drawer-close" id="drawer-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <div class="drawer-chart-wrap">
+                <canvas id="drawer-chart-canvas"></canvas>
+            </div>
+            <div class="drawer-companions" id="drawer-companions"></div>
+            <div class="drawer-stats-bar" id="drawer-stats"></div>
         </div>
     </div>
 
-    <!-- Load the EXACT same JavaScript files from the real application via CDN -->
-    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/chart-config.js?v=1.6.0"></script>
-    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/chart-manager.js?v=1.6.0"></script>
-    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/gpu-cards.js?v=1.6.0"></script>
-    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/ui.js?v=1.6.0"></script>
+    <!-- Application Scripts (from CDN) -->
+    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/chart-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/chart-manager.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/gpu-cards.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/psalias2006/gpu-hot@main/static/js/chart-drawer.js"></script>
 
-    <!-- Demo Data Generator (replaces socket-handlers.js) -->
+    <!-- Demo Data Generator (replaces socket-handlers.js + app.js) -->
     <script>
     // ============================================================================
     // DEMO DATA GENERATOR - Simulates realistic GPU data
@@ -122,13 +161,12 @@
             this.gpuStates = [];
             this.time = 0;
 
-            // Initialize GPU states - realistic idle behavior
             for (let i = 0; i < numGPUs; i++) {
                 this.gpuStates.push({
-                    baseUtil: 0 + Math.random() * 5,  // Very low idle utilization
-                    baseTemp: 30 + Math.random() * 5,  // Cool at idle
-                    basePower: 10 + Math.random() * 10,  // Low idle power
-                    baseMemUsed: 500 + Math.random() * 100,  // Minimal memory at idle
+                    baseUtil: 0 + Math.random() * 5,
+                    baseTemp: 30 + Math.random() * 5,
+                    basePower: 10 + Math.random() * 10,
+                    baseMemUsed: 500 + Math.random() * 100,
                     memTotal: 16384,
                     totalEnergy: 0
                 });
@@ -142,14 +180,12 @@
             for (let i = 0; i < this.numGPUs; i++) {
                 const state = this.gpuStates[i];
 
-                // Simulate realistic idle with occasional small spikes
                 const noise = () => (Math.random() - 0.5) * 3;
                 const wave = Math.sin(this.time * 0.03 + i) * 8;
 
                 const utilization = Math.max(0, Math.min(100, state.baseUtil + wave + noise()));
                 const temperature = Math.max(25, Math.min(85, 31 + utilization * 0.2 + noise() * 0.3));
 
-                // Power scales with utilization
                 const idlePower = 11.5;
                 const powerDraw = utilization > 3 ?
                     Math.max(idlePower, Math.min(165, idlePower + (utilization / 100) * 150 + wave + noise() * 2)) :
@@ -157,7 +193,6 @@
 
                 const memoryUsed = Math.max(512, Math.min(state.memTotal, state.baseMemUsed + wave * 20 + noise() * 50));
 
-                // Clock speeds - idle clocks when idle
                 const idleGraphicsClock = 210;
                 const maxGraphicsClock = 2610;
                 const idleMemoryClock = 405;
@@ -166,28 +201,21 @@
                 const clockGraphics = utilization > 3 ?
                     Math.round(idleGraphicsClock + (utilization / 100) * (maxGraphicsClock - idleGraphicsClock)) :
                     idleGraphicsClock;
-
                 const clockMemory = utilization > 3 ?
                     Math.round(idleMemoryClock + (utilization / 100) * (maxMemoryClock - idleMemoryClock)) :
                     idleMemoryClock;
-
                 const clockSm = Math.round(clockGraphics * 1.0);
                 const clockSmMax = 3105;
                 const clockVideo = Math.round(clockGraphics * 0.95);
 
-                // PCIe link adjusts with utilization
                 const pcieGen = utilization > 10 ? 4 : utilization > 5 ? 2 : 1;
                 const pcieWidth = utilization > 10 ? 16 : 8;
 
-                // Energy accumulation (Wh)
                 if (!state.totalEnergy) state.totalEnergy = 0;
-                state.totalEnergy += (powerDraw * (0.5 / 3600)); // 500ms interval, in Wh
+                state.totalEnergy += (powerDraw * (0.5 / 3600));
 
-                // BAR1 memory (small portion of total)
                 const bar1Used = Math.round(memoryUsed * 0.0004);
                 const bar1Total = Math.round(state.memTotal * 0.016);
-
-                // Process counts
                 const computeProcesses = utilization > 20 ? Math.floor(utilization / 30) : 0;
                 const graphicsProcesses = utilization > 10 ? Math.floor(Math.random() * 2) : utilization > 5 ? 2 : 0;
 
@@ -215,7 +243,7 @@
                     performance_state: utilization > 70 ? 'P0' : utilization > 40 ? 'P2' : utilization > 3 ? 'P5' : 'P8',
                     throttle_reasons: utilization > 90 ? 'Active' : 'None',
                     driver_version: '550.163.01',
-                    energy_consumption_wh: state.totalEnergy, // Already in Wh
+                    energy_consumption_wh: state.totalEnergy,
                     brand: 'GRID',
                     architecture: 'Ada Lovelace',
                     memory_free: state.memTotal - Math.round(memoryUsed),
@@ -268,19 +296,11 @@
     }
 
     // ============================================================================
-    // DEMO APPLICATION - Uses the same update functions as the real app
+    // DEMO APPLICATION
     // ============================================================================
 
-    const dataGenerator = new DemoDataGenerator(1); // 1 GPU for demo
+    const dataGenerator = new DemoDataGenerator(1);
 
-    function updateDemo() {
-        const data = dataGenerator.generateFullData();
-
-        // Use the EXACT same update functions from the real application
-        handleGPUDataUpdate(data);
-    }
-
-    // This function mimics what socket-handlers.js does
     function handleGPUDataUpdate(data) {
         const overviewContainer = document.getElementById('overview-container');
 
@@ -289,56 +309,51 @@
             return;
         }
 
-        // Update each GPU
         Object.keys(data.gpus).forEach(gpuId => {
             const gpuInfo = data.gpus[gpuId];
 
-            // Initialize chart data if needed
             if (!chartData[gpuId]) {
                 initGPUData(gpuId);
             }
 
-            // Create or update overview card
             const existingOverview = overviewContainer.querySelector(`[data-gpu-id="${gpuId}"]`);
             if (!existingOverview) {
-                overviewContainer.insertAdjacentHTML('beforeend', createOverviewCard(gpuId, gpuInfo));
+                overviewContainer.insertAdjacentHTML('beforeend', createEnhancedOverviewCard(gpuId, gpuInfo));
                 initOverviewMiniChart(gpuId, gpuInfo.utilization);
             } else {
                 updateOverviewCard(gpuId, gpuInfo, true);
             }
 
-            // Create or update detailed GPU tab
             ensureGPUTab(gpuId, gpuInfo, true);
+
+            // Update per-GPU system charts
+            if (data.system) {
+                updateGPUSystemCharts(gpuId, data.system, '_demo', true);
+            }
         });
 
-        // Update processes
         if (data.processes) {
             updateProcesses(data.processes);
         }
 
-        // Update system info
         if (data.system) {
             updateSystemInfo(data.system);
         }
 
-        // Auto-switch to single GPU view on first load
         const gpuCount = Object.keys(data.gpus).length;
         const gpuIds = Object.keys(data.gpus);
         autoSwitchSingleGPU(gpuCount, gpuIds);
     }
 
-    // Initialize and start demo
+    function updateDemo() {
+        const data = dataGenerator.generateFullData();
+        handleGPUDataUpdate(data);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         console.log('GPU Hot Demo initialized');
-
-        // Initial update
         updateDemo();
-
-        // Update every 500ms (same as real app)
         setInterval(updateDemo, 500);
-
-        // Initialize system charts
-        initSystemCharts();
     });
     </script>
 </body>

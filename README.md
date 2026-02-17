@@ -2,7 +2,7 @@
 
 # GPU Hot
 
-Real-time NVIDIA GPU monitoring dashboard. Web-based, no SSH required.
+Real-time NVIDIA GPU monitoring dashboard. Lightweight, web-based, and self-hosted.
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -76,7 +76,7 @@ NODE_URLS=http://host:1312...  # Comma-separated node URLs (required for hub mod
 
 **Backend (`core/config.py`):**
 ```python
-UPDATE_INTERVAL = 0.5  # Polling interval
+UPDATE_INTERVAL = 0.5  # Polling interval in seconds
 PORT = 1312            # Server port
 ```
 
@@ -87,42 +87,58 @@ PORT = 1312            # Server port
 ### HTTP
 ```bash
 GET /              # Dashboard
-GET /api/gpu-data  # JSON metrics
+GET /api/gpu-data  # JSON metrics snapshot
+GET /api/version   # Version and update info
 ```
 
 ### WebSocket
 ```javascript
-socket.on('gpu_data', (data) => {
-  // Updates every 0.5s (configurable)
-  // Contains: data.gpus, data.processes, data.system
-});
+const ws = new WebSocket('ws://localhost:1312/socket.io/');
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  // data.gpus      — per-GPU metrics
+  // data.processes  — active GPU processes
+  // data.system     — host CPU, RAM, swap, disk, network
+};
 ```
+
 ---
 
 ## Project Structure
 
-```bash
+```
 gpu-hot/
-├── app.py                      # Flask + WebSocket server
+├── app.py                      # FastAPI server + routes
+├── version.py                  # Version info
 ├── core/
 │   ├── config.py               # Configuration
 │   ├── monitor.py              # NVML GPU monitoring
 │   ├── handlers.py             # WebSocket handlers
-│   ├── routes.py               # HTTP routes
+│   ├── hub.py                  # Multi-node hub aggregator
+│   ├── hub_handlers.py         # Hub WebSocket handlers
+│   ├── nvidia_smi_fallback.py  # nvidia-smi fallback for older GPUs
 │   └── metrics/
 │       ├── collector.py        # Metrics collection
 │       └── utils.py            # Metric utilities
 ├── static/
+│   ├── css/
+│   │   ├── tokens.css          # Design tokens (colors, spacing)
+│   │   ├── layout.css          # Page layout (sidebar, main)
+│   │   └── components.css      # UI components (cards, charts)
 │   ├── js/
-│   │   ├── charts.js           # Chart configs
-│   │   ├── gpu-cards.js        # UI components
-│   │   ├── socket-handlers.js  # WebSocket + rendering
-│   │   ├── ui.js               # View management
-│   │   └── app.js              # Init
-│   └── css/styles.css
+│   │   ├── chart-config.js     # Chart.js configurations
+│   │   ├── chart-manager.js    # Chart data + lifecycle
+│   │   ├── chart-drawer.js     # Correlation drawer
+│   │   ├── gpu-cards.js        # GPU card rendering
+│   │   ├── socket-handlers.js  # WebSocket + batched rendering
+│   │   ├── ui.js               # Sidebar navigation
+│   │   └── app.js              # Init + version check
+│   └── favicon.svg
 ├── templates/index.html
 ├── Dockerfile
-└── docker-compose.yml
+├── docker-compose.yml
+└── requirements.txt
 ```
 
 ---

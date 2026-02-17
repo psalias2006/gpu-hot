@@ -1,0 +1,124 @@
+/* ============================================
+   GPU Studio — Design Tokens
+   Swiss Minimalist / Industrial Dark
+   ============================================ */
+
+:root {
+    /* Background */
+    --bg-primary: #0D0D0D;
+    --bg-surface: #1A1A1A;
+    --bg-elevated: #222222;
+
+    /* Text */
+    --text-primary: #FFFFFF;
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-tertiary: rgba(255, 255, 255, 0.4);
+
+    /* Accent — Steel Blue at 20% opacity, for selection/active only */
+    --accent: rgba(66, 133, 244, 0.20);
+    --accent-text: #4285F4;
+
+    /* Signal — color is forbidden except for warnings */
+    --warning: #FF9500;
+    --danger: #FF2D2D;
+    --ok: rgba(255, 255, 255, 0.5);
+
+    /* Metric Identity Colors (RGB channels for flexible opacity) */
+    --metric-util: 130, 177, 255;
+    --metric-temp: 255, 183, 77;
+    --metric-mem: 100, 210, 255;
+    --metric-power: 134, 239, 172;
+    --metric-fan: 186, 147, 216;
+    --metric-clocks: 255, 213, 130;
+    --metric-efficiency: 168, 216, 185;
+    --metric-pcie: 176, 190, 210;
+
+    /* Sparkline */
+    --spark-stroke: rgba(255, 255, 255, 0.4);
+    --spark-stroke-secondary: rgba(255, 255, 255, 0.2);
+
+    /* Bullet bar */
+    --bar-track: rgba(255, 255, 255, 0.08);
+    --bar-fill: rgba(255, 255, 255, 0.25);
+    --bar-fill-warning: var(--warning);
+    --bar-fill-danger: var(--danger);
+
+    /* Grid */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 40px;
+    --space-2xl: 64px;
+
+    /* Sidebar */
+    --sidebar-width: 56px;
+
+    /* Typography */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+
+    /* Borders — kept minimal, only for structure */
+    --border-subtle: rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================
+   Reset
+   ============================================ */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ============================================
+   Base Typography & Body
+   ============================================ */
+
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ============================================
+   Scrollbar — Minimal
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
+   Selection
+   ============================================ */
+
+::selection {
+    background: var(--accent);
+    color: var(--text-primary);
+}

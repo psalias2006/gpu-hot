@@ -193,10 +193,9 @@ class MetricsCollector:
     
     def _add_throttling(self, handle, data):
         if throttle := safe_get(pynvml.nvmlDeviceGetCurrentClocksThrottleReasons, handle):
+            # Only report genuinely alarming throttle reasons.
+            # GPU Idle, App Settings, and SW Power Cap are normal operating conditions.
             throttle_map = [
-                (pynvml.nvmlClocksThrottleReasonGpuIdle, 'GPU Idle'),
-                (pynvml.nvmlClocksThrottleReasonApplicationsClocksSetting, 'App Settings'),
-                (pynvml.nvmlClocksThrottleReasonSwPowerCap, 'SW Power Cap'),
                 (pynvml.nvmlClocksThrottleReasonHwSlowdown, 'HW Slowdown'),
                 (pynvml.nvmlClocksThrottleReasonSwThermalSlowdown, 'SW Thermal'),
                 (pynvml.nvmlClocksThrottleReasonHwThermalSlowdown, 'HW Thermal'),

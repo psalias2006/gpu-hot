@@ -1,0 +1,339 @@
+/* ============================================
+   GPU Studio — Layout
+   Sidebar + Main Content Grid
+   ============================================ */
+
+/* Studio shell — sidebar + main */
+.studio {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ============================================
+   Sidebar
+   ============================================ */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-md) 0;
+    z-index: 100;
+    border-right: 1px solid var(--border-subtle);
+}
+
+.sidebar-logo {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-lg);
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    user-select: none;
+}
+
+/* GPU nav list */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar-btn {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sidebar-btn:hover {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-btn.active {
+    color: var(--text-primary);
+    background: var(--accent);
+}
+
+/* Sidebar bottom section (system info, links) */
+.sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    flex-shrink: 0;
+}
+
+.sidebar-system {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.sidebar-system-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+}
+
+.sidebar-system-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: color 0.1s, background 0.1s;
+}
+
+.sidebar-link:hover {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* ============================================
+   Main Content
+   ============================================ */
+
+.main {
+    flex: 1;
+    min-height: 0;
+    margin-left: var(--sidebar-width);
+    padding: var(--space-xl) var(--space-xl) var(--space-2xl);
+    max-width: 1600px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+}
+
+/* Header — minimal */
+.header {
+    margin-bottom: var(--space-xl);
+}
+
+.header-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-xs);
+}
+
+.header-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+}
+
+.status-dot.connected {
+    background: var(--text-secondary);
+}
+
+.version-info {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.update-badge a {
+    font-size: 11px;
+    color: var(--accent-text);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.update-badge a:hover {
+    text-decoration: underline;
+}
+
+/* ============================================
+   View / Tab System
+   ============================================ */
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ============================================
+   Overview Grid (All GPUs view)
+   ============================================ */
+
+.overview-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* Cluster node grouping */
+.node-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.node-group + .node-group {
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.node-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    padding-left: var(--space-xs);
+}
+
+.node-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ============================================
+   Loading State
+   ============================================ */
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-subtle);
+    border-top: 2px solid var(--text-tertiary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: var(--space-sm);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Responsive — Mobile
+   ============================================ */
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 48px;
+        flex-direction: row;
+        padding: 0 var(--space-sm);
+        border-right: none;
+        border-top: 1px solid var(--border-subtle);
+    }
+
+    .sidebar-logo {
+        display: none;
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        gap: var(--space-xs);
+    }
+
+    .sidebar-bottom {
+        flex-direction: row;
+        margin-top: 0;
+        margin-left: auto;
+        padding-top: 0;
+        gap: var(--space-sm);
+    }
+
+    .main {
+        margin-left: 0;
+        margin-bottom: 48px;
+        padding: var(--space-lg) var(--space-md) var(--space-xl);
+    }
+}
+
+@media (max-width: 480px) {
+    .main {
+        padding: var(--space-md) var(--space-sm) var(--space-xl);
+    }
+}

@@ -1,0 +1,1177 @@
+/* ============================================
+   GPU Studio — Components
+   Metric cells, bullet bars, sparklines,
+   process table, system info, toast
+   ============================================ */
+
+/* ============================================
+   Overview Card (All GPUs view)
+   ============================================ */
+
+.overview-gpu-card {
+    display: grid;
+    grid-template-columns: 180px 1fr 200px;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-sm) 0;
+    cursor: pointer;
+    transition: background 0.1s;
+    min-width: 0;
+}
+
+.overview-gpu-card:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.overview-gpu-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.overview-gpu-name h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+}
+
+.overview-gpu-name p {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.overview-metrics {
+    display: flex;
+    gap: var(--space-xl);
+    flex-wrap: nowrap;
+    min-width: 0;
+}
+
+.overview-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 72px;
+}
+
+.overview-metric-value {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.overview-metric-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-tertiary);
+}
+
+.overview-mini-chart {
+    height: 48px;
+    max-height: 48px;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.overview-mini-chart canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 48px !important;
+    max-height: 48px !important;
+}
+
+/* ============================================
+   Enhanced Overview Card
+   ============================================ */
+
+.single-gpu-overview {
+    cursor: pointer;
+    padding: 0 0 var(--space-md) 0;
+    transition: background 0.1s;
+}
+
+.single-gpu-overview:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.sgo-header {
+    margin-bottom: var(--space-xs);
+}
+
+.sgo-metrics-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-md);
+}
+
+.sgo-metrics-grid {
+    flex: 1;
+    margin-bottom: 0 !important;
+}
+
+.sgo-mini-chart {
+    width: 200px;
+    height: 64px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.sgo-mini-chart canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 64px !important;
+    max-height: 64px !important;
+}
+
+.sgo-info-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+    padding: var(--space-sm) 0;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.sgo-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sgo-info-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.sgo-info-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+}
+
+/* ============================================
+   Detailed GPU Card — Three Tiers
+   ============================================ */
+
+.gpu-card {
+    contain: layout style;
+}
+
+/* GPU Header (detail view) */
+.gpu-detail-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xs);
+}
+
+.gpu-detail-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.gpu-detail-name {
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.gpu-detail-specs {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.spec-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+/* ---- Metrics Panel — subtle grouping container ---- */
+
+.metrics-panel {
+    background: rgba(255, 255, 255, 0.015);
+    border-radius: 8px;
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+/* ---- TOP TIER: Raw metric numbers ---- */
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--space-md) var(--space-xl);
+    margin-bottom: var(--space-xl);
+    align-items: stretch;
+}
+
+/* Primary tier — hero metrics (util, temp, mem, power, fan) */
+.metrics-grid--primary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-lg) var(--space-2xl);
+    margin-bottom: 0;
+    align-items: stretch;
+}
+
+.metrics-grid--primary .metric-num {
+    font-size: 36px;
+    letter-spacing: -1.5px;
+}
+
+.metrics-grid--primary .metric-unit {
+    font-size: 15px;
+}
+
+/* Secondary tier — reference data (clocks, PCIe, brand, etc.) */
+.metrics-grid--secondary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: var(--space-sm) var(--space-lg);
+    margin-bottom: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-subtle);
+    align-items: stretch;
+}
+
+.metrics-grid--secondary .metric-num {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.metrics-grid--secondary .metric-unit {
+    font-size: 11px;
+}
+
+.metrics-grid--secondary .metric-label {
+    font-size: 9px;
+    letter-spacing: 0.8px;
+}
+
+.metrics-grid--secondary .metric-sub {
+    font-size: 10px;
+}
+
+.metrics-grid--secondary .metric-cell {
+    gap: 3px;
+}
+
+.metric-cell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-height: 0;
+}
+
+.metric-num-row {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.metric-num {
+    font-family: var(--font-mono);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.metric-unit {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+}
+
+.metric-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+}
+
+.metric-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+/* ---- Bullet bar (horizontal progress) ---- */
+
+.bullet-bar {
+    height: 4px;
+    background: var(--bar-track);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: auto;
+}
+
+.bullet-fill {
+    height: 100%;
+    background: var(--bar-fill);
+    border-radius: 2px;
+}
+
+/* Metric-identity colored bullet fills */
+.bullet-fill[data-metric="utilization"] {
+    background: rgba(var(--metric-util), 0.35);
+}
+.bullet-fill[data-metric="temperature"] {
+    background: rgba(var(--metric-temp), 0.30);
+}
+.bullet-fill[data-metric="memory"] {
+    background: rgba(var(--metric-mem), 0.35);
+}
+.bullet-fill[data-metric="power"] {
+    background: rgba(var(--metric-power), 0.30);
+}
+.bullet-fill[data-metric="fan"] {
+    background: rgba(var(--metric-fan), 0.30);
+}
+
+.bullet-fill.warning {
+    background: var(--bar-fill-warning) !important;
+}
+
+.bullet-fill.danger {
+    background: var(--bar-fill-warning) !important;
+}
+
+/* Metric value warning/danger text colors */
+.metric-num.warning,
+.metric-num.danger,
+.overview-metric-value.warning,
+.overview-metric-value.danger {
+    color: var(--warning);
+}
+
+/* ---- MID TIER: Sparkline charts ---- */
+
+.sparklines-section {
+    margin-bottom: var(--space-xl);
+}
+
+.sparklines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--space-lg);
+}
+
+.sparkline-container {
+    position: relative;
+    contain: layout style;
+    padding: 0;
+}
+
+.sparkline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--space-sm);
+}
+
+.sparkline-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+}
+
+.sparkline-stats {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.sparkline-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+}
+
+.sparkline-stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+}
+
+.sparkline-stat-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.sparkline-canvas-wrap {
+    height: 90px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sparkline-canvas-wrap canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* ============================================
+   Process Table — Bottom Tier
+   ============================================ */
+
+.processes-section {
+    margin-top: var(--space-xl);
+}
+
+.processes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.processes-header:hover .processes-title,
+.processes-header:hover .processes-toggle {
+    color: var(--text-secondary);
+}
+
+.processes-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    transition: color 0.1s;
+}
+
+.processes-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    transition: color 0.1s;
+}
+
+.toggle-icon {
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.toggle-icon.expanded {
+    transform: rotate(180deg);
+}
+
+.processes-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.processes-content.expanded {
+    max-height: 600px;
+}
+
+.processes-inner {
+    padding: var(--space-md) 0;
+}
+
+/* Process table rows */
+.process-table-header {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.process-table-header span {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-tertiary);
+}
+
+.process-item {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.process-item:last-child {
+    border-bottom: none;
+}
+
+.process-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.process-pid {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+.process-memory {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-xl) 0;
+}
+
+.empty-state-text {
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.empty-state-subtext {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    margin-top: var(--space-xs);
+}
+
+/* ============================================
+   System Info (sidebar sparklines)
+   ============================================ */
+
+.system-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    width: 100%;
+    padding: 0 var(--space-sm);
+}
+
+.system-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    max-height: 60px;
+    overflow: hidden;
+}
+
+.system-metric-chart {
+    width: 36px !important;
+    height: 20px !important;
+    max-width: 36px;
+    max-height: 20px;
+    display: block;
+}
+
+.system-metric-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.system-metric-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+}
+
+/* ============================================
+   System Sparklines Section (GPU detail page)
+   ============================================ */
+
+.system-sparklines-section {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.system-sparklines-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-lg);
+}
+
+.sparkline-sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    padding-left: var(--space-sm);
+}
+
+/* ============================================
+   Star Toast — Minimal Restyle
+   ============================================ */
+
+.star-toast {
+    position: fixed;
+    right: var(--space-lg);
+    top: var(--space-lg);
+    width: 280px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: var(--space-md);
+    z-index: 1000;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.star-toast.is-hidden {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+}
+
+.star-toast-close {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.star-toast-close:hover {
+    color: var(--text-secondary);
+}
+
+.star-toast-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    padding-right: var(--space-lg);
+}
+
+.star-toast-text {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-md);
+}
+
+.star-toast-progress-wrap {
+    margin-bottom: var(--space-md);
+}
+
+.star-toast-progress-wrap.is-hidden {
+    display: none;
+}
+
+.star-toast-progress-bar {
+    height: 3px;
+    background: var(--bar-track);
+    border-radius: 1.5px;
+    overflow: hidden;
+    margin-bottom: var(--space-xs);
+}
+
+.star-toast-progress-fill {
+    height: 100%;
+    background: var(--text-tertiary);
+    border-radius: 1.5px;
+    transition: width 0.5s ease;
+}
+
+.star-toast-milestone {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.star-toast-btn {
+    width: 100%;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: var(--space-sm) var(--space-md);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    transition: background 0.1s, color 0.1s;
+}
+
+.star-toast-btn svg {
+    flex-shrink: 0;
+}
+
+.star-toast-btn:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Chart Drawer — Slide-out detail panel
+   ============================================ */
+
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 520px;
+    max-width: calc(100vw - var(--sidebar-width) - var(--space-lg));
+    background: var(--bg-surface);
+    z-index: 201;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border-subtle);
+}
+
+.drawer.open {
+    transform: translateX(0);
+}
+
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--space-lg) var(--space-lg) var(--space-md);
+    flex-shrink: 0;
+}
+
+.drawer-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.drawer-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+}
+
+.drawer-hero {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.drawer-hero-value {
+    font-family: var(--font-mono);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.drawer-hero-unit {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+}
+
+.drawer-close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    font-size: 16px;
+    cursor: pointer;
+    transition: color 0.1s;
+    margin-top: 2px;
+}
+
+.drawer-close:hover {
+    color: var(--text-primary);
+}
+
+.drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 var(--space-lg) var(--space-lg);
+    min-height: 0;
+}
+
+/* Large chart in drawer */
+.drawer-chart-wrap {
+    height: 300px;
+    position: relative;
+    margin-bottom: var(--space-md);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.015);
+    border-radius: 6px;
+    padding: var(--space-sm);
+}
+
+.drawer-chart-wrap canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Companion selector chips */
+.drawer-companions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    padding: 0 0 var(--space-lg);
+}
+
+.drawer-companions-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    margin-right: var(--space-xs);
+    white-space: nowrap;
+}
+
+.drawer-companion-chip {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.drawer-companion-chip:hover {
+    color: var(--text-secondary);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.drawer-companion-chip.active {
+    color: rgba(255, 170, 50, 0.80);
+    background: rgba(255, 170, 50, 0.12);
+    border-color: rgba(255, 170, 50, 0.35);
+}
+
+/* Dual-metric stats bar */
+.drawer-stats-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.drawer-stats-group {
+    border-top: 1px solid var(--border-subtle);
+    padding: var(--space-sm) 0;
+}
+
+.drawer-stats-group:last-child {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.drawer-stats-group-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    padding: 0 var(--space-md) var(--space-xs);
+}
+
+.drawer-stats-group.companion .drawer-stats-group-label {
+    color: rgba(255, 170, 50, 0.50);
+}
+
+.drawer-stats-row {
+    display: flex;
+    gap: 0;
+}
+
+.drawer-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-xs) var(--space-md);
+    border-right: 1px solid var(--border-subtle);
+}
+
+.drawer-stat:last-child {
+    border-right: none;
+}
+
+.drawer-stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    order: -1;
+}
+
+.drawer-stat-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.drawer-stats-group.companion .drawer-stat-value {
+    color: rgba(255, 170, 50, 0.65);
+}
+
+/* Make sparklines clickable */
+.sparkline-container[data-chart-type] {
+    cursor: pointer;
+}
+
+.sparkline-container[data-chart-type]:hover {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+}
+
+.sparkline-container[data-chart-type]:hover .sparkline-title {
+    color: var(--text-secondary);
+}
+
+.sparkline-container[data-chart-type]:hover .sparkline-stat-value {
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Responsive — Components
+   ============================================ */
+
+@media (max-width: 1200px) {
+    .overview-gpu-card {
+        grid-template-columns: 140px 1fr 160px;
+    }
+
+    .sparklines-grid {
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .drawer {
+        width: 100%;
+        max-width: 100vw;
+    }
+
+    .sgo-metrics-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sgo-mini-chart {
+        width: 100%;
+        height: 48px;
+    }
+
+    .sgo-mini-chart canvas {
+        height: 48px !important;
+        max-height: 48px !important;
+    }
+
+    .sgo-info-strip {
+        gap: var(--space-md);
+    }
+
+    .overview-gpu-card {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+        padding: var(--space-md) 0;
+    }
+
+    .overview-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-md);
+    }
+
+    .overview-mini-chart {
+        height: 40px;
+    }
+
+    .metrics-grid,
+    .metrics-grid--primary {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-md);
+    }
+
+    .metrics-grid--primary .metric-num {
+        font-size: 28px;
+    }
+
+    .metrics-grid--secondary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .metrics-panel {
+        padding: var(--space-sm) var(--space-md);
+    }
+
+    .metric-num {
+        font-size: 24px;
+    }
+
+    .sparklines-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sparkline-container {
+        height: 130px;
+    }
+
+    .sparkline-canvas-wrap {
+        height: 90px;
+    }
+
+    .sparkline-stats {
+        display: none;
+    }
+
+    .process-table-header,
+    .process-item {
+        grid-template-columns: 1fr 80px 80px;
+    }
+
+    .system-info {
+        flex-direction: row;
+        justify-content: center;
+        gap: var(--space-lg);
+    }
+
+    .system-metric {
+        width: auto;
+    }
+
+    .star-toast {
+        right: var(--space-md);
+        top: var(--space-md);
+        width: calc(100% - 2 * var(--space-md));
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .overview-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metrics-grid,
+    .metrics-grid--primary {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .metrics-grid--primary .metric-num {
+        font-size: 24px;
+    }
+
+    .metrics-grid--secondary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metric-num {
+        font-size: 20px;
+    }
+
+    .gpu-detail-title {
+        font-size: 18px;
+    }
+
+    .process-table-header,
+    .process-item {
+        grid-template-columns: 1fr 80px;
+    }
+
+    .process-pid {
+        display: none;
+    }
+}

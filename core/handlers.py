@@ -55,11 +55,59 @@ async def monitor_loop(monitor, connections):
                 monitor.get_processes()
             )
             
+            # Core system metrics
+            vmem = psutil.virtual_memory()
             system_info = {
                 'cpu_percent': psutil.cpu_percent(percpu=False),
-                'memory_percent': psutil.virtual_memory().percent,
+                'memory_percent': vmem.percent,
+                'memory_total_gb': round(vmem.total / (1024 ** 3), 2),
+                'memory_used_gb': round(vmem.used / (1024 ** 3), 2),
+                'memory_available_gb': round(vmem.available / (1024 ** 3), 2),
+                'cpu_count': psutil.cpu_count(),
                 'timestamp': datetime.now().isoformat()
             }
+
+            # Swap memory
+            try:
+                swap = psutil.swap_memory()
+                system_info['swap_percent'] = swap.percent
+            except Exception:
+                pass
+
+            # CPU frequency
+            try:
+                freq = psutil.cpu_freq()
+                if freq:
+                    system_info['cpu_freq_current'] = round(freq.current, 0)
+                    system_info['cpu_freq_max'] = round(freq.max, 0)
+            except Exception:
+                pass
+
+            # Load average (Linux/Mac only)
+            try:
+                load = psutil.getloadavg()
+                system_info['load_avg_1'] = round(load[0], 2)
+                system_info['load_avg_5'] = round(load[1], 2)
+                system_info['load_avg_15'] = round(load[2], 2)
+            except (AttributeError, OSError):
+                pass
+
+            # Network I/O (cumulative bytes — frontend computes rate)
+            try:
+                net = psutil.net_io_counters()
+                system_info['net_bytes_sent'] = net.bytes_sent
+                system_info['net_bytes_recv'] = net.bytes_recv
+            except Exception:
+                pass
+
+            # Disk I/O (cumulative bytes — frontend computes rate)
+            try:
+                disk = psutil.disk_io_counters()
+                if disk:
+                    system_info['disk_read_bytes'] = disk.read_bytes
+                    system_info['disk_write_bytes'] = disk.write_bytes
+            except Exception:
+                pass
             
             data = {
                 'mode': config.MODE,

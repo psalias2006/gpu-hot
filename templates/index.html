@@ -5,99 +5,126 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPU Hot</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-    
+
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Application Styles -->
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wcdt@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Application Styles (modular) -->
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/components.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔥 GPU Hot</h1>
-            <p>Real-time NVIDIA GPU monitoring dashboard</p>
-            <div class="header-links">
-                <a href="https://github.com/psalias2006/gpu-hot" target="_blank" rel="noopener noreferrer" class="github-link" title="View on GitHub">
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+    <div class="studio">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">GPU</div>
+
+            <nav class="sidebar-nav" id="view-selector">
+                <button class="sidebar-btn active" data-view="overview" onclick="switchToView('overview')" title="All GPUs">All</button>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <!-- System info -->
+                <div class="system-info">
+                    <div class="system-metric">
+                        <canvas class="system-metric-chart" id="cpu-chart"></canvas>
+                        <div class="system-metric-value" id="cpu-usage">0%</div>
+                        <div class="system-metric-label">CPU</div>
+                    </div>
+                    <div class="system-metric">
+                        <canvas class="system-metric-chart" id="memory-chart"></canvas>
+                        <div class="system-metric-value" id="memory-usage">0%</div>
+                        <div class="system-metric-label">RAM</div>
+                    </div>
+                </div>
+
+                <!-- GitHub link -->
+                <a href="https://github.com/psalias2006/gpu-hot" target="_blank" rel="noopener noreferrer" class="sidebar-link" title="GitHub">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
                     </svg>
-                    <span>GitHub</span>
                 </a>
-                <div class="version-info" id="version-info">
-                    <span class="version-current" id="version-current">Loading...</span>
-                    <span class="update-badge" id="update-badge" style="display: none;">
-                        <a href="#" id="update-link" target="_blank" rel="noopener noreferrer">Update</a>
-                    </span>
-                </div>
             </div>
-        </div>
+        </aside>
 
-        <div class="status-bar">
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                <span>Live Monitoring</span>
-            </div>
-            <div id="connection-status">Connecting...</div>
-        </div>
-
-        <!-- View Selector -->
-        <div class="view-selector" id="view-selector">
-            <button class="view-option active" data-view="overview" onclick="switchToView('overview')">All GPUs</button>
-        </div>
-
-        <!-- Overview Tab -->
-        <div id="tab-overview" class="tab-content active">
-            <div id="overview-container" class="overview-grid">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Loading GPU data...
-                </div>
-            </div>
-        </div>
-
-        <!-- Individual GPU Tabs (dynamically created) -->
-
-        <div class="processes-section">
-            <div class="processes-header" onclick="toggleProcesses()">
-                <div class="processes-title">
-                    Active GPU Processes
-                </div>
-                <div class="processes-toggle">
-                    <span id="process-count">0 processes</span>
-                    <span class="toggle-icon">▼</span>
-                </div>
-            </div>
-            <div class="processes-content" id="processes-content">
-                <div class="processes-inner" id="processes-container">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        Loading processes...
+        <!-- Main Content -->
+        <main class="main">
+            <div class="header">
+                <div class="header-row">
+                    <div class="header-status">
+                        <div class="status-dot" id="status-dot"></div>
+                        <span id="connection-status">Connecting</span>
+                    </div>
+                    <div class="version-info" id="version-info">
+                        <span id="version-current"></span>
+                        <span class="update-badge" id="update-badge" style="display: none;">
+                            <a href="#" id="update-link" target="_blank" rel="noopener noreferrer">Update</a>
+                        </span>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="system-info">
-            <div class="system-metric">
-                <canvas class="system-metric-chart" id="cpu-chart"></canvas>
-                <div class="system-metric-value" id="cpu-usage">0%</div>
-                <div class="system-metric-label">System CPU</div>
-                <div class="metric-sublabel">Host Processor</div>
+            <!-- Overview Tab -->
+            <div id="tab-overview" class="tab-content active">
+                <div id="overview-container" class="overview-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading GPU data...
+                    </div>
+                </div>
             </div>
-            <div class="system-metric">
-                <canvas class="system-metric-chart" id="memory-chart"></canvas>
-                <div class="system-metric-value" id="memory-usage">0%</div>
-                <div class="system-metric-label">System RAM</div>
-                <div class="metric-sublabel">Host Memory</div>
+
+            <!-- Individual GPU Tabs (dynamically created) -->
+
+            <!-- Processes -->
+            <div class="processes-section">
+                <div class="processes-header" onclick="toggleProcesses()">
+                    <div class="processes-title">Processes</div>
+                    <div class="processes-toggle">
+                        <span id="process-count">0</span>
+                        <span class="toggle-icon">&#9660;</span>
+                    </div>
+                </div>
+                <div class="processes-content" id="processes-content">
+                    <div class="processes-inner" id="processes-container">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading processes...
+                        </div>
+                    </div>
+                </div>
             </div>
+        </main>
+    </div>
+
+    <!-- Chart detail drawer -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <div class="drawer" id="chart-drawer">
+        <div class="drawer-header">
+            <div class="drawer-header-left">
+                <span class="drawer-title" id="drawer-title">Chart</span>
+                <div class="drawer-hero" id="drawer-hero">
+                    <span class="drawer-hero-value" id="drawer-hero-value">--</span>
+                    <span class="drawer-hero-unit" id="drawer-hero-unit"></span>
+                </div>
+            </div>
+            <button class="drawer-close" id="drawer-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <div class="drawer-chart-wrap">
+                <canvas id="drawer-chart-canvas"></canvas>
+            </div>
+            <div class="drawer-companions" id="drawer-companions"></div>
+            <div class="drawer-stats-bar" id="drawer-stats"></div>
         </div>
     </div>
 
+    <!-- Star toast -->
     <div class="star-toast is-hidden" id="star-toast" role="status" aria-live="polite">
         <button class="star-toast-close" type="button" data-action="dismiss" aria-label="Close">&times;</button>
-        <div class="star-toast-title">Star us on GitHub</div>
+        <div class="star-toast-title">Star on GitHub</div>
         <div class="star-toast-text">Help others discover GPU Hot</div>
         <div class="star-toast-progress-wrap is-hidden" id="star-progress-wrap">
             <div class="star-toast-progress-bar">
@@ -112,12 +139,12 @@
     </div>
 
     <!-- Application Scripts -->
-    <!-- Load in order: chart-config -> chart-manager -> gpu-cards -> ui -> socket-handlers -> app -->
     <script src="/static/js/chart-config.js"></script>
     <script src="/static/js/chart-manager.js"></script>
     <script src="/static/js/gpu-cards.js"></script>
     <script src="/static/js/ui.js"></script>
     <script src="/static/js/socket-handlers.js"></script>
+    <script src="/static/js/chart-drawer.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
