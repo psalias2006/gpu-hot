@@ -9,13 +9,13 @@ Real-time NVIDIA GPU monitoring dashboard. Lightweight, web-based, and self-host
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![NVIDIA](https://img.shields.io/badge/NVIDIA-GPU-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/)
 
+<img src="gpu-hot.jpg" alt="GPU Hot Dashboard" width="800" />
+
 <p>
 <a href="https://psalias2006.github.io/gpu-hot/demo.html">
-<img src="https://img.shields.io/badge/Live_Demo-%E2%86%92-E8E8E8?style=for-the-badge" alt="Live Demo" />
+<img src="https://img.shields.io/badge/%E2%96%B6%20%20Live_Demo-try_it_in_your_browser-1a1a1a?style=for-the-badge&labelColor=76B900" alt="Live Demo" />
 </a>
 </p>
-
-<img src="gpu-hot.jpg" alt="GPU Hot Dashboard" width="800" />
 
 </div>
 
