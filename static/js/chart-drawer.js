@@ -193,12 +193,12 @@ function createDrawerChart() {
             systemDiskIo:  [{ key: 'dataRead', label: 'Read' }, { key: 'dataWrite', label: 'Write' }],
             systemLoadAvg: [{ key: 'data1m', label: '1m' }, { key: 'data5m', label: '5m' }, { key: 'data15m', label: '15m' }],
         };
-        const whiteAlphas = [0.6, 0.3, 0.18, 0.12];
+        const whiteAlphas = [0.7, 0.4, 0.25, 0.15];
         (multiDefs[chartType] || []).forEach((def, i) => {
             datasets.push({
                 label: def.label,
                 data: primaryStore[def.key],
-                borderColor: `rgba(255, 255, 255, ${whiteAlphas[i] || 0.12})`,
+                borderColor: `rgba(255, 255, 255, ${whiteAlphas[i] || 0.15})`,
                 backgroundColor: i === 0 ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
                 borderWidth: i === 0 ? 2 : 1.5,
                 tension: 0.3,
@@ -212,7 +212,7 @@ function createDrawerChart() {
         datasets.push({
             label: pMeta.title,
             data: primaryArr,
-            borderColor: 'rgba(255, 255, 255, 0.6)',
+            borderColor: 'rgba(255, 255, 255, 0.7)',
             backgroundColor: 'rgba(255, 255, 255, 0.04)',
             borderWidth: 2,
             tension: 0.3,
@@ -327,7 +327,7 @@ function createDrawerChart() {
                 },
                 tooltip: {
                     enabled: true,
-                    backgroundColor: '#222222',
+                    backgroundColor: '#1a1a1c',
                     titleColor: '#ffffff',
                     bodyColor: 'rgba(255,255,255,0.7)',
                     borderWidth: 0,

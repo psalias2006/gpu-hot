@@ -5,12 +5,12 @@
 
 // Sparkline palette — monochromatic
 const SPARK = {
-    stroke: 'rgba(255, 255, 255, 0.4)',
-    strokeLight: 'rgba(255, 255, 255, 0.25)',
-    strokeDim: 'rgba(255, 255, 255, 0.15)',
+    stroke: 'rgba(255, 255, 255, 0.6)',
+    strokeLight: 'rgba(255, 255, 255, 0.35)',
+    strokeDim: 'rgba(255, 255, 255, 0.2)',
     grid: 'rgba(255, 255, 255, 0.04)',
-    tick: 'rgba(255, 255, 255, 0.3)',
-    tooltipBg: '#1A1A1A',
+    tick: 'rgba(255, 255, 255, 0.4)',
+    tooltipBg: '#131315',
     warning: '#FF9500',
 };
 
@@ -197,7 +197,7 @@ function createMultiLineChartConfig(options) {
         config.options.plugins.legend.position = 'top';
         config.options.plugins.legend.align = 'end';
         config.options.plugins.legend.labels = {
-            color: 'rgba(255, 255, 255, 0.4)',
+            color: 'rgba(255, 255, 255, 0.5)',
             font: { size: 10 },
             boxWidth: 8,
             boxHeight: 2,

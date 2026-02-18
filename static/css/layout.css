@@ -149,8 +149,7 @@
     flex: 1;
     min-height: 0;
     margin-left: var(--sidebar-width);
-    padding: var(--space-xl) var(--space-xl) var(--space-2xl);
-    max-width: 1600px;
+    padding: var(--space-xl) max(var(--space-xl), calc((100vw - var(--sidebar-width) - 1800px) / 2)) var(--space-2xl);
     overflow-y: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
