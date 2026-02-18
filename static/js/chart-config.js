@@ -10,7 +10,7 @@ const SPARK = {
     strokeDim: 'rgba(255, 255, 255, 0.15)',
     grid: 'rgba(255, 255, 255, 0.04)',
     tick: 'rgba(255, 255, 255, 0.3)',
-    tooltipBg: '#1A1A1A',
+    tooltipBg: '#141418',
     warning: '#FF9500',
 };
 

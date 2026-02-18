@@ -327,7 +327,7 @@ function createDrawerChart() {
                 },
                 tooltip: {
                     enabled: true,
-                    backgroundColor: '#222222',
+                    backgroundColor: '#1c1c22',
                     titleColor: '#ffffff',
                     bodyColor: 'rgba(255,255,255,0.7)',
                     borderWidth: 0,

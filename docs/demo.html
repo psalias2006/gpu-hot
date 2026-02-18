@@ -183,8 +183,12 @@
                 const noise = () => (Math.random() - 0.5) * 3;
                 const wave = Math.sin(this.time * 0.03 + i) * 8;
 
-                const utilization = Math.max(0, Math.min(100, state.baseUtil + wave + noise()));
-                const temperature = Math.max(25, Math.min(85, 31 + utilization * 0.2 + noise() * 0.3));
+                const burstCycle = 120;
+                const burstPhase = (this.time + i * 40) % burstCycle;
+                const burst = burstPhase < 40 ? Math.sin(burstPhase / 40 * Math.PI) * 85 : 0;
+
+                const utilization = Math.max(0, Math.min(100, state.baseUtil + wave + noise() + burst));
+                const temperature = Math.max(25, Math.min(90, 30 + utilization * 0.55 + noise() * 0.5));
 
                 const idlePower = 11.5;
                 const powerDraw = utilization > 3 ?
@@ -242,7 +246,7 @@
                     pcie_rx_throughput: Math.round((utilization / 100) * 30 + Math.random() * 3),
                     performance_state: utilization > 70 ? 'P0' : utilization > 40 ? 'P2' : utilization > 3 ? 'P5' : 'P8',
                     throttle_reasons: utilization > 90 ? 'Active' : 'None',
-                    driver_version: '550.163.01',
+                    driver_version: '580.126.09',
                     energy_consumption_wh: state.totalEnergy,
                     brand: 'GRID',
                     architecture: 'Ada Lovelace',
@@ -278,11 +282,44 @@
         generateSystemInfo() {
             const cpuBase = 10 + Math.random() * 20;
             const cpuNoise = (Math.random() - 0.5) * 10;
+            const cpuPercent = Math.max(5, Math.min(95, cpuBase + cpuNoise));
             const memBase = 30 + Math.random() * 20;
+            const memPercent = Math.max(20, Math.min(85, memBase + (Math.random() - 0.5) * 5));
+
+            const memTotalGb = 125.56;
+            const memUsedGb = Math.round(memTotalGb * (memPercent / 100) * 100) / 100;
+
+            if (!this._netSent) this._netSent = 500000000;
+            if (!this._netRecv) this._netRecv = 800000000;
+            if (!this._diskRead) this._diskRead = 2000000000;
+            if (!this._diskWrite) this._diskWrite = 1000000000;
+            this._netSent += Math.round((0.5 + Math.random() * 2) * 1024);
+            this._netRecv += Math.round((0.2 + Math.random() * 1.5) * 1024);
+            this._diskRead += Math.round(Math.random() * 5 * 1024);
+            this._diskWrite += Math.round(Math.random() * 3 * 1024);
+
+            const load1 = Math.max(0, 0.15 + Math.sin(this.time * 0.02) * 0.1 + (Math.random() - 0.5) * 0.08);
+            const load5 = Math.max(0, 0.20 + Math.sin(this.time * 0.01) * 0.08);
+            const load15 = Math.max(0, 0.25 + Math.sin(this.time * 0.005) * 0.05);
 
             return {
-                cpu_percent: Math.max(5, Math.min(95, cpuBase + cpuNoise)),
-                memory_percent: Math.max(20, Math.min(85, memBase + (Math.random() - 0.5) * 5))
+                cpu_percent: cpuPercent,
+                memory_percent: memPercent,
+                memory_total_gb: memTotalGb,
+                memory_used_gb: memUsedGb,
+                memory_available_gb: Math.round((memTotalGb - memUsedGb) * 100) / 100,
+                cpu_count: 16,
+                swap_percent: Math.max(0, Math.min(100, 2 + (Math.random() - 0.5) * 3)),
+                cpu_freq_current: Math.round(2400 + Math.random() * 600),
+                cpu_freq_max: 3600,
+                load_avg_1: Math.round(load1 * 100) / 100,
+                load_avg_5: Math.round(load5 * 100) / 100,
+                load_avg_15: Math.round(load15 * 100) / 100,
+                net_bytes_sent: this._netSent,
+                net_bytes_recv: this._netRecv,
+                disk_read_bytes: this._diskRead,
+                disk_write_bytes: this._diskWrite,
+                timestamp: new Date().toISOString()
             };
         }
 
