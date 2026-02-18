@@ -5,14 +5,14 @@
 
 :root {
     /* Background */
-    --bg-primary: #0b0b0f;
-    --bg-surface: #141418;
-    --bg-elevated: #1c1c22;
+    --bg-primary: #09090b;
+    --bg-surface: #131315;
+    --bg-elevated: #1a1a1c;
 
     /* Text */
     --text-primary: #FFFFFF;
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --text-tertiary: rgba(255, 255, 255, 0.4);
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-tertiary: rgba(255, 255, 255, 0.5);
 
     /* Accent — Steel Blue at 20% opacity, for selection/active only */
     --accent: rgba(66, 133, 244, 0.20);
@@ -34,8 +34,8 @@
     --metric-pcie: 176, 190, 210;
 
     /* Sparkline */
-    --spark-stroke: rgba(255, 255, 255, 0.4);
-    --spark-stroke-secondary: rgba(255, 255, 255, 0.2);
+    --spark-stroke: rgba(255, 255, 255, 0.6);
+    --spark-stroke-secondary: rgba(255, 255, 255, 0.35);
 
     /* Bullet bar */
     --bar-track: rgba(255, 255, 255, 0.08);
@@ -59,7 +59,7 @@
     --font-mono: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
 
     /* Borders — kept minimal, only for structure */
-    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-subtle: rgba(255, 255, 255, 0.08);
 }
 
 /* ============================================

@@ -272,12 +272,11 @@ function initGPUCharts(gpuId) {
             }
         }
 
-        // Apply monochrome gradient fill for subtle depth
         const ctx = canvas.getContext('2d');
         const rect = canvas.parentElement.getBoundingClientRect();
         const h = rect.height || 120;
         const gradient = ctx.createLinearGradient(0, 0, 0, h);
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.06)');
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
         config.data.datasets[0].backgroundColor = gradient;
         config.data.datasets[0].fill = true;
@@ -310,7 +309,7 @@ function initOverviewMiniChart(gpuId, currentValue) {
     const miniRect = canvas.parentElement.getBoundingClientRect();
     const miniH = miniRect.height || 48;
     const miniGradient = ctxMini.createLinearGradient(0, 0, 0, miniH);
-    miniGradient.addColorStop(0, 'rgba(255, 255, 255, 0.06)');
+    miniGradient.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
     miniGradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
 
     const config = {
@@ -319,7 +318,7 @@ function initOverviewMiniChart(gpuId, currentValue) {
             labels: chartData[gpuId].utilization.labels,
             datasets: [{
                 data: chartData[gpuId].utilization.data,
-                borderColor: 'rgba(255, 255, 255, 0.3)',
+                borderColor: 'rgba(255, 255, 255, 0.5)',
                 backgroundColor: miniGradient,
                 borderWidth: 1.5,
                 tension: 0.3,
@@ -395,7 +394,7 @@ function initSidebarCharts() {
                 labels: systemData.cpu.labels,
                 datasets: [{
                     data: systemData.cpu.data,
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
                     backgroundColor: 'transparent',
                     borderWidth: 1.5,
                     tension: 0.3,
@@ -414,7 +413,7 @@ function initSidebarCharts() {
                 labels: systemData.memory.labels,
                 datasets: [{
                     data: systemData.memory.data,
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
                     backgroundColor: 'transparent',
                     borderWidth: 1.5,
                     tension: 0.3,
