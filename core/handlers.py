@@ -117,16 +117,14 @@ async def monitor_loop(monitor, connections):
                 'system': system_info
             }
             
-            # Send to all connected clients
+            # Send to all connected clients (iterate over copy to avoid "Set changed size during iteration")
             if connections:
                 disconnected = set()
-                for websocket in connections:
+                for websocket in list(connections):
                     try:
                         await websocket.send_text(json.dumps(data))
-                    except:
+                    except Exception:
                         disconnected.add(websocket)
-                
-                # Remove disconnected clients
                 connections -= disconnected
             
         except Exception as e:

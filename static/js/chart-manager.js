@@ -274,7 +274,7 @@ function initGPUCharts(gpuId) {
 
         const ctx = canvas.getContext('2d');
         const rect = canvas.parentElement.getBoundingClientRect();
-        const h = rect.height || 120;
+        const h = (rect.height > 0 ? rect.height : 90);
         const gradient = ctx.createLinearGradient(0, 0, 0, h);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 0.06)');
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
