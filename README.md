@@ -92,7 +92,8 @@ PORT = 1312            # Server port
 
 ### HTTP
 ```bash
-GET /              # Dashboard
+GET /              # Dashboard (new UI)
+GET /classic       # Classic UI (same app, different layout)
 GET /api/gpu-data  # JSON metrics snapshot
 GET /api/version   # Version and update info
 ```

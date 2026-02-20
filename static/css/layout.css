@@ -141,6 +141,36 @@
     background: rgba(255, 255, 255, 0.04);
 }
 
+/* UI switcher — icon-only in sidebar to fit 56px width; same size as .sidebar-link */
+.sidebar .ui-switcher {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: none;
+    padding: 0;
+    margin-bottom: var(--space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    transition: color 0.1s, background 0.1s, border-color 0.1s;
+}
+
+.sidebar .ui-switcher:hover {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar .ui-switcher svg {
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
 /* ============================================
    Main Content
    ============================================ */

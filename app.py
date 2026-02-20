@@ -21,6 +21,7 @@ app = FastAPI(title="GPU Hot", version=__version__)
 
 # Serve static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/classic-static", StaticFiles(directory="classic_design/static"), name="classic_static")
 
 # Mode selection
 if config.MODE == 'hub':
@@ -53,8 +54,15 @@ else:
 
 @app.get("/")
 async def index():
-    """Serve the main dashboard"""
+    """Serve the main dashboard (new UI)."""
     with open("templates/index.html", "r") as f:
+        return HTMLResponse(content=f.read())
+
+
+@app.get("/classic")
+async def classic_index():
+    """Serve the classic UI dashboard"""
+    with open("classic_design/templates/index.html", "r") as f:
         return HTMLResponse(content=f.read())
 
 
