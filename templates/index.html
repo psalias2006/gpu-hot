@@ -8,7 +8,7 @@
 
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wcdt@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Application Styles (modular) -->
     <link rel="stylesheet" href="/static/css/tokens.css">
@@ -26,6 +26,10 @@
             </nav>
 
             <div class="sidebar-bottom">
+                <!-- UI switcher: icon-only so it fits the narrow sidebar -->
+                <a href="/set-ui?ui=classic" class="sidebar-link ui-switcher" title="Switch to Classic UI">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </a>
                 <!-- System info -->
                 <div class="system-info">
                     <div class="system-metric">

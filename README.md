@@ -92,9 +92,12 @@ PORT = 1312            # Server port
 
 ### HTTP
 ```bash
-GET /              # Dashboard
-GET /api/gpu-data  # JSON metrics snapshot
-GET /api/version   # Version and update info
+GET /                    # Dashboard (UI from saved preference: new or classic)
+GET /set-ui?ui=classic   # Save classic UI preference, redirect to /
+GET /set-ui?ui=new       # Save new UI preference, redirect to /
+GET /classic             # Redirect to / with classic preference (backwards compat)
+GET /api/gpu-data        # JSON metrics snapshot
+GET /api/version         # Version and update info
 ```
 
 ### WebSocket

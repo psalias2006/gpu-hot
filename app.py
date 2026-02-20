@@ -4,10 +4,14 @@
 import asyncio
 import logging
 import aiohttp
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from core import config
+
+# Cookie for UI preference: "classic" or "new". Default (no cookie) = "new".
+UI_COOKIE_NAME = "gpu_hot_ui"
+UI_COOKIE_MAX_AGE = 365 * 24 * 60 * 60  # 1 year
 from version import __version__
 
 # Setup logging
@@ -21,6 +25,7 @@ app = FastAPI(title="GPU Hot", version=__version__)
 
 # Serve static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/classic-static", StaticFiles(directory="classic_design/static"), name="classic_static")
 
 # Mode selection
 if config.MODE == 'hub':
@@ -51,11 +56,50 @@ else:
     monitor_or_hub = monitor
 
 
+def _get_ui_preference(request: Request) -> str:
+    return request.cookies.get(UI_COOKIE_NAME, "new").lower()
+
+
 @app.get("/")
-async def index():
-    """Serve the main dashboard"""
+async def index(request: Request):
+    """Serve the dashboard. UI (new vs classic) is chosen from cookie preference."""
+    ui = _get_ui_preference(request)
+    if ui == "classic":
+        with open("classic_design/templates/index.html", "r") as f:
+            return HTMLResponse(content=f.read())
     with open("templates/index.html", "r") as f:
         return HTMLResponse(content=f.read())
+
+
+@app.get("/set-ui")
+async def set_ui(ui: str = "new"):
+    """Set UI preference cookie and redirect to /. ui=classic or ui=new."""
+    ui = (ui or "new").lower()
+    if ui not in ("classic", "new"):
+        ui = "new"
+    response = RedirectResponse(url="/", status_code=302)
+    response.set_cookie(
+        key=UI_COOKIE_NAME,
+        value=ui,
+        max_age=UI_COOKIE_MAX_AGE,
+        path="/",
+        samesite="lax",
+    )
+    return response
+
+
+@app.get("/classic")
+async def classic_redirect():
+    """Backwards compatibility: redirect to / with classic preference."""
+    response = RedirectResponse(url="/", status_code=302)
+    response.set_cookie(
+        key=UI_COOKIE_NAME,
+        value="classic",
+        max_age=UI_COOKIE_MAX_AGE,
+        path="/",
+        samesite="lax",
+    )
+    return response
 
 
 @app.get("/api/gpu-data")
