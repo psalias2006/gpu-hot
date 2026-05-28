@@ -388,8 +388,8 @@ function updateAllChartDataOnly(gpuId, gpuInfo) {
             data.thresholdData.push(90);
         }
 
-        // Maintain rolling window (120 points = 60s at 0.5s interval)
-        if (data.labels.length > 120) {
+        // Maintain rolling window (240 points = 2 min at 0.5s interval)
+        if (data.labels.length > 240) {
             data.labels.shift();
             data.data.shift();
             if (data.thresholdData) data.thresholdData.shift();
@@ -406,7 +406,7 @@ function updateAllChartDataOnly(gpuId, gpuInfo) {
         clocksData.smData.push(gpuInfo.clock_sm || 0);
         clocksData.memoryData.push(gpuInfo.clock_memory || 0);
 
-        if (clocksData.labels.length > 120) {
+        if (clocksData.labels.length > 240) {
             clocksData.labels.shift();
             clocksData.graphicsData.shift();
             clocksData.smData.shift();
@@ -613,11 +613,16 @@ function createClusterGPUCard(nodeName, gpuId, gpuInfo) {
     const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
     const memPercent = (memory_used / memory_total) * 100;
 
+    const uuid = getMetricValue(gpuInfo, 'uuid', '');
+    const uuidLine = (uuid && uuid !== 'N/A')
+        ? `<p class="gpu-uuid" title="${uuid}">${uuid}</p>` : '';
+
     return `
         <div class="overview-gpu-card" data-gpu-id="${fullGpuId}" onclick="switchToView('gpu-${fullGpuId}')">
             <div class="overview-gpu-name">
                 <h2>GPU ${gpuId}</h2>
                 <p>${getMetricValue(gpuInfo, 'name', 'Unknown GPU')}</p>
+                ${uuidLine}
             </div>
             <div class="overview-metrics">
                 <div class="overview-metric">

@@ -14,7 +14,7 @@ const chartData = {};
 
 // Initialize chart data for a GPU with pre-filled baseline
 function initGPUData(gpuId, initialValues = {}) {
-    const dataPoints = 120; // 60 seconds at 0.5s interval
+    const dataPoints = 240; // 2 minutes at 0.5s interval
     const labels = [];
 
     for (let i = dataPoints - 1; i >= 0; i--) {
@@ -163,8 +163,8 @@ function updateChart(gpuId, chartType, value, value2, value3, value4) {
         data.data.push(safe(value));
     }
 
-    // Rolling window — 120 points
-    if (data.labels.length > 120) {
+    // Rolling window — 240 points (2 minutes at 0.5s)
+    if (data.labels.length > 240) {
         data.labels.shift();
         if (data.data) data.data.shift();
         if (data.graphicsData) data.graphicsData.shift();
@@ -489,7 +489,7 @@ function updateSystemInfo(systemInfo) {
     systemData.memory.labels.push(now);
     systemData.memory.data.push(systemInfo.memory_percent);
 
-    if (systemData.cpu.labels.length > 120) {
+    if (systemData.cpu.labels.length > 240) {
         systemData.cpu.labels.shift();
         systemData.cpu.data.shift();
         systemData.memory.labels.shift();
@@ -570,7 +570,7 @@ function updateGPUSystemCharts(gpuId, systemInfo, sourceKey, shouldUpdateDOM) {
 
     // --- Push data to per-GPU chart arrays ---
     const trim = (obj, ...keys) => {
-        if (obj.labels.length > 120) {
+        if (obj.labels.length > 240) {
             obj.labels.shift();
             keys.forEach(k => { if (obj[k]) obj[k].shift(); });
         }

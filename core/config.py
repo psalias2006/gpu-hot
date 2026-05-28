@@ -12,8 +12,9 @@ PORT = 1312
 DEBUG = False
 
 # Monitoring Configuration
-UPDATE_INTERVAL = 0.5  # Update interval for NVML (sub-second monitoring)
-NVIDIA_SMI_INTERVAL = 2.0  # Update interval for nvidia-smi fallback (slower to reduce overhead)
+# Both intervals are overridable via env vars (seconds, float).
+UPDATE_INTERVAL = float(os.getenv('UPDATE_INTERVAL', '0.5'))         # NVML polling interval
+NVIDIA_SMI_INTERVAL = float(os.getenv('NVIDIA_SMI_INTERVAL', '2.0')) # nvidia-smi fallback interval
 
 # GPU Monitoring Mode
 # Can be set via environment variable: NVIDIA_SMI=true
