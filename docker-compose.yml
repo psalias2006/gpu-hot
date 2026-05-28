@@ -9,6 +9,9 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
       - NODE_NAME=${HOSTNAME}
+      # Optional — override polling intervals (seconds)
+      # - UPDATE_INTERVAL=0.5
+      # - NVIDIA_SMI_INTERVAL=2.0
     deploy:
       resources:
         reservations:
@@ -16,6 +19,11 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+              # To pin specific GPUs instead of "count: all", replace `count` with
+              # `device_ids` and list the UUIDs shown under each card in the UI:
+              # device_ids:
+              #   - "GPU-e1924eea-b9bb-d537-39f2-b345087fa145"
+              #   - "GPU-899c71bf-27be-b6a0-ae8f-d8afe5ba0f85"
     init: true
     pid: "host"
     restart: unless-stopped

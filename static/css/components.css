@@ -45,6 +45,24 @@
     text-overflow: ellipsis;
 }
 
+.overview-gpu-name p.gpu-uuid,
+.gpu-detail-uuid {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.gpu-detail-uuid {
+    display: block;
+    margin-top: 2px;
+}
+
 .overview-metrics {
     display: flex;
     gap: var(--space-xl);
@@ -876,7 +894,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 520px;
+    width: 680px;
     max-width: calc(100vw - var(--sidebar-width) - var(--space-lg));
     background: var(--bg-surface);
     z-index: 201;
@@ -976,13 +994,13 @@
 
 /* Large chart in drawer */
 .drawer-chart-wrap {
-    height: 300px;
+    height: 420px;
     position: relative;
     margin-bottom: var(--space-md);
     overflow: hidden;
     background: rgba(255, 255, 255, 0.015);
     border-radius: 6px;
-    padding: var(--space-sm);
+    padding: var(--space-md) var(--space-sm) var(--space-sm);
 }
 
 .drawer-chart-wrap canvas {
@@ -1074,8 +1092,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: var(--space-xs) var(--space-md);
+    gap: 6px;
+    padding: var(--space-sm) var(--space-md);
     border-right: 1px solid var(--border-subtle);
 }
 
@@ -1094,9 +1112,9 @@
 
 .drawer-stat-value {
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-variant-numeric: tabular-nums;
     line-height: 1;
 }

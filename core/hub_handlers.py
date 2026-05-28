@@ -36,6 +36,10 @@ def register_hub_handlers(app, hub):
             logger.debug(f'Dashboard client disconnected: {e}')
         finally:
             websocket_connections.discard(websocket)
+            # Pause aggregation when nobody is watching to avoid idle CPU usage.
+            if not websocket_connections and hub.running:
+                hub.running = False
+                logger.info("No active clients — pausing hub loop")
 
 
 async def hub_loop(hub, connections):

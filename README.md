@@ -78,11 +78,14 @@ NVIDIA_SMI=true                # Force nvidia-smi mode for older GPUs
 GPU_HOT_MODE=hub               # Set to 'hub' for multi-node aggregation (default: single node)
 NODE_NAME=gpu-server-1         # Node display name (default: hostname)
 NODE_URLS=http://host:1312...  # Comma-separated node URLs (required for hub mode)
+UPDATE_INTERVAL=0.5            # Optional. NVML polling interval in seconds (default: 0.5)
+NVIDIA_SMI_INTERVAL=2.0        # Optional. nvidia-smi fallback polling interval (default: 2.0)
 ```
+
+Polling is paused automatically when no clients are connected, so idle CPU usage stays near zero.
 
 **Backend (`core/config.py`):**
 ```python
-UPDATE_INTERVAL = 0.5  # Polling interval in seconds
 PORT = 1312            # Server port
 ```
 
@@ -163,7 +166,7 @@ curl http://node-ip:1312/api/gpu-data  # Test connectivity
 sudo ufw allow 1312/tcp                # Check firewall
 ```
 
-**Performance issues:** Increase `UPDATE_INTERVAL` in `core/config.py`
+**Performance issues:** Increase `UPDATE_INTERVAL` (env var, seconds — e.g. `-e UPDATE_INTERVAL=2.0`)
 
 ---
 
