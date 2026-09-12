@@ -79,3 +79,4 @@ class TestConfig:
         assert config.PORT == 1312
         assert config.UPDATE_INTERVAL == 0.5
         assert config.NVIDIA_SMI_INTERVAL == 2.0
+        assert config.HUB_HEALTH_STALE_SECONDS == 30.0

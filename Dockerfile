@@ -29,7 +29,7 @@ EXPOSE 1312
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:1312/api/gpu-data || exit 1
+    CMD curl -f http://localhost:1312/health || exit 1
 
 # Run the application
 CMD ["python3", "app.py"]

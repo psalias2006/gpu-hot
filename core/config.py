@@ -26,4 +26,4 @@ MODE = os.getenv('GPU_HOT_MODE', 'default')
 NODE_NAME = os.getenv('NODE_NAME', socket.gethostname())
 # NODE_URLS: comma-separated URLs for hub mode (e.g., http://node1:1312,http://node2:1312)
 NODE_URLS = [url.strip() for url in os.getenv('NODE_URLS', '').split(',') if url.strip()]
-
+HUB_HEALTH_STALE_SECONDS = 30.0

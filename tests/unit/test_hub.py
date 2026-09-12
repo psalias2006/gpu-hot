@@ -148,6 +148,65 @@ class TestGetClusterData:
         assert result['cluster_stats']['total_nodes'] == 1
 
 
+class TestHealthStatus:
+    def test_healthy_with_one_fresh_node(self):
+        hub = Hub(['http://a:1312', 'http://b:1312'])
+        hub.nodes['http://a:1312'].update({
+            'status': 'online',
+            'data': {'gpus': {}},
+            'last_update_monotonic': 90.0
+        })
+
+        with patch('core.hub.config.HUB_HEALTH_STALE_SECONDS', 30):
+            health_status = hub.get_health_status(now=100.0)
+
+        assert health_status['status'] == 'healthy'
+        assert health_status['reason'] == 'fresh_node_data'
+        assert health_status['configured_nodes'] == 2
+        assert health_status['fresh_nodes'] == 1
+        assert health_status['newest_update_age_seconds'] == 10.0
+
+    def test_unhealthy_when_all_nodes_absent(self):
+        hub = Hub(['http://a:1312'])
+
+        health_status = hub.get_health_status(now=100.0)
+
+        assert health_status['status'] == 'unhealthy'
+        assert health_status['reason'] == 'no_node_data'
+        assert health_status['fresh_nodes'] == 0
+        assert health_status['newest_update_age_seconds'] is None
+
+    def test_unhealthy_when_newest_update_is_stale(self):
+        hub = Hub(['http://a:1312'])
+        hub.nodes['http://a:1312'].update({
+            'status': 'online',
+            'data': {'gpus': {}},
+            'last_update_monotonic': 60.0
+        })
+
+        with patch('core.hub.config.HUB_HEALTH_STALE_SECONDS', 30):
+            health_status = hub.get_health_status(now=100.0)
+
+        assert health_status['status'] == 'unhealthy'
+        assert health_status['reason'] == 'node_data_stale'
+        assert health_status['fresh_nodes'] == 0
+        assert health_status['newest_update_age_seconds'] == 40.0
+
+    def test_offline_node_history_does_not_count_as_fresh(self):
+        hub = Hub(['http://a:1312'])
+        hub.nodes['http://a:1312'].update({
+            'status': 'offline',
+            'data': {'gpus': {}},
+            'last_update_monotonic': 99.0
+        })
+
+        health_status = hub.get_health_status(now=100.0)
+
+        assert health_status['status'] == 'unhealthy'
+        assert health_status['reason'] == 'no_node_data'
+        assert health_status['newest_update_age_seconds'] is None
+
+
 class TestShutdown:
     @pytest.mark.asyncio
     async def test_shutdown_closes_websockets(self):

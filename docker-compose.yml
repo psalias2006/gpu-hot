@@ -28,7 +28,7 @@ services:
     pid: "host"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:1312/api/gpu-data"]
+      test: ["CMD", "curl", "-f", "http://localhost:1312/health"]
       interval: 30s
       timeout: 10s
       retries: 3

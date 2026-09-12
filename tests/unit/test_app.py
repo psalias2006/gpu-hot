@@ -136,6 +136,50 @@ class TestEndpoints:
             assert data['gpus'] == {}
 
     @pytest.mark.asyncio
+    async def test_hub_health_is_healthy_with_fresh_node_data(self):
+        from httpx import AsyncClient, ASGITransport
+        from core.hub import Hub
+        import time
+
+        self.app_module.config.MODE = 'hub'
+        hub = Hub(['http://a:1312'])
+        hub.nodes['http://a:1312'].update({
+            'status': 'online',
+            'data': {'gpus': {}},
+            'last_update_monotonic': time.monotonic()
+        })
+        self.app_module.monitor_or_hub = hub
+
+        transport = ASGITransport(app=self.app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/health")
+
+        assert response.status_code == 200
+        assert response.json()['fresh_nodes'] == 1
+
+    @pytest.mark.asyncio
+    async def test_hub_health_fails_without_fresh_node_data(self):
+        from httpx import AsyncClient, ASGITransport
+        from core.hub import Hub
+
+        self.app_module.config.MODE = 'hub'
+        hub = Hub(['http://a:1312'])
+        hub.nodes['http://a:1312'].update({
+            'status': 'online',
+            'data': {'gpus': {}},
+            'last_update_monotonic': 1.0
+        })
+        self.app_module.monitor_or_hub = hub
+
+        transport = ASGITransport(app=self.app)
+        with patch('core.hub.time.monotonic', return_value=100.0):
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await client.get("/health")
+
+        assert response.status_code == 503
+        assert response.json()['reason'] == 'node_data_stale'
+
+    @pytest.mark.asyncio
     async def test_api_version_github_failure(self):
         from httpx import AsyncClient, ASGITransport
         with patch('aiohttp.ClientSession') as mock_session:

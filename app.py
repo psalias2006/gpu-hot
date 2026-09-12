@@ -70,6 +70,19 @@ async def api_gpu_data():
     return {"gpus": {}, "timestamp": "no_data"}
 
 
+@app.get("/health")
+async def health():
+    """Report service health and, in hub mode, node-data freshness."""
+    if config.MODE == 'hub':
+        health_status = monitor_or_hub.get_health_status()
+        return JSONResponse(
+            health_status,
+            status_code=200 if health_status['status'] == 'healthy' else 503
+        )
+
+    return {"status": "healthy", "mode": "node"}
+
+
 def compare_versions(current, latest):
     """Compare semantic versions. Returns True if latest > current"""
     try:

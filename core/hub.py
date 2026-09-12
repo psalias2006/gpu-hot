@@ -3,8 +3,11 @@
 import asyncio
 import logging
 import json
-import websockets
+import time
 from datetime import datetime
+
+import websockets
+
 from . import config
 
 logger = logging.getLogger(__name__)
@@ -27,7 +30,8 @@ class Hub:
                 'websocket': None,
                 'data': None,
                 'status': 'offline',
-                'last_update': None
+                'last_update': None,
+                'last_update_monotonic': None
             }
             self.url_to_node[url] = url
     
@@ -75,7 +79,8 @@ class Hub:
                         'websocket': websocket,
                         'data': None,
                         'status': 'online',
-                        'last_update': datetime.now().isoformat()
+                        'last_update': datetime.now().isoformat(),
+                        'last_update_monotonic': None
                     }
                     
                     # Listen for data from the node
@@ -95,7 +100,8 @@ class Hub:
                                 'websocket': websocket,
                                 'data': data,
                                 'status': 'online',
-                                'last_update': datetime.now().isoformat()
+                                'last_update': datetime.now().isoformat(),
+                                'last_update_monotonic': time.monotonic()
                             }
                             
                         except json.JSONDecodeError as e:
@@ -157,6 +163,54 @@ class Hub:
                 'total_gpus': total_gpus
             }
         }
+
+    def get_health_status(self, now=None):
+        """Report whether at least one configured node has fresh data."""
+        current_time = time.monotonic() if now is None else now
+        fresh_nodes, newest_age_seconds = self._node_freshness(current_time)
+
+        if fresh_nodes:
+            reason = 'fresh_node_data'
+        elif newest_age_seconds is not None:
+            reason = 'node_data_stale'
+        else:
+            reason = 'no_node_data'
+
+        return {
+            'status': 'healthy' if fresh_nodes else 'unhealthy',
+            'mode': 'hub',
+            'reason': reason,
+            'configured_nodes': len(self.node_urls),
+            'fresh_nodes': fresh_nodes,
+            'newest_update_age_seconds': (
+                round(newest_age_seconds, 3)
+                if newest_age_seconds is not None
+                else None
+            )
+        }
+
+    def _node_freshness(self, current_time):
+        """Count fresh nodes and find the age of the newest node update."""
+        fresh_nodes = 0
+        newest_age_seconds = None
+
+        for node_info in self.nodes.values():
+            last_update = node_info.get('last_update_monotonic')
+            if (
+                node_info.get('status') != 'online'
+                or node_info.get('data') is None
+                or last_update is None
+            ):
+                continue
+
+            age_seconds = max(0.0, current_time - last_update)
+            if newest_age_seconds is None or age_seconds < newest_age_seconds:
+                newest_age_seconds = age_seconds
+
+            if age_seconds <= config.HUB_HEALTH_STALE_SECONDS:
+                fresh_nodes += 1
+
+        return fresh_nodes, newest_age_seconds
     
     async def shutdown(self):
         """Disconnect from all nodes"""
@@ -167,4 +221,3 @@ class Hub:
                     await node_info['websocket'].close()
                 except:
                     pass
-
