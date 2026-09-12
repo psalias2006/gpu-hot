@@ -20,7 +20,8 @@ class MetricsCollector:
         """Collect all available metrics for a GPU"""
         data = {
             'index': gpu_id,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'vendor': 'nvidia'
         }
         current_time = time.time()
         
@@ -390,4 +391,3 @@ class MetricsCollector:
             if nvlinks:
                 data['nvlink_links'] = nvlinks
                 data['nvlink_active_count'] = active_count
-

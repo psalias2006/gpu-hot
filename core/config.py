@@ -23,7 +23,6 @@ NVIDIA_SMI = os.getenv('NVIDIA_SMI', 'false').lower() == 'true'
 # Multi-Node Configuration
 # MODE: default (single node monitoring), hub (aggregate multiple nodes)
 MODE = os.getenv('GPU_HOT_MODE', 'default')
-NODE_NAME = os.getenv('NODE_NAME', socket.gethostname())
+NODE_NAME = os.getenv('NODE_NAME') or socket.gethostname()
 # NODE_URLS: comma-separated URLs for hub mode (e.g., http://node1:1312,http://node2:1312)
 NODE_URLS = [url.strip() for url in os.getenv('NODE_URLS', '').split(',') if url.strip()]
-

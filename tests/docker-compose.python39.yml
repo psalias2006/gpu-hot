@@ -1,0 +1,5 @@
+services:
+  python39-import:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.python39

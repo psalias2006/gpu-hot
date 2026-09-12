@@ -1,0 +1,15 @@
+services:
+  gpu-hot:
+    environment:
+      NODE_NAME: ${NODE_NAME:-gpu-hot-node}
+      PATH: /opt/rocm/core-7.14/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      LD_LIBRARY_PATH: /opt/rocm/core-7.14/lib
+    devices:
+      - /dev/dri:/dev/dri:rwm
+      - /dev/kfd:/dev/kfd:rwm
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - ${ROCM_HOST_PATH:-/opt/rocm/core-7.14}:/opt/rocm/core-7.14:ro

@@ -1,0 +1,16 @@
+{
+  "gpu_data": [
+    {
+      "gpu": 0,
+      "asic": {
+        "market_name": "AMD Radeon Pro V620"
+      }
+    },
+    {
+      "gpu": 1,
+      "asic": {
+        "market_name": "AMD Radeon Pro V620"
+      }
+    }
+  ]
+}

@@ -41,6 +41,7 @@ def parse_nvidia_smi():
                     gpu_id = parts[0]
                     gpu_data[gpu_id] = {
                         'index': parts[0],
+                        'vendor': 'nvidia',
                         'name': parts[1],
                         'uuid': parts[2] if parts[2] not in ['N/A', '[N/A]', ''] else 'N/A',
                         'driver_version': parts[3] if parts[3] not in ['N/A', '[N/A]', ''] else 'N/A',
@@ -120,6 +121,7 @@ def parse_nvidia_smi_fallback():
                     gpu_id = parts[0]
                     gpu_data[gpu_id] = {
                         'index': parts[0],
+                        'vendor': 'nvidia',
                         'name': parts[1],
                         'uuid': 'N/A',
                         'driver_version': 'N/A',
@@ -168,4 +170,3 @@ def parse_nvidia_smi_fallback():
     except Exception as e:
         logger.error(f"Basic nvidia-smi query failed: {e}")
         return {}
-

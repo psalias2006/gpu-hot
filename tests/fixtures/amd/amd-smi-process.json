@@ -1,0 +1,36 @@
+[
+  {
+    "gpu": 0,
+    "process_list": [
+      {
+        "process_info": {
+          "name": "llama-server",
+          "pid": 18679,
+          "memory_usage": {
+            "vram_mem": {
+              "value": 24285192000,
+              "unit": "B"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "gpu": 1,
+    "process_list": [
+      {
+        "process_info": {
+          "name": "llama-server",
+          "pid": 18679,
+          "memory_usage": {
+            "vram_mem": {
+              "value": 23124628000,
+              "unit": "B"
+            }
+          }
+        }
+      }
+    ]
+  }
+]

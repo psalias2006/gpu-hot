@@ -1,0 +1,16 @@
+{
+  "gpu_data": [
+    {
+      "gpu": 0,
+      "power": {
+        "throttle_status": "UNTHROTTLED"
+      }
+    },
+    {
+      "gpu": 1,
+      "power": {
+        "throttle_status": "UNTHROTTLED"
+      }
+    }
+  ]
+}

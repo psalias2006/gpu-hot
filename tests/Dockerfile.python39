@@ -1,0 +1,10 @@
+FROM python:3.9.19-slim-bookworm@sha256:69e712dbe4c4a166527cbf69374533125cfb6ee93a5e39031a0191c741d386d7
+
+WORKDIR /app
+COPY requirements.txt .
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc python3-dev \
+    && pip install --no-cache-dir -r requirements.txt \
+    && rm -rf /var/lib/apt/lists/*
+COPY core core
+CMD ["python", "-c", "import core.amd; import core.monitor_factory; print('python39 imports passed')"]

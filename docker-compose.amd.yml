@@ -1,0 +1,18 @@
+services:
+  gpu-hot:
+    build: .
+    image: gpu-hot:local
+    container_name: gpu-hot-amd
+    ports:
+      - "1312:1312"
+    environment:
+      NODE_NAME: ${NODE_NAME:-gpu-hot-node}
+    init: true
+    pid: "host"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1312/api/gpu-data"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

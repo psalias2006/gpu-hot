@@ -43,10 +43,10 @@ else:
     logger.info("Starting GPU Hot (FastAPI)")
     logger.info(f"Node name: {config.NODE_NAME}")
     
-    from core.monitor import GPUMonitor
+    from core.monitor_factory import create_monitor
     from core.handlers import register_handlers
     
-    monitor = GPUMonitor()
+    monitor = create_monitor()
     register_handlers(app, monitor)
     monitor_or_hub = monitor
 
