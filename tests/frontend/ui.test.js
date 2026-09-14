@@ -113,6 +113,18 @@ describe('removeGPUTab', () => {
         expect(global.registeredGPUs.has('0')).toBe(false);
     });
 
+    it('removes a sidebar button when the GPU id contains selector syntax', () => {
+        const gpuId = 'node"x-0';
+        ensureGPUTab(gpuId, { name: 'GPU', utilization: 10 }, false);
+        expect(Array.from(document.querySelectorAll('.sidebar-btn'))
+            .some(button => button.dataset.view === `gpu-${gpuId}`)).toBe(true);
+
+        removeGPUTab(gpuId);
+
+        expect(Array.from(document.querySelectorAll('.sidebar-btn'))
+            .some(button => button.dataset.view === `gpu-${gpuId}`)).toBe(false);
+    });
+
     it('switches to overview if current tab removed', () => {
         const gpuInfo = { name: 'RTX 3090', utilization: 50 };
         ensureGPUTab('0', gpuInfo, false);

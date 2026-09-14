@@ -75,6 +75,11 @@ function loadSocketHandlers(locationOverride) {
         globalThis.handleSocketClose = handleSocketClose;
         globalThis.handleSocketError = handleSocketError;
         globalThis.attemptReconnect = attemptReconnect;
+        globalThis.findDataElement = findDataElement;
+        globalThis.createNodeGroup = createNodeGroup;
+        globalThis.createClusterGPUCard = createClusterGPUCard;
+        globalThis.handleSocketMessage = handleSocketMessage;
+        globalThis.handleClusterData = handleClusterData;
         globalThis.MAX_RECONNECT_ATTEMPTS = MAX_RECONNECT_ATTEMPTS;
         globalThis.RECONNECT_DELAY = RECONNECT_DELAY;
     })();`;
@@ -107,6 +112,93 @@ describe('createWebSocketConnection', () => {
             host: 'secure.example.com'
         });
         expect(instances[0].url).toBe('wss://secure.example.com/socket.io/');
+    });
+});
+
+describe('untrusted hub identity rendering', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        globalThis.switchToView = vi.fn();
+    });
+    afterEach(() => {
+        vi.useRealTimers();
+        global.clearInterval(global.reconnectInterval);
+    });
+
+    it('renders node, GPU name, and UUID as text without inline handlers', () => {
+        loadSocketHandlers();
+        const hostile = '<img src=x onerror="window.__hubXss=1">';
+        const container = document.createElement('div');
+        const group = createNodeGroup(container, hostile, hostile);
+        const card = createClusterGPUCard(hostile, '0', {
+            name: hostile,
+            uuid: hostile,
+            utilization: 1,
+            temperature: 2,
+            memory_used: 3,
+            memory_total: 4,
+            power_draw: 5
+        });
+        group.querySelector('.node-grid').appendChild(card);
+
+        expect(container.querySelector('img')).toBeNull();
+        expect(group.querySelector('.node-label').textContent).toBe(hostile);
+        expect(card.querySelector('.overview-gpu-name p').textContent).toBe(hostile);
+        expect(card.querySelector('.gpu-uuid').textContent).toBe(hostile);
+        expect(card.hasAttribute('onclick')).toBe(false);
+        card.click();
+        expect(switchToView).toHaveBeenCalledWith(`gpu-${hostile}-0`);
+    });
+
+    it('finds a node whose name contains selector syntax', () => {
+        loadSocketHandlers();
+        const container = document.createElement('div');
+        const name = 'node"] .other';
+        const group = createNodeGroup(container, name, name);
+
+        expect(findDataElement(container, '.node-group', 'node', name)).toBe(group);
+    });
+
+    it('reuses a local card when its GPU id contains selector syntax', () => {
+        loadSocketHandlers();
+        document.body.innerHTML = '<div id="overview-container"></div>';
+        const id = 'gpu"x';
+        const data = { gpus: { [id]: { name: 'GPU', utilization: 10, temperature: 30,
+            memory_used: 1, memory_total: 2, power_draw: 10, power_limit: 20 } } };
+
+        handleSocketMessage({ data: JSON.stringify(data) });
+        handleSocketMessage({ data: JSON.stringify(data) });
+
+        expect(document.querySelectorAll('.single-gpu-overview')).toHaveLength(1);
+        expect(document.querySelector('.single-gpu-overview').dataset.gpuId).toBe(id);
+    });
+
+    it('reuses a hub node when its name contains selector syntax', () => {
+        loadSocketHandlers();
+        document.body.innerHTML = '<div id="overview-container"></div>';
+        const name = 'node"x';
+        const gpuInfo = { name: 'GPU', utilization: 10, temperature: 30,
+            memory_used: 1, memory_total: 2, power_draw: 10, power_limit: 20 };
+
+        handleClusterData({ nodes: { [name]: { status: 'online', gpus: { 0: gpuInfo } } } });
+        handleClusterData({ nodes: { [name]: { status: 'online', gpus: { 0: gpuInfo } } } });
+
+        expect(document.querySelectorAll('.node-group')).toHaveLength(1);
+        expect(document.querySelector('.node-group').dataset.node).toBe(name);
+    });
+
+    it('reuses a hub card when its full GPU id contains selector syntax', () => {
+        loadSocketHandlers();
+        document.body.innerHTML = '<div id="overview-container"></div>';
+        const name = 'node"x';
+        const gpuInfo = { name: 'GPU', utilization: 10, temperature: 30,
+            memory_used: 1, memory_total: 2, power_draw: 10, power_limit: 20 };
+
+        handleClusterData({ nodes: { [name]: { status: 'online', gpus: { 0: gpuInfo } } } });
+        handleClusterData({ nodes: { [name]: { status: 'online', gpus: { 0: gpuInfo } } } });
+
+        expect(document.querySelectorAll('.overview-gpu-card')).toHaveLength(1);
+        expect(document.querySelector('.overview-gpu-card').dataset.gpuId).toBe(`${name}-0`);
     });
 });
 

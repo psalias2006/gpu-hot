@@ -80,6 +80,8 @@ for (const file of loadOrder) {
         if (typeof updateChart !== 'undefined') globalThis.updateChart = updateChart;
         if (typeof updateChartStats !== 'undefined') globalThis.updateChartStats = updateChartStats;
         if (typeof initGPUCharts !== 'undefined') globalThis.initGPUCharts = initGPUCharts;
+        if (typeof initOverviewMiniChart !== 'undefined') globalThis.initOverviewMiniChart = initOverviewMiniChart;
+        if (typeof initAggregateChart !== 'undefined') globalThis.initAggregateChart = initAggregateChart;
         if (typeof isMobile !== 'undefined') globalThis.isMobile = isMobile;
         if (typeof formatMemory !== 'undefined') globalThis.formatMemory = formatMemory;
         if (typeof formatMemoryUnit !== 'undefined') globalThis.formatMemoryUnit = formatMemoryUnit;

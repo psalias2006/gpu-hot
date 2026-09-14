@@ -90,11 +90,11 @@ function ensureGPUTab(gpuId, gpuInfo, shouldUpdateDOM = true) {
     }
 
     // Update or create detailed GPU card
-    const detailedContainer = document.querySelector(`#tab-gpu-${gpuId} .detailed-view`);
+    const detailedContainer = document.getElementById(`tab-gpu-${gpuId}`)?.querySelector('.detailed-view');
     const existingCard = document.getElementById(`gpu-${gpuId}`);
 
     if (!existingCard && detailedContainer) {
-        detailedContainer.innerHTML = createGPUCard(gpuId, gpuInfo);
+        detailedContainer.replaceChildren(createGPUCard(gpuId, gpuInfo));
         if (!chartData[gpuId]) initGPUData(gpuId);
         initGPUCharts(gpuId);
     } else if (existingCard) {
@@ -110,7 +110,8 @@ function removeGPUTab(gpuId) {
         switchToView('overview');
     }
 
-    const btn = document.querySelector(`.sidebar-btn[data-view="gpu-${gpuId}"]`);
+    const btn = Array.from(document.querySelectorAll('.sidebar-btn'))
+        .find(element => element.dataset.view === `gpu-${gpuId}`);
     if (btn) btn.remove();
 
     const tabContent = document.getElementById(`tab-gpu-${gpuId}`);

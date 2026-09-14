@@ -84,6 +84,10 @@ describe('getMetricValue', () => {
     it('returns zero when value is zero', () => {
         expect(getMetricValue({ temp: 0 }, 'temp', 99)).toBe(0);
     });
+
+    it('uses the numeric default when a metric is not numeric', () => {
+        expect(getMetricValue({ temp: '<img src=x>' }, 'temp', 7)).toBe(7);
+    });
 });
 
 describe('hasMetric', () => {
@@ -164,13 +168,13 @@ describe('createEnhancedOverviewCard', () => {
         architecture: 'Ampere'
     };
 
-    it('returns HTML with GPU name', () => {
-        const html = createEnhancedOverviewCard('0', gpuInfo);
+    it('returns a card with the GPU name', () => {
+        const html = createEnhancedOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('RTX 3090');
     });
 
     it('includes metric elements', () => {
-        const html = createEnhancedOverviewCard('0', gpuInfo);
+        const html = createEnhancedOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('1800 MHz');
     });
 });
@@ -194,6 +198,17 @@ describe('updateProcesses', () => {
         expect(container.innerHTML).toContain('blender');
     });
 
+    it('renders process names and identifiers as text', () => {
+        const hostile = '<img src=x onerror="window.__processXss=1">';
+        updateProcesses([{ name: hostile, pid: hostile, memory: hostile }]);
+        const container = document.getElementById('processes-container');
+
+        expect(container.querySelector('img')).toBeNull();
+        expect(container.querySelector('.process-name').textContent).toBe(hostile);
+        expect(container.querySelector('.process-pid').textContent).toBe(hostile);
+        expect(container.querySelector('.process-memory').textContent).toBe('Not reported');
+    });
+
     it('handles empty process list', () => {
         updateProcesses([]);
         const container = document.getElementById('processes-container');
@@ -212,18 +227,18 @@ describe('createCompactOverviewCard', () => {
         power_limit: 350,
     };
 
-    it('returns HTML with GPU name', () => {
-        const html = createCompactOverviewCard('0', gpuInfo);
+    it('returns a card with the GPU name', () => {
+        const html = createCompactOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('RTX 3090');
     });
 
     it('includes overview-gpu-card class', () => {
-        const html = createCompactOverviewCard('0', gpuInfo);
+        const html = createCompactOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('overview-gpu-card');
     });
 
     it('includes compact metric elements with overview- IDs', () => {
-        const html = createCompactOverviewCard('0', gpuInfo);
+        const html = createCompactOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('overview-util-0');
         expect(html).toContain('overview-temp-0');
         expect(html).toContain('overview-mem-0');
@@ -231,34 +246,140 @@ describe('createCompactOverviewCard', () => {
     });
 
     it('shows utilization percentage', () => {
-        const html = createCompactOverviewCard('0', gpuInfo);
+        const html = createCompactOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('75%');
     });
 
     it('shows temperature with degree symbol', () => {
-        const html = createCompactOverviewCard('0', gpuInfo);
+        const html = createCompactOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('72°');
     });
 
     it('shows memory as percentage', () => {
-        const html = createCompactOverviewCard('0', gpuInfo);
+        const html = createCompactOverviewCard('0', gpuInfo).outerHTML;
         // 8192/24576 = 33.3%
         expect(html).toContain('33%');
     });
 
     it('shows power in watts', () => {
-        const html = createCompactOverviewCard('0', gpuInfo);
+        const html = createCompactOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('250W');
     });
 
     it('includes mini chart canvas', () => {
-        const html = createCompactOverviewCard('0', gpuInfo);
+        const html = createCompactOverviewCard('0', gpuInfo).outerHTML;
         expect(html).toContain('overview-chart-0');
         expect(html).toContain('<canvas');
     });
 
-    it('includes onclick to switch view', () => {
-        const html = createCompactOverviewCard('2', gpuInfo);
-        expect(html).toContain("switchToView('gpu-2')");
+    it('uses an event listener instead of an inline click handler', () => {
+        const card = createCompactOverviewCard('2', gpuInfo);
+        expect(card.hasAttribute('onclick')).toBe(false);
+    });
+});
+
+describe('collector text rendering', () => {
+    const hostileText = '<img src=x onerror="window.__collectorTextExecuted=1">';
+    const gpuInfo = {
+        name: 'Test GPU',
+        utilization: 1,
+        temperature: 1,
+        memory_used: 1,
+        memory_total: 1024,
+        power_draw: 1,
+        power_limit: 100,
+        fan_speed: 1
+    };
+
+    it.each([
+        ['compact overview', 'uuid', createCompactOverviewCard],
+        ['single-GPU overview', 'uuid', createEnhancedOverviewCard],
+        ['single-GPU overview', 'performance_state', createEnhancedOverviewCard],
+        ['single-GPU overview', 'driver_version', createEnhancedOverviewCard],
+        ['single-GPU overview', 'architecture', createEnhancedOverviewCard],
+        ['detail card', 'performance_state', createGPUCard],
+        ['detail card', 'driver_version', createGPUCard],
+        ['detail card', 'architecture', createGPUCard],
+        ['detail card', 'throttle_reasons', createGPUCard]
+    ])('%s renders hostile %s as text', (_cardType, field, markupFactory) => {
+        const container = document.createElement('div');
+        container.appendChild(markupFactory('0', { ...gpuInfo, [field]: hostileText }));
+
+        expect(container.querySelector('img')).toBeNull();
+        expect(container.textContent).toContain(hostileText);
+        if (field === 'uuid') {
+            expect(container.querySelector('[title]').title).toBe(hostileText);
+        }
+    });
+
+    it('renders GPU names as text in every card factory', () => {
+        for (const factory of [createCompactOverviewCard, createEnhancedOverviewCard, createGPUCard]) {
+            const card = factory('0', { ...gpuInfo, name: hostileText });
+            expect(card.querySelector('img')).toBeNull();
+            expect(card.textContent).toContain(hostileText);
+        }
+    });
+
+    it('rejects non-numeric markup from every numeric-looking collector field', () => {
+        const fields = [
+            'brand', 'pcie_gen', 'pcie_width', 'pcie_gen_max', 'pcie_width_max',
+            'clock_sm_max', 'clock_graphics', 'clock_memory', 'clock_sm', 'clock_video',
+            'memory_utilization', 'temperature_memory', 'decoder_sessions',
+            'encoder_sessions', 'encoder_utilization', 'decoder_utilization'
+        ];
+        const hostileInfo = { ...gpuInfo };
+        fields.forEach(field => { hostileInfo[field] = hostileText; });
+
+        const cards = [
+            createEnhancedOverviewCard('0', hostileInfo),
+            createGPUCard('0', hostileInfo)
+        ];
+        cards.forEach(card => {
+            expect(card.querySelector('img')).toBeNull();
+            expect(card.innerHTML).not.toContain(hostileText);
+            expect(card.textContent).toContain('Not reported');
+        });
+    });
+
+    it.each([
+        ['object with a non-callable toString', JSON.parse('{"toString":"bad"}')],
+        ['array', [12]],
+        ['boolean', true],
+        ['nested object', { value: { amount: 12 } }]
+    ])('keeps rendering when a numeric field contains a %s', (_name, badValue) => {
+        const data = {
+            ...gpuInfo,
+            utilization: badValue,
+            memory_used: badValue,
+            power_draw: badValue,
+            fan_speed: badValue,
+            clock_graphics: badValue,
+            pcie_gen: badValue,
+            energy_consumption_wh: badValue
+        };
+        const cards = [
+            createCompactOverviewCard('0', data),
+            createEnhancedOverviewCard('0', data),
+            createGPUCard('0', data)
+        ];
+
+        cards.forEach(card => expect(card).toBeInstanceOf(Element));
+        expect(cards[1].textContent).toContain('Not reported');
+        expect(cards[2].querySelector('#clock-gr-0').textContent).toBe('Not reported');
+        expect(getMetricValue({ metric: badValue }, 'metric', 7)).toBe(7);
+    });
+
+    it.each([
+        ['compact overview', createCompactOverviewCard],
+        ['single-GPU overview', createEnhancedOverviewCard],
+        ['detail card', createGPUCard]
+    ])('keeps an untrusted GPU identifier inside text and attributes for %s', (_cardType, factory) => {
+        const hostileId = '0"><img src=x onerror="window.__idXss=1">';
+        const card = factory(hostileId, gpuInfo);
+
+        expect(card.querySelector('img')).toBeNull();
+        expect(card.id || card.dataset.gpuId).toContain(hostileId);
+        expect(card.querySelector('[class*="gpu-detail-title"], h2').textContent).toBe(`GPU ${hostileId}`);
+        expect(card.hasAttribute('onclick')).toBe(false);
     });
 });

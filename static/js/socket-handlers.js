@@ -9,6 +9,25 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_DELAY = 2000; // Start with 2 seconds
 
+function findDataElement(container, selector, dataKey, value) {
+    return Array.from(container.querySelectorAll(selector))
+        .find(element => element.dataset[dataKey] === String(value)) || null;
+}
+
+function createNodeGroup(container, groupKey, nodeName) {
+    const group = document.createElement('div');
+    group.className = 'node-group';
+    group.dataset.node = String(groupKey);
+    const label = document.createElement('div');
+    label.className = 'node-label';
+    label.textContent = String(nodeName);
+    const grid = document.createElement('div');
+    grid.className = 'node-grid';
+    group.append(label, grid);
+    container.appendChild(group);
+    return group;
+}
+
 function createWebSocketConnection() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(protocol + '//' + window.location.host + '/socket.io/');
@@ -224,24 +243,19 @@ function handleSocketMessage(event) {
         });
 
         // Handle initial card creation (can't be batched since we need the DOM element)
-        const existingOverview = overviewContainer.querySelector(`[data-gpu-id="${gpuId}"]`);
+        const existingOverview = Array.from(overviewContainer.querySelectorAll('[data-gpu-id]'))
+            .find(element => element.dataset.gpuId === String(gpuId));
         if (!existingOverview) {
             if (gpuCount >= 2) {
                 // Compact layout for multi-GPU servers
                 let nodeGrid = overviewContainer.querySelector('.node-grid');
                 if (!nodeGrid) {
-                    const hostname = data.node_name || 'GPU Server';
-                    overviewContainer.insertAdjacentHTML('beforeend', `
-                        <div class="node-group" data-node="_local">
-                            <div class="node-label">${hostname}</div>
-                            <div class="node-grid"></div>
-                        </div>
-                    `);
-                    nodeGrid = overviewContainer.querySelector('.node-grid');
+                    nodeGrid = createNodeGroup(overviewContainer, '_local', data.node_name || 'GPU Server')
+                        .querySelector('.node-grid');
                 }
-                nodeGrid.insertAdjacentHTML('beforeend', createCompactOverviewCard(gpuId, gpuInfo));
+                nodeGrid.appendChild(createCompactOverviewCard(gpuId, gpuInfo));
             } else {
-                overviewContainer.insertAdjacentHTML('beforeend', createEnhancedOverviewCard(gpuId, gpuInfo));
+                overviewContainer.appendChild(createEnhancedOverviewCard(gpuId, gpuInfo));
                 // Auto-expand processes for single GPU
                 setTimeout(() => {
                     const content = document.getElementById('processes-content');
@@ -488,15 +502,9 @@ function handleClusterData(data) {
     // Render GPUs grouped by node (minimal grouping)
     Object.entries(data.nodes).forEach(([nodeName, nodeData]) => {
         // Get or create node group container
-        let nodeGroup = overviewContainer.querySelector(`[data-node="${nodeName}"]`);
+        let nodeGroup = findDataElement(overviewContainer, '.node-group', 'node', nodeName);
         if (!nodeGroup) {
-            overviewContainer.insertAdjacentHTML('beforeend', `
-                <div class="node-group" data-node="${nodeName}">
-                    <div class="node-label">${nodeName}</div>
-                    <div class="node-grid"></div>
-                </div>
-            `);
-            nodeGroup = overviewContainer.querySelector(`[data-node="${nodeName}"]`);
+            nodeGroup = createNodeGroup(overviewContainer, nodeName, nodeName);
         }
 
         const nodeGrid = nodeGroup.querySelector('.node-grid');
@@ -533,9 +541,9 @@ function handleClusterData(data) {
                 });
 
                 // Create card if doesn't exist
-                const existingCard = nodeGrid.querySelector(`[data-gpu-id="${fullGpuId}"]`);
+                const existingCard = findDataElement(nodeGrid, '[data-gpu-id]', 'gpuId', fullGpuId);
                 if (!existingCard) {
-                    nodeGrid.insertAdjacentHTML('beforeend', createClusterGPUCard(nodeName, gpuId, gpuInfo));
+                    nodeGrid.appendChild(createClusterGPUCard(nodeName, gpuId, gpuInfo));
                     initOverviewMiniChart(fullGpuId, gpuInfo.utilization);
                     lastDOMUpdate[fullGpuId] = now;
                 }
@@ -609,42 +617,7 @@ function handleClusterData(data) {
  */
 function createClusterGPUCard(nodeName, gpuId, gpuInfo) {
     const fullGpuId = `${nodeName}-${gpuId}`;
-    const memory_used = getMetricValue(gpuInfo, 'memory_used', 0);
-    const memory_total = getMetricValue(gpuInfo, 'memory_total', 1);
-    const memPercent = (memory_used / memory_total) * 100;
-
-    const uuid = getMetricValue(gpuInfo, 'uuid', '');
-    const uuidLine = (uuid && uuid !== 'N/A')
-        ? `<p class="gpu-uuid" title="${uuid}">${uuid}</p>` : '';
-
-    return `
-        <div class="overview-gpu-card" data-gpu-id="${fullGpuId}" onclick="switchToView('gpu-${fullGpuId}')">
-            <div class="overview-gpu-name">
-                <h2>GPU ${gpuId}</h2>
-                <p>${getMetricValue(gpuInfo, 'name', 'Unknown GPU')}</p>
-                ${uuidLine}
-            </div>
-            <div class="overview-metrics">
-                <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-util-${fullGpuId}">${getMetricValue(gpuInfo, 'utilization', 0)}%</div>
-                    <div class="overview-metric-label">UTIL</div>
-                </div>
-                <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-temp-${fullGpuId}">${getMetricValue(gpuInfo, 'temperature', 0)}°</div>
-                    <div class="overview-metric-label">TEMP</div>
-                </div>
-                <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-mem-${fullGpuId}">${Math.round(memPercent)}%</div>
-                    <div class="overview-metric-label">MEM</div>
-                </div>
-                <div class="overview-metric">
-                    <div class="overview-metric-value" id="overview-power-${fullGpuId}">${getMetricValue(gpuInfo, 'power_draw', 0).toFixed(0)}W</div>
-                    <div class="overview-metric-label">POWER</div>
-                </div>
-            </div>
-            <div class="overview-mini-chart">
-                <canvas id="overview-chart-${fullGpuId}"></canvas>
-            </div>
-        </div>
-    `;
+    const card = createCompactOverviewCard(fullGpuId, gpuInfo);
+    card.querySelector('.overview-gpu-name h2').textContent = `GPU ${gpuId}`;
+    return card;
 }
